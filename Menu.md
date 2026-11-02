@@ -1,10 +1,20 @@
 
 --[[
 ====================================================
-              GAU MODS V3.0
-          PREMIUM SCRIPT CENTER
+                GAU MODS V3.0
+            PREMIUM SCRIPT CENTER
 ====================================================
---]]
+    - 3 TAB, 6 SCRIPT MOI TAB
+    - DRAG MENU
+    - DRAG FLOATING BUTTON
+    - MINIMIZE / RESTORE
+    - EXIT CONFIRMATION
+====================================================
+]]
+
+--==================================================
+-- SERVICES
+--==================================================
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -12,11 +22,15 @@ local UIS = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
+--==================================================
+-- CONFIG
+--==================================================
+
 local LOGO_ID = "rbxassetid://72592444132863"
 local OPEN_ICON_ID = "rbxassetid://72592444132863"
 
 --==================================================
--- DANH SÁCH SCRIPT: 6 MỤC MỖI TAB
+-- SCRIPT LIST
 --==================================================
 
 local Scripts = {
@@ -46,7 +60,7 @@ local Scripts = {
 }
 
 --==================================================
--- MÀU GIAO DIỆN
+-- THEME
 --==================================================
 
 local Theme = {
@@ -62,14 +76,18 @@ local Theme = {
 }
 
 --==================================================
--- TẠO SCREEN GUI
+-- SCREEN GUI
 --==================================================
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AXURS_HUB_V32"
+ScreenGui.Name = "GAU_MODS_V30"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = PlayerGui
+
+--==================================================
+-- HELPER FUNCTIONS
+--==================================================
 
 local function Corner(Object, Radius)
     local C = Instance.new("UICorner")
@@ -87,11 +105,11 @@ local function Stroke(Object, Color, Thickness)
 end
 
 --==================================================
--- NÚT MỞ MENU NỔI
+-- FLOATING BUTTON
 --==================================================
 
 local OpenButton = Instance.new("ImageButton")
-OpenButton.Name = "OpenAXURS"
+OpenButton.Name = "OpenGAUMODS"
 OpenButton.Parent = ScreenGui
 OpenButton.Size = UDim2.new(0, 75, 0, 75)
 OpenButton.Position = UDim2.new(0, 25, 0.5, -37)
@@ -100,12 +118,13 @@ OpenButton.Image = OPEN_ICON_ID
 OpenButton.ScaleType = Enum.ScaleType.Fit
 OpenButton.Visible = false
 OpenButton.ZIndex = 10
+OpenButton.Active = true
 
 Corner(OpenButton, 18)
 Stroke(OpenButton, Theme.BlueLight, 2)
 
 --==================================================
--- MENU CHÍNH
+-- MAIN MENU
 --==================================================
 
 local Main = Instance.new("Frame")
@@ -130,8 +149,11 @@ Header.Size = UDim2.new(1, -4, 0, 105)
 Header.Position = UDim2.new(0, 2, 0, 2)
 Header.BackgroundColor3 = Theme.Panel
 Header.BorderSizePixel = 0
+Header.Active = true
 
 Corner(Header, 16)
+
+-- LOGO
 
 local Logo = Instance.new("ImageLabel")
 Logo.Parent = Header
@@ -141,12 +163,14 @@ Logo.BackgroundTransparency = 1
 Logo.Image = LOGO_ID
 Logo.ScaleType = Enum.ScaleType.Fit
 
+-- TITLE
+
 local Title = Instance.new("TextLabel")
 Title.Parent = Header
 Title.Size = UDim2.new(0, 330, 0, 43)
 Title.Position = UDim2.new(0, 105, 0, 17)
 Title.BackgroundTransparency = 1
-Title.Text = "AXURS HUB"
+Title.Text = "GAU MODS"
 Title.TextColor3 = Theme.White
 Title.TextSize = 29
 Title.Font = Enum.Font.GothamBlack
@@ -163,6 +187,8 @@ Subtitle.TextSize = 15
 Subtitle.Font = Enum.Font.GothamBold
 Subtitle.TextXAlignment = Enum.TextXAlignment.Left
 
+-- MINIMIZE
+
 local MinimizeButton = Instance.new("TextButton")
 MinimizeButton.Parent = Header
 MinimizeButton.Size = UDim2.new(0, 42, 0, 42)
@@ -173,7 +199,10 @@ MinimizeButton.TextColor3 = Theme.White
 MinimizeButton.TextSize = 30
 MinimizeButton.Font = Enum.Font.GothamBold
 MinimizeButton.BorderSizePixel = 0
+
 Corner(MinimizeButton, 11)
+
+-- CLOSE
 
 local CloseButton = Instance.new("TextButton")
 CloseButton.Parent = Header
@@ -185,36 +214,31 @@ CloseButton.TextColor3 = Theme.White
 CloseButton.TextSize = 24
 CloseButton.Font = Enum.Font.GothamBold
 CloseButton.BorderSizePixel = 0
+
 Corner(CloseButton, 11)
 
 --==================================================
--- KÉO MENU BẰNG HEADER
+-- DRAG MAIN MENU
 --==================================================
 
 local Dragging = false
-local DragInput
 local DragStart
 local StartPosition
+local DragInput
 
 Header.InputBegan:Connect(function(Input)
     if Input.UserInputType == Enum.UserInputType.MouseButton1
         or Input.UserInputType == Enum.UserInputType.Touch then
 
-        if Input.Position.X >= CloseButton.AbsolutePosition.X - 5
-            or Input.Position.X >= MinimizeButton.AbsolutePosition.X - 5 then
+        local X = Input.Position.X
+
+        if X >= MinimizeButton.AbsolutePosition.X - 5 then
             return
         end
 
         Dragging = true
         DragStart = Input.Position
         StartPosition = Main.Position
-    end
-end)
-
-Header.InputEnded:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1
-        or Input.UserInputType == Enum.UserInputType.Touch then
-        Dragging = false
     end
 end)
 
@@ -235,8 +259,15 @@ UIS.InputChanged:Connect(function(Input)
     end
 end)
 
+UIS.InputEnded:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton1
+        or Input.UserInputType == Enum.UserInputType.Touch then
+        Dragging = false
+    end
+end)
+
 --==================================================
--- KHU VỰC TAB
+-- TAB HOLDER
 --==================================================
 
 local TabHolder = Instance.new("Frame")
@@ -254,6 +285,10 @@ local TabNames = {
 local TabButtons = {}
 local TabPages = {}
 
+--==================================================
+-- CONTENT HOLDER
+--==================================================
+
 local ContentHolder = Instance.new("Frame")
 ContentHolder.Parent = Main
 ContentHolder.Size = UDim2.new(1, -28, 0, 330)
@@ -263,7 +298,12 @@ ContentHolder.BorderSizePixel = 0
 
 Corner(ContentHolder, 15)
 
+--==================================================
+-- CREATE 3 TABS
+--==================================================
+
 for i = 1, 3 do
+
     local TabButton = Instance.new("TextButton")
     TabButton.Parent = TabHolder
     TabButton.Size = UDim2.new(1/3, -7, 1, 0)
@@ -274,6 +314,7 @@ for i = 1, 3 do
     TabButton.TextSize = 16
     TabButton.Font = Enum.Font.GothamBold
     TabButton.BorderSizePixel = 0
+
     Corner(TabButton, 12)
 
     TabButtons[i] = TabButton
@@ -307,10 +348,11 @@ for i = 1, 3 do
 end
 
 --==================================================
--- CHUYỂN TAB
+-- SELECT TAB
 --==================================================
 
 local function SelectTab(Number)
+
     for i = 1, 3 do
         TabPages[i].Visible = (i == Number)
 
@@ -333,10 +375,11 @@ end
 SelectTab(1)
 
 --==================================================
--- TẠO CÁC THẺ SCRIPT
+-- CREATE SCRIPT CARDS
 --==================================================
 
 for Index, Data in ipairs(Scripts) do
+
     local TabNumber = math.clamp(tonumber(Data.Tab) or 1, 1, 3)
 
     local Card = Instance.new("Frame")
@@ -362,7 +405,11 @@ for Index, Data in ipairs(Scripts) do
     ScriptName.Size = UDim2.new(0.55, 0, 0, 31)
     ScriptName.Position = UDim2.new(0, 70, 0, 9)
     ScriptName.BackgroundTransparency = 1
-    ScriptName.Text = string.format("%02d  •  %s", Index, tostring(Data.Name))
+    ScriptName.Text = string.format(
+        "%02d  •  %s",
+        Index,
+        tostring(Data.Name)
+    )
     ScriptName.TextColor3 = Theme.White
     ScriptName.TextSize = 17
     ScriptName.Font = Enum.Font.GothamBold
@@ -390,18 +437,23 @@ for Index, Data in ipairs(Scripts) do
     EnableButton.TextSize = 17
     EnableButton.Font = Enum.Font.GothamBold
     EnableButton.BorderSizePixel = 0
+
     Corner(EnableButton, 10)
 
     EnableButton.MouseButton1Click:Connect(function()
+
         Status.Text = "● ĐÃ CHỌN"
         Status.TextColor3 = Theme.BlueLight
+
         EnableButton.Text = "ĐÃ CHỌN"
-        EnableButton.BackgroundColor3 = Color3.fromRGB(35, 80, 145)
+        EnableButton.BackgroundColor3 =
+            Color3.fromRGB(35, 80, 145)
+
     end)
 end
 
 --==================================================
--- CHÂN MENU
+-- FOOTER
 --==================================================
 
 local Footer = Instance.new("TextLabel")
@@ -416,7 +468,7 @@ Footer.Font = Enum.Font.GothamBold
 Footer.TextXAlignment = Enum.TextXAlignment.Left
 
 --==================================================
--- BẢNG XÁC NHẬN TẮT
+-- EXIT CONFIRMATION
 --==================================================
 
 local ConfirmOverlay = Instance.new("Frame")
@@ -443,7 +495,7 @@ Question.Parent = ConfirmBox
 Question.Size = UDim2.new(1, -20, 0, 75)
 Question.Position = UDim2.new(0, 10, 0, 10)
 Question.BackgroundTransparency = 1
-Question.Text = "BẠN CÓ MUỐN TẮT AXURS HUB KHÔNG?"
+Question.Text = "BẠN CÓ MUỐN TẮT GAU MODS KHÔNG?"
 Question.TextColor3 = Theme.White
 Question.TextSize = 17
 Question.Font = Enum.Font.GothamBold
@@ -461,6 +513,7 @@ YesButton.TextSize = 16
 YesButton.Font = Enum.Font.GothamBold
 YesButton.BorderSizePixel = 0
 YesButton.ZIndex = 102
+
 Corner(YesButton, 9)
 
 local NoButton = Instance.new("TextButton")
@@ -474,6 +527,7 @@ NoButton.TextSize = 16
 NoButton.Font = Enum.Font.GothamBold
 NoButton.BorderSizePixel = 0
 NoButton.ZIndex = 102
+
 Corner(NoButton, 9)
 
 CloseButton.MouseButton1Click:Connect(function()
@@ -489,7 +543,7 @@ YesButton.MouseButton1Click:Connect(function()
 end)
 
 --==================================================
--- THU NHỎ MENU
+-- MINIMIZE / RESTORE
 --==================================================
 
 MinimizeButton.MouseButton1Click:Connect(function()
@@ -498,7 +552,7 @@ MinimizeButton.MouseButton1Click:Connect(function()
 end)
 
 --==================================================
--- KÉO THẢ + CHẠM MỞ NÚT NỔI
+-- FLOATING BUTTON DRAG + CLICK
 --==================================================
 
 local FloatingDragging = false
@@ -508,6 +562,7 @@ local FloatingStartPosition = nil
 local FloatingMoved = false
 
 OpenButton.InputBegan:Connect(function(Input)
+
     if Input.UserInputType == Enum.UserInputType.MouseButton1
         or Input.UserInputType == Enum.UserInputType.Touch then
 
@@ -516,19 +571,26 @@ OpenButton.InputBegan:Connect(function(Input)
         FloatingStart = Input.Position
         FloatingStartPosition = OpenButton.Position
         FloatingMoved = false
+
     end
 end)
 
 UIS.InputChanged:Connect(function(Input)
-    if not FloatingDragging then return end
 
-    local IsMouse = FloatingInput.UserInputType == Enum.UserInputType.MouseButton1
+    if not FloatingDragging or not FloatingInput then
+        return
+    end
+
+    local IsMouse =
+        FloatingInput.UserInputType == Enum.UserInputType.MouseButton1
         and Input.UserInputType == Enum.UserInputType.MouseMovement
 
-    local IsTouch = FloatingInput.UserInputType == Enum.UserInputType.Touch
+    local IsTouch =
+        FloatingInput.UserInputType == Enum.UserInputType.Touch
         and Input == FloatingInput
 
     if IsMouse or IsTouch then
+
         local Delta = Input.Position - FloatingStart
 
         if math.abs(Delta.X) > 6 or math.abs(Delta.Y) > 6 then
@@ -541,19 +603,26 @@ UIS.InputChanged:Connect(function(Input)
             FloatingStartPosition.Y.Scale,
             FloatingStartPosition.Y.Offset + Delta.Y
         )
+
     end
 end)
 
 UIS.InputEnded:Connect(function(Input)
-    if not FloatingDragging or not FloatingInput then return end
 
-    local IsMouse = FloatingInput.UserInputType == Enum.UserInputType.MouseButton1
+    if not FloatingDragging or not FloatingInput then
+        return
+    end
+
+    local IsMouse =
+        FloatingInput.UserInputType == Enum.UserInputType.MouseButton1
         and Input.UserInputType == Enum.UserInputType.MouseButton1
 
-    local IsTouch = FloatingInput.UserInputType == Enum.UserInputType.Touch
+    local IsTouch =
+        FloatingInput.UserInputType == Enum.UserInputType.Touch
         and Input == FloatingInput
 
     if IsMouse or IsTouch then
+
         FloatingDragging = false
         FloatingInput = nil
 
@@ -561,7 +630,8 @@ UIS.InputEnded:Connect(function(Input)
             Main.Visible = true
             OpenButton.Visible = false
         end
+
     end
 end)
 
-print("GAU MODS V3.0 đã khởi tạo!")
+print("GAU MODS V3.0 đã khởi tạo thành công!")
