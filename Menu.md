@@ -35,7 +35,7 @@ local OPEN_ICON_ID = "rbxassetid://72592444132863"
 
 local Scripts = {
     -- TAB 1
-    {Name = "Chilli Hub V8", URL = "https://raw.githubusercontent.com/napun67/stealanegg/refs/heads/main/chillihubv8.lua", Tab = 1},
+    {Name = "Chilli Hub V8", URL = "loadstring(game:HttpGet("https://raw.githubusercontent.com/napun67/stealanegg/refs/heads/main/chillihubv8.lua"))()    ", Tab = 1},
     {Name = "Miranda Hub", URL = "https://raw.githubusercontent.com/miirandahub/loader/refs/heads/main/stealaegg", Tab = 1},
     {Name = "Lennon Hub", URL = "https://api.jnkie.com/api/v1/luascripts/public/bf52181bce5c28e6ecd16eebfa1a88ddaf646c7acb10015fbaa7b30dc7bad0a8/download", Tab = 1},
     {Name = "Lumin Hub", URL = "http://luminon.top/loader.lua", Tab = 1},
