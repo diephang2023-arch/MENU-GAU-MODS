@@ -1,7 +1,7 @@
 
 --[[
 ====================================================
-              AXURS HUB V3.2
+              GAU MODS V3.0
           PREMIUM SCRIPT CENTER
 ====================================================
 --]]
@@ -409,7 +409,7 @@ Footer.Parent = Main
 Footer.Size = UDim2.new(1, -28, 0, 32)
 Footer.Position = UDim2.new(0, 14, 1, -38)
 Footer.BackgroundTransparency = 1
-Footer.Text = "♛  AXURS HUB V3.2                    Enjoy Script! ❤️"
+Footer.Text = "♛  GAU MODS V3.0                    Enjoy Script! ❤️"
 Footer.TextColor3 = Theme.Gray
 Footer.TextSize = 13
 Footer.Font = Enum.Font.GothamBold
@@ -564,4 +564,4 @@ UIS.InputEnded:Connect(function(Input)
     end
 end)
 
-print("AXURS HUB V3.2 đã khởi tạo!")
+print("GAU MODS V3.0 đã khởi tạo!")
