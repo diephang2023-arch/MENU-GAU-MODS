@@ -51,7 +51,7 @@ local Scripts = {
     {Name = "Venyx", URL = "https://raw.githubusercontent.com/tienkhanh1/Venyx/main/VenyxHub", Tab = 2},
 
     -- TAB 3
-    {Name = "SKIBIDI", URL = "", Tab = 3},
+    {Name = "Piano", URL = "https://raw.githubusercontent.com/luraobermeyer-jpg/redzhub/refs/heads/main/redzhub.lua.txt", Tab = 3},
     {Name = "SCRIPT 02", URL = "", Tab = 3},
     {Name = "SCRIPT 03", URL = "", Tab = 3},
     {Name = "SCRIPT 04", URL = "", Tab = 3},
