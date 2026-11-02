@@ -12,8 +12,8 @@ local UIS = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
-local LOGO_ID = "72592444132863"
-local OPEN_ICON_ID = "72592444132863"
+local LOGO_ID = "rbxassetid://72592444132863"
+local OPEN_ICON_ID = "rbxassetid://72592444132863"
 
 --==================================================
 -- DANH SÁCH SCRIPT: 6 MỤC MỖI TAB
