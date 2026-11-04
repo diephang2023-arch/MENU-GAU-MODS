@@ -1,637 +1,584 @@
-
 --[[
-====================================================
-                GAU MODS V3.0
-            PREMIUM SCRIPT CENTER
-====================================================
-    - 3 TAB, 6 SCRIPT MOI TAB
-    - DRAG MENU
-    - DRAG FLOATING BUTTON
-    - MINIMIZE / RESTORE
-    - EXIT CONFIRMATION
-====================================================
+    GAU MODS - Giao diện một file dành cho Delta Executor
+    Phiên bản: 2.1 - One-click HTTPS / Lua executor
+
+    CÁCH DÙNG:
+    1) Dán mã Lua hoặc URL Raw HTTPS vào ô nhập.
+    2) Nhấn Execute: URL sẽ được tải rồi biên dịch/chạy; Lua thuần chạy trực tiếp.
+    3) Chỉ dùng mã và URL do anh kiểm soát hoặc tin cậy. Mã từ xa có thể chạy với
+       quyền mà executor cung cấp và có thể gây mất dữ liệu/tài khoản.
+    4) Đổi ICON_ID và AUTHOR_LINKS nếu cần.
 ]]
 
---==================================================
--- SERVICES
---==================================================
+--==============================================================
+-- PHẦN 1: CẤU HÌNH - ANH CÓ THỂ SỬA CÁC GIÁ TRỊ Ở ĐÂY
+--==============================================================
+local ICON_ID = "rbxassetid://0" -- Thay số 0 bằng ID ảnh của anh
+local AUTHOR_LINKS = {
+    TikTok = "https://www.tiktok.com/@your_name", -- Sửa thành link TikTok
+    YouTube = "https://www.youtube.com/@your_channel", -- Sửa thành link YouTube
+    Discord = "https://discord.gg/your_invite", -- Sửa thành link Discord
+}
 
+local MENU_TITLE = "GAU MODS"
+local SAVE_FOLDER = "GAU_MODS"
+local SAVE_FILE = SAVE_FOLDER .. "/saved.json"
+local MAX_VIEW_TEXT = 250000 -- Giới hạn nội dung xem để tránh treo giao diện
+
+--==============================================================
+-- PHẦN 2: DỊCH VỤ ROBLOX VÀ HÀM HỖ TRỢ
+--==============================================================
 local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
 
-local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
-
---==================================================
--- CONFIG
---==================================================
-
-local LOGO_ID = "rbxassetid://72592444132863"
-local OPEN_ICON_ID = "rbxassetid://72592444132863"
-
---==================================================
--- SCRIPT LIST
---==================================================
-
-local Scripts = {
-    -- TAB 1
-    {Name = "Chilli Hub V8", URL = "loadstring(game:HttpGet("https://raw.githubusercontent.com/napun67/stealanegg/refs/heads/main/chillihubv8.lua"))()    ", Tab = 1},
-    {Name = "Miranda Hub", URL = "https://raw.githubusercontent.com/miirandahub/loader/refs/heads/main/stealaegg", Tab = 1},
-    {Name = "Lennon Hub", URL = "https://api.jnkie.com/api/v1/luascripts/public/bf52181bce5c28e6ecd16eebfa1a88ddaf646c7acb10015fbaa7b30dc7bad0a8/download", Tab = 1},
-    {Name = "Lumin Hub", URL = "http://luminon.top/loader.lua", Tab = 1},
-    {Name = "Titanic Hub", URL = "https://raw.githubusercontent.com/TITANIC-HUB/StealAnEgg/main/Loader.lua", Tab = 1},
-    {Name = "OMG Hub", URL = "https://raw.githubusercontent.com/Omgshit/Scripts/main/MainLoader.lua", Tab = 1},
-
-    -- TAB 2
-    {Name = "Sources Hub", URL = "https://pastefy.app/Lk0vDMmN/raw", Tab = 2},
-    {Name = "Sena", URL = "https://raw.githubusercontent.com/senarblx/sena/refs/heads/main/loader", Tab = 2},
-    {Name = "Zeroin", URL = "https://zeroinhub.com/api/script", Tab = 2},
-    {Name = "Clout Hub", URL = "https://raw.githubusercontent.com/ClouthubOnTop/Loader/main/main.lua", Tab = 2},
-    {Name = "Limbo hub", URL = "https://limbohub.my.id/loader.lua", Tab = 2},
-    {Name = "Venyx", URL = "https://raw.githubusercontent.com/tienkhanh1/Venyx/main/VenyxHub", Tab = 2},
-
-    -- TAB 3
-    {Name = "Piano", URL = "https://raw.githubusercontent.com/luraobermeyer-jpg/redzhub/refs/heads/main/redzhub.lua.txt", Tab = 3},
-    {Name = "SCRIPT 02", URL = "", Tab = 3},
-    {Name = "SCRIPT 03", URL = "", Tab = 3},
-    {Name = "SCRIPT 04", URL = "", Tab = 3},
-    {Name = "SCRIPT 05", URL = "", Tab = 3},
-    {Name = "SCRIPT 06", URL = "", Tab = 3},
-}
-
---==================================================
--- THEME
---==================================================
-
-local Theme = {
-    Background = Color3.fromRGB(10, 13, 23),
-    Panel = Color3.fromRGB(19, 24, 39),
-    Card = Color3.fromRGB(25, 31, 49),
-    Blue = Color3.fromRGB(25, 105, 255),
-    BlueLight = Color3.fromRGB(55, 155, 255),
-    White = Color3.fromRGB(245, 247, 255),
-    Gray = Color3.fromRGB(145, 158, 185),
-    Green = Color3.fromRGB(50, 220, 120),
-    Red = Color3.fromRGB(220, 55, 65)
-}
-
---==================================================
--- SCREEN GUI
---==================================================
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "GAU_MODS_V30"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true
-ScreenGui.Parent = PlayerGui
-
---==================================================
--- HELPER FUNCTIONS
---==================================================
-
-local function Corner(Object, Radius)
-    local C = Instance.new("UICorner")
-    C.CornerRadius = UDim.new(0, Radius)
-    C.Parent = Object
-    return C
+local function safeGet(parent, childName)
+    local ok, result = pcall(function() return parent[childName] end)
+    if ok then return result end
+    return nil
 end
 
-local function Stroke(Object, Color, Thickness)
-    local S = Instance.new("UIStroke")
-    S.Color = Color
-    S.Thickness = Thickness
-    S.Parent = Object
-    return S
+local function notify(message)
+    -- Thông báo nhỏ do chính menu tạo ra
+    local playerGui = safeGet(LocalPlayer, "PlayerGui")
+    local parent = playerGui
+    if not parent then return end
+
+    local old = parent:FindFirstChild("GAU_Toast")
+    if old then old:Destroy() end
+
+    local toastGui = Instance.new("ScreenGui")
+    toastGui.Name = "GAU_Toast"
+    toastGui.ResetOnSpawn = false
+    toastGui.DisplayOrder = 100000
+    toastGui.Parent = parent
+
+    local toast = Instance.new("TextLabel")
+    toast.Name = "Toast"
+    toast.AnchorPoint = Vector2.new(0.5, 0)
+    toast.Position = UDim2.new(0.5, 0, 0, 26)
+    toast.Size = UDim2.new(0.82, 0, 0, 42)
+    toast.BackgroundColor3 = Color3.fromRGB(22, 29, 42)
+    toast.TextColor3 = Color3.fromRGB(240, 246, 255)
+    toast.Text = tostring(message)
+    toast.TextSize = 14
+    toast.Font = Enum.Font.GothamMedium
+    toast.TextWrapped = true
+    toast.Parent = toastGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = toast
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(45, 150, 255)
+    stroke.Thickness = 1.2
+    stroke.Parent = toast
+
+    task.delay(2.6, function()
+        if toastGui and toastGui.Parent then toastGui:Destroy() end
+    end)
 end
 
---==================================================
--- FLOATING BUTTON
---==================================================
+local function make(className, props, parent)
+    local object = Instance.new(className)
+    for property, value in pairs(props or {}) do
+        pcall(function() object[property] = value end)
+    end
+    object.Parent = parent
+    return object
+end
 
-local OpenButton = Instance.new("ImageButton")
-OpenButton.Name = "OpenGAUMODS"
-OpenButton.Parent = ScreenGui
-OpenButton.Size = UDim2.new(0, 75, 0, 75)
-OpenButton.Position = UDim2.new(0, 25, 0.5, -37)
-OpenButton.BackgroundColor3 = Theme.Panel
-OpenButton.Image = OPEN_ICON_ID
-OpenButton.ScaleType = Enum.ScaleType.Fit
-OpenButton.Visible = false
-OpenButton.ZIndex = 10
-OpenButton.Active = true
+local function addCorner(object, radius)
+    return make("UICorner", {CornerRadius = UDim.new(0, radius or 10)}, object)
+end
 
-Corner(OpenButton, 18)
-Stroke(OpenButton, Theme.BlueLight, 2)
+local function addStroke(object, color, thickness, transparency)
+    return make("UIStroke", {
+        Color = color or Color3.fromRGB(80, 155, 255),
+        Thickness = thickness or 1,
+        Transparency = transparency or 0,
+    }, object)
+end
 
---==================================================
--- MAIN MENU
---==================================================
+local function addPadding(object, left, right, top, bottom)
+    return make("UIPadding", {
+        PaddingLeft = UDim.new(0, left or 8),
+        PaddingRight = UDim.new(0, right or 8),
+        PaddingTop = UDim.new(0, top or 8),
+        PaddingBottom = UDim.new(0, bottom or 8),
+    }, object)
+end
 
-local Main = Instance.new("Frame")
-Main.Name = "MainMenu"
-Main.Parent = ScreenGui
-Main.Size = UDim2.new(0, 650, 0, 490)
-Main.Position = UDim2.new(0.5, -325, 0.5, -245)
-Main.BackgroundColor3 = Theme.Background
-Main.BorderSizePixel = 0
-Main.ClipsDescendants = true
+local function makeButton(parent, text, size, position, color)
+    local button = make("TextButton", {
+        Size = size,
+        Position = position,
+        BackgroundColor3 = color or Color3.fromRGB(31, 91, 157),
+        BorderSizePixel = 0,
+        Text = text,
+        TextColor3 = Color3.fromRGB(245, 249, 255),
+        TextSize = 13,
+        Font = Enum.Font.GothamSemibold,
+        AutoButtonColor = true,
+    }, parent)
+    addCorner(button, 9)
+    return button
+end
 
-Corner(Main, 18)
-Stroke(Main, Theme.Blue, 2)
+local function trim(value)
+    return (tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+end
 
---==================================================
--- HEADER
---==================================================
+local function wordCount(value)
+    local count = 0
+    for _ in tostring(value or ""):gmatch("%S+") do count = count + 1 end
+    return count
+end
 
-local Header = Instance.new("Frame")
-Header.Parent = Main
-Header.Size = UDim2.new(1, -4, 0, 105)
-Header.Position = UDim2.new(0, 2, 0, 2)
-Header.BackgroundColor3 = Theme.Panel
-Header.BorderSizePixel = 0
-Header.Active = true
+--==============================================================
+-- PHẦN 3: LƯU VÀ ĐỌC DỮ LIỆU TRÊN THIẾT BỊ
+--==============================================================
+local savedItems = {}
+local storageAvailable = type(writefile) == "function" and type(readfile) == "function"
 
-Corner(Header, 16)
-
--- LOGO
-
-local Logo = Instance.new("ImageLabel")
-Logo.Parent = Header
-Logo.Size = UDim2.new(0, 76, 0, 76)
-Logo.Position = UDim2.new(0, 16, 0, 14)
-Logo.BackgroundTransparency = 1
-Logo.Image = LOGO_ID
-Logo.ScaleType = Enum.ScaleType.Fit
-
--- TITLE
-
-local Title = Instance.new("TextLabel")
-Title.Parent = Header
-Title.Size = UDim2.new(0, 330, 0, 43)
-Title.Position = UDim2.new(0, 105, 0, 17)
-Title.BackgroundTransparency = 1
-Title.Text = "GAU MODS"
-Title.TextColor3 = Theme.White
-Title.TextSize = 29
-Title.Font = Enum.Font.GothamBlack
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
-local Subtitle = Instance.new("TextLabel")
-Subtitle.Parent = Header
-Subtitle.Size = UDim2.new(0, 330, 0, 28)
-Subtitle.Position = UDim2.new(0, 106, 0, 58)
-Subtitle.BackgroundTransparency = 1
-Subtitle.Text = "PREMIUM SCRIPT CENTER"
-Subtitle.TextColor3 = Theme.Gray
-Subtitle.TextSize = 15
-Subtitle.Font = Enum.Font.GothamBold
-Subtitle.TextXAlignment = Enum.TextXAlignment.Left
-
--- MINIMIZE
-
-local MinimizeButton = Instance.new("TextButton")
-MinimizeButton.Parent = Header
-MinimizeButton.Size = UDim2.new(0, 42, 0, 42)
-MinimizeButton.Position = UDim2.new(1, -104, 0.5, -21)
-MinimizeButton.BackgroundColor3 = Color3.fromRGB(38, 45, 68)
-MinimizeButton.Text = "−"
-MinimizeButton.TextColor3 = Theme.White
-MinimizeButton.TextSize = 30
-MinimizeButton.Font = Enum.Font.GothamBold
-MinimizeButton.BorderSizePixel = 0
-
-Corner(MinimizeButton, 11)
-
--- CLOSE
-
-local CloseButton = Instance.new("TextButton")
-CloseButton.Parent = Header
-CloseButton.Size = UDim2.new(0, 42, 0, 42)
-CloseButton.Position = UDim2.new(1, -54, 0.5, -21)
-CloseButton.BackgroundColor3 = Theme.Red
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Theme.White
-CloseButton.TextSize = 24
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.BorderSizePixel = 0
-
-Corner(CloseButton, 11)
-
---==================================================
--- DRAG MAIN MENU
---==================================================
-
-local Dragging = false
-local DragStart
-local StartPosition
-local DragInput
-
-Header.InputBegan:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1
-        or Input.UserInputType == Enum.UserInputType.Touch then
-
-        local X = Input.Position.X
-
-        if X >= MinimizeButton.AbsolutePosition.X - 5 then
-            return
+local function ensureSaveFolder()
+    if type(makefolder) == "function" then
+        local exists = false
+        if type(isfolder) == "function" then
+            local ok, result = pcall(isfolder, SAVE_FOLDER)
+            exists = ok and result == true
         end
-
-        Dragging = true
-        DragStart = Input.Position
-        StartPosition = Main.Position
+        if not exists then pcall(makefolder, SAVE_FOLDER) end
     end
-end)
-
-UIS.InputChanged:Connect(function(Input)
-    if not Dragging then return end
-
-    if Input.UserInputType == Enum.UserInputType.MouseMovement
-        or Input.UserInputType == Enum.UserInputType.Touch then
-
-        local Delta = Input.Position - DragStart
-
-        Main.Position = UDim2.new(
-            StartPosition.X.Scale,
-            StartPosition.X.Offset + Delta.X,
-            StartPosition.Y.Scale,
-            StartPosition.Y.Offset + Delta.Y
-        )
-    end
-end)
-
-UIS.InputEnded:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1
-        or Input.UserInputType == Enum.UserInputType.Touch then
-        Dragging = false
-    end
-end)
-
---==================================================
--- TAB HOLDER
---==================================================
-
-local TabHolder = Instance.new("Frame")
-TabHolder.Parent = Main
-TabHolder.Size = UDim2.new(1, -28, 0, 48)
-TabHolder.Position = UDim2.new(0, 14, 0, 115)
-TabHolder.BackgroundTransparency = 1
-
-local TabNames = {
-    "⚡ TAB 1",
-    "👑 TAB 2",
-    "⚙ TAB 3"
-}
-
-local TabButtons = {}
-local TabPages = {}
-
---==================================================
--- CONTENT HOLDER
---==================================================
-
-local ContentHolder = Instance.new("Frame")
-ContentHolder.Parent = Main
-ContentHolder.Size = UDim2.new(1, -28, 0, 330)
-ContentHolder.Position = UDim2.new(0, 14, 0, 172)
-ContentHolder.BackgroundColor3 = Theme.Panel
-ContentHolder.BorderSizePixel = 0
-
-Corner(ContentHolder, 15)
-
---==================================================
--- CREATE 3 TABS
---==================================================
-
-for i = 1, 3 do
-
-    local TabButton = Instance.new("TextButton")
-    TabButton.Parent = TabHolder
-    TabButton.Size = UDim2.new(1/3, -7, 1, 0)
-    TabButton.Position = UDim2.new((i-1)/3, 0, 0, 0)
-    TabButton.BackgroundColor3 = Theme.Card
-    TabButton.Text = TabNames[i]
-    TabButton.TextColor3 = Theme.Gray
-    TabButton.TextSize = 16
-    TabButton.Font = Enum.Font.GothamBold
-    TabButton.BorderSizePixel = 0
-
-    Corner(TabButton, 12)
-
-    TabButtons[i] = TabButton
-
-    local Page = Instance.new("ScrollingFrame")
-    Page.Name = "Tab" .. i
-    Page.Parent = ContentHolder
-    Page.Size = UDim2.new(1, -12, 1, -12)
-    Page.Position = UDim2.new(0, 6, 0, 6)
-    Page.BackgroundTransparency = 1
-    Page.BorderSizePixel = 0
-    Page.ScrollBarThickness = 5
-    Page.ScrollBarImageColor3 = Theme.BlueLight
-    Page.CanvasSize = UDim2.new(0, 0, 0, 0)
-    Page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    Page.Visible = (i == 1)
-
-    local Layout = Instance.new("UIListLayout")
-    Layout.Parent = Page
-    Layout.Padding = UDim.new(0, 9)
-    Layout.SortOrder = Enum.SortOrder.LayoutOrder
-
-    local Padding = Instance.new("UIPadding")
-    Padding.Parent = Page
-    Padding.PaddingTop = UDim.new(0, 7)
-    Padding.PaddingBottom = UDim.new(0, 7)
-    Padding.PaddingLeft = UDim.new(0, 7)
-    Padding.PaddingRight = UDim.new(0, 7)
-
-    TabPages[i] = Page
 end
 
---==================================================
--- SELECT TAB
---==================================================
+local function loadSavedItems()
+    savedItems = {}
+    if not storageAvailable then
+        return false
+    end
+    ensureSaveFolder()
+    local ok, raw = pcall(readfile, SAVE_FILE)
+    if not ok or type(raw) ~= "string" or raw == "" then
+        return true
+    end
+    local decodedOk, decoded = pcall(function()
+        return HttpService:JSONDecode(raw)
+    end)
+    if decodedOk and type(decoded) == "table" then
+        savedItems = decoded
+    end
+    return true
+end
 
-local function SelectTab(Number)
+local function persistSavedItems()
+    if not storageAvailable then
+        notify("Delta hiện không cung cấp readfile/writefile; danh sách chỉ còn trong phiên này.")
+        return false
+    end
+    ensureSaveFolder()
+    local okEncode, encoded = pcall(function()
+        return HttpService:JSONEncode(savedItems)
+    end)
+    if not okEncode then
+        notify("Không thể chuyển dữ liệu lưu thành JSON.")
+        return false
+    end
+    local okWrite = pcall(writefile, SAVE_FILE, encoded)
+    if not okWrite then
+        notify("Không ghi được file. Hãy kiểm tra quyền lưu tệp của Delta.")
+        return false
+    end
+    return true
+end
 
+loadSavedItems()
+
+--==============================================================
+-- PHẦN 4: TẠO GUI CHÍNH
+--==============================================================
+local parentForGui
+local function getGuiParent()
+    -- Ưu tiên gethui nếu executor có hỗ trợ; nếu không dùng CoreGui/PlayerGui.
+    if type(gethui) == "function" then
+        local ok, result = pcall(gethui)
+        if ok and result then return result end
+    end
+    local okCore, core = pcall(function() return game:GetService("CoreGui") end)
+    if okCore and core then return core end
+    return LocalPlayer:WaitForChild("PlayerGui")
+end
+parentForGui = getGuiParent()
+
+-- Xóa bản GAU MODS cũ nếu chạy script nhiều lần
+local oldGui = parentForGui:FindFirstChild("GAU_MODS_GUI")
+if oldGui then oldGui:Destroy() end
+
+local screenGui = make("ScreenGui", {
+    Name = "GAU_MODS_GUI",
+    ResetOnSpawn = false,
+    IgnoreGuiInset = true,
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+    DisplayOrder = 99999,
+}, parentForGui)
+
+local toggle = make("ImageButton", {
+    Name = "OpenMenuButton",
+    Size = UDim2.fromOffset(56, 56),
+    Position = UDim2.new(0, 24, 0.42, 0),
+    BackgroundColor3 = Color3.fromRGB(17, 25, 39),
+    BorderSizePixel = 0,
+    Image = ICON_ID,
+    ScaleType = Enum.ScaleType.Fit,
+    AutoButtonColor = true,
+    ZIndex = 20,
+}, screenGui)
+addCorner(toggle, 14)
+addStroke(toggle, Color3.fromRGB(37, 151, 255), 2, 0)
+
+local main = make("Frame", {
+    Name = "MainMenu",
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    Size = UDim2.new(0.88, 0, 0.72, 0),
+    BackgroundColor3 = Color3.fromRGB(15, 20, 30),
+    BorderSizePixel = 0,
+    Visible = false,
+    ClipsDescendants = true,
+}, screenGui)
+addCorner(main, 15)
+addStroke(main, Color3.fromRGB(57, 139, 235), 1.5, 0.05)
+make("UISizeConstraint", {MinSize = Vector2.new(310, 320), MaxSize = Vector2.new(560, 520)}, main)
+
+local header = make("Frame", {
+    Name = "Header",
+    Size = UDim2.new(1, 0, 0, 48),
+    BackgroundColor3 = Color3.fromRGB(22, 31, 46),
+    BorderSizePixel = 0,
+}, main)
+
+local headerIcon = make("ImageLabel", {
+    Name = "HeaderIcon",
+    Position = UDim2.fromOffset(12, 8),
+    Size = UDim2.fromOffset(32, 32),
+    BackgroundTransparency = 1,
+    Image = ICON_ID,
+    ScaleType = Enum.ScaleType.Fit,
+}, header)
+
+make("TextLabel", {
+    Name = "HeaderTitle",
+    Position = UDim2.fromOffset(52, 0),
+    Size = UDim2.new(1, -148, 1, 0),
+    BackgroundTransparency = 1,
+    Text = MENU_TITLE,
+    TextColor3 = Color3.fromRGB(238, 245, 255),
+    TextSize = 16,
+    Font = Enum.Font.GothamBold,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, header)
+
+-- Vùng kéo menu: phải giữ 0,5 giây mới bắt đầu kéo
+local dragZone = make("Frame", {
+    Name = "DragZone",
+    Position = UDim2.fromOffset(48, 0),
+    Size = UDim2.new(1, -145, 1, 0),
+    BackgroundTransparency = 1,
+    Active = true,
+}, header)
+
+local minimizeButton = makeButton(header, "−", UDim2.fromOffset(34, 32), UDim2.new(1, -82, 0, 8), Color3.fromRGB(42, 61, 86))
+minimizeButton.TextSize = 23
+local closeButton = makeButton(header, "×", UDim2.fromOffset(34, 32), UDim2.new(1, -42, 0, 8), Color3.fromRGB(132, 47, 57))
+closeButton.TextSize = 22
+
+local tabBar = make("Frame", {
+    Name = "TabBar",
+    Position = UDim2.fromOffset(10, 56),
+    Size = UDim2.new(1, -20, 0, 38),
+    BackgroundTransparency = 1,
+}, main)
+
+local tabButtons = {}
+for i = 1, 3 do
+    local tabButton = makeButton(tabBar, "TAB " .. i, UDim2.new(1/3, -6, 1, 0), UDim2.new((i-1)/3, (i == 1 and 0 or 3), 0, 0), Color3.fromRGB(34, 48, 68))
+    tabButtons[i] = tabButton
+end
+
+local contentHolder = make("Frame", {
+    Name = "ContentHolder",
+    Position = UDim2.fromOffset(10, 102),
+    Size = UDim2.new(1, -20, 1, -112),
+    BackgroundTransparency = 1,
+}, main)
+
+local tabPages = {}
+for i = 1, 3 do
+    tabPages[i] = make("Frame", {
+        Name = "TabPage" .. i,
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        Visible = i == 1,
+    }, contentHolder)
+end
+
+local function selectTab(index)
     for i = 1, 3 do
-        TabPages[i].Visible = (i == Number)
-
-        if i == Number then
-            TabButtons[i].BackgroundColor3 = Theme.Blue
-            TabButtons[i].TextColor3 = Theme.White
-        else
-            TabButtons[i].BackgroundColor3 = Theme.Card
-            TabButtons[i].TextColor3 = Theme.Gray
-        end
+        tabPages[i].Visible = i == index
+        tabButtons[i].BackgroundColor3 = (i == index) and Color3.fromRGB(30, 111, 190) or Color3.fromRGB(34, 48, 68)
     end
 end
-
 for i = 1, 3 do
-    TabButtons[i].MouseButton1Click:Connect(function()
-        SelectTab(i)
-    end)
+    tabButtons[i].MouseButton1Click:Connect(function() selectTab(i) end)
 end
 
-SelectTab(1)
+--==============================================================
+-- PHẦN 5: TAB 1 - Ô NHẬP VĂN BẢN VÀ CÁC NÚT
+--==============================================================
+local editorBorder = make("Frame", {
+    Name = "EditorBorder",
+    Size = UDim2.new(1, 0, 1, -52),
+    BackgroundColor3 = Color3.fromRGB(10, 15, 23),
+    BorderSizePixel = 0,
+    ClipsDescendants = true,
+}, tabPages[1])
+addCorner(editorBorder, 10)
+addStroke(editorBorder, Color3.fromRGB(109, 127, 150), 1, 0.25)
 
---==================================================
--- CREATE SCRIPT CARDS
---==================================================
+local editor = make("TextBox", {
+    Name = "ScriptInput",
+    Position = UDim2.fromOffset(9, 8),
+    Size = UDim2.new(1, -18, 1, -16),
+    BackgroundTransparency = 1,
+    ClearTextOnFocus = false,
+    MultiLine = true,
+    TextWrapped = true,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Top,
+    Text = "",
+    PlaceholderText = "Nhập văn bản",
+    PlaceholderColor3 = Color3.fromRGB(120, 132, 150),
+    TextColor3 = Color3.fromRGB(224, 233, 245),
+    TextSize = 14,
+    Font = Enum.Font.Code,
+}, editorBorder)
 
-for Index, Data in ipairs(Scripts) do
+local actionBar = make("Frame", {
+    Name = "ActionBar",
+    Position = UDim2.new(0, 0, 1, -44),
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundTransparency = 1,
+}, tabPages[1])
+local actionLayout = make("UIListLayout", {
+    FillDirection = Enum.FillDirection.Horizontal,
+    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+    VerticalAlignment = Enum.VerticalAlignment.Center,
+    Padding = UDim.new(0, 5),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+}, actionBar)
 
-    local TabNumber = math.clamp(tonumber(Data.Tab) or 1, 1, 3)
-
-    local Card = Instance.new("Frame")
-    Card.Parent = TabPages[TabNumber]
-    Card.Size = UDim2.new(1, -8, 0, 76)
-    Card.BackgroundColor3 = Theme.Card
-    Card.BorderSizePixel = 0
-    Card.LayoutOrder = Index
-
-    Corner(Card, 13)
-    Stroke(Card, Color3.fromRGB(40, 48, 70), 1)
-
-    local Icon = Instance.new("TextLabel")
-    Icon.Parent = Card
-    Icon.Size = UDim2.new(0, 55, 0, 55)
-    Icon.Position = UDim2.new(0, 10, 0.5, -27)
-    Icon.BackgroundTransparency = 1
-    Icon.Text = "🚀"
-    Icon.TextSize = 29
-
-    local ScriptName = Instance.new("TextLabel")
-    ScriptName.Parent = Card
-    ScriptName.Size = UDim2.new(0.55, 0, 0, 31)
-    ScriptName.Position = UDim2.new(0, 70, 0, 9)
-    ScriptName.BackgroundTransparency = 1
-    ScriptName.Text = string.format(
-        "%02d  •  %s",
-        Index,
-        tostring(Data.Name)
-    )
-    ScriptName.TextColor3 = Theme.White
-    ScriptName.TextSize = 17
-    ScriptName.Font = Enum.Font.GothamBold
-    ScriptName.TextXAlignment = Enum.TextXAlignment.Left
-    ScriptName.TextTruncate = Enum.TextTruncate.AtEnd
-
-    local Status = Instance.new("TextLabel")
-    Status.Parent = Card
-    Status.Size = UDim2.new(0.55, 0, 0, 23)
-    Status.Position = UDim2.new(0, 70, 0, 40)
-    Status.BackgroundTransparency = 1
-    Status.Text = "● SẴN SÀNG"
-    Status.TextColor3 = Theme.Green
-    Status.TextSize = 13
-    Status.Font = Enum.Font.GothamBold
-    Status.TextXAlignment = Enum.TextXAlignment.Left
-
-    local EnableButton = Instance.new("TextButton")
-    EnableButton.Parent = Card
-    EnableButton.Size = UDim2.new(0, 105, 0, 46)
-    EnableButton.Position = UDim2.new(1, -118, 0.5, -23)
-    EnableButton.BackgroundColor3 = Theme.Blue
-    EnableButton.Text = "BẬT"
-    EnableButton.TextColor3 = Theme.White
-    EnableButton.TextSize = 17
-    EnableButton.Font = Enum.Font.GothamBold
-    EnableButton.BorderSizePixel = 0
-
-    Corner(EnableButton, 10)
-
-    EnableButton.MouseButton1Click:Connect(function()
-
-        Status.Text = "● ĐÃ CHỌN"
-        Status.TextColor3 = Theme.BlueLight
-
-        EnableButton.Text = "ĐÃ CHỌN"
-        EnableButton.BackgroundColor3 =
-            Color3.fromRGB(35, 80, 145)
-
-    end)
+local function actionButton(text, order)
+    local button = makeButton(actionBar, text, UDim2.new(0.25, -5, 1, 0), UDim2.new(), Color3.fromRGB(32, 89, 145))
+    button.LayoutOrder = order
+    button.TextSize = 11
+    return button
 end
+local executeButton = actionButton("Execute", 1)
+local copyButton = actionButton("Sao chép", 2)
+local pasteButton = actionButton("Dán", 3)
+local saveButton = actionButton("Lưu", 4)
 
---==================================================
--- FOOTER
---==================================================
+--==============================================================
+-- PHẦN 6: KHUNG XEM LINK - CHỈ HIỂN THỊ VĂN BẢN, KHÔNG CHẠY MÃ
+--==============================================================
+local viewer = make("Frame", {
+    Name = "LinkViewer",
+    Size = UDim2.fromScale(1, 1),
+    BackgroundColor3 = Color3.fromRGB(15, 20, 30),
+    BorderSizePixel = 0,
+    Visible = false,
+    ZIndex = 30,
+}, main)
 
-local Footer = Instance.new("TextLabel")
-Footer.Parent = Main
-Footer.Size = UDim2.new(1, -28, 0, 32)
-Footer.Position = UDim2.new(0, 14, 1, -38)
-Footer.BackgroundTransparency = 1
-Footer.Text = "♛  GAU MODS V3.0                    Enjoy Script! ❤️"
-Footer.TextColor3 = Theme.Gray
-Footer.TextSize = 13
-Footer.Font = Enum.Font.GothamBold
-Footer.TextXAlignment = Enum.TextXAlignment.Left
+local viewerTop = make("Frame", {
+    Size = UDim2.new(1, 0, 0, 42),
+    BackgroundColor3 = Color3.fromRGB(22, 31, 46),
+    BorderSizePixel = 0,
+    ZIndex = 31,
+}, viewer)
+local backButton = makeButton(viewerTop, "‹", UDim2.fromOffset(36, 30), UDim2.fromOffset(8, 6), Color3.fromRGB(42, 61, 86))
+backButton.TextSize = 22
+local viewerTitle = make("TextLabel", {
+    Position = UDim2.fromOffset(52, 0),
+    Size = UDim2.new(1, -150, 1, 0),
+    BackgroundTransparency = 1,
+    Text = "NỘI DUNG LINK",
+    TextColor3 = Color3.fromRGB(238, 245, 255),
+    TextSize = 13,
+    Font = Enum.Font.GothamBold,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 32,
+}, viewerTop)
+local viewerCopyButton = makeButton(viewerTop, "Copy", UDim2.fromOffset(62, 30), UDim2.new(1, -70, 0, 6), Color3.fromRGB(30, 111, 190))
+viewerCopyButton.ZIndex = 32
 
---==================================================
--- EXIT CONFIRMATION
---==================================================
+local viewerScroll = make("ScrollingFrame", {
+    Name = "ViewerScroll",
+    Position = UDim2.fromOffset(8, 50),
+    Size = UDim2.new(1, -16, 1, -58),
+    BackgroundColor3 = Color3.fromRGB(9, 13, 20),
+    BorderSizePixel = 0,
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    ScrollBarThickness = 6,
+    ScrollBarImageColor3 = Color3.fromRGB(74, 145, 220),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ZIndex = 31,
+}, viewer)
+addCorner(viewerScroll, 8)
+addStroke(viewerScroll, Color3.fromRGB(109, 127, 150), 1, 0.35)
+local viewerText = make("TextLabel", {
+    Name = "ViewerText",
+    Position = UDim2.fromOffset(10, 9),
+    Size = UDim2.new(1, -20, 0, 30),
+    AutomaticSize = Enum.AutomaticSize.Y,
+    BackgroundTransparency = 1,
+    Text = "Nội dung đường link sẽ hiển thị ở đây.",
+    TextColor3 = Color3.fromRGB(222, 232, 245),
+    TextSize = 13,
+    Font = Enum.Font.Code,
+    TextWrapped = true,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Top,
+    ZIndex = 32,
+}, viewerScroll)
 
-local ConfirmOverlay = Instance.new("Frame")
-ConfirmOverlay.Parent = ScreenGui
-ConfirmOverlay.Size = UDim2.new(1, 0, 1, 0)
-ConfirmOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
-ConfirmOverlay.BackgroundTransparency = 0.35
-ConfirmOverlay.Visible = false
-ConfirmOverlay.ZIndex = 100
-
-local ConfirmBox = Instance.new("Frame")
-ConfirmBox.Parent = ConfirmOverlay
-ConfirmBox.Size = UDim2.new(0, 320, 0, 170)
-ConfirmBox.Position = UDim2.new(0.5, -160, 0.5, -85)
-ConfirmBox.BackgroundColor3 = Theme.Panel
-ConfirmBox.BorderSizePixel = 0
-ConfirmBox.ZIndex = 101
-
-Corner(ConfirmBox, 15)
-Stroke(ConfirmBox, Theme.BlueLight, 2)
-
-local Question = Instance.new("TextLabel")
-Question.Parent = ConfirmBox
-Question.Size = UDim2.new(1, -20, 0, 75)
-Question.Position = UDim2.new(0, 10, 0, 10)
-Question.BackgroundTransparency = 1
-Question.Text = "BẠN CÓ MUỐN TẮT GAU MODS KHÔNG?"
-Question.TextColor3 = Theme.White
-Question.TextSize = 17
-Question.Font = Enum.Font.GothamBold
-Question.TextWrapped = true
-Question.ZIndex = 102
-
-local YesButton = Instance.new("TextButton")
-YesButton.Parent = ConfirmBox
-YesButton.Size = UDim2.new(0, 120, 0, 42)
-YesButton.Position = UDim2.new(0, 25, 1, -57)
-YesButton.BackgroundColor3 = Theme.Red
-YesButton.Text = "CÓ"
-YesButton.TextColor3 = Theme.White
-YesButton.TextSize = 16
-YesButton.Font = Enum.Font.GothamBold
-YesButton.BorderSizePixel = 0
-YesButton.ZIndex = 102
-
-Corner(YesButton, 9)
-
-local NoButton = Instance.new("TextButton")
-NoButton.Parent = ConfirmBox
-NoButton.Size = UDim2.new(0, 120, 0, 42)
-NoButton.Position = UDim2.new(1, -145, 1, -57)
-NoButton.BackgroundColor3 = Theme.Blue
-NoButton.Text = "KHÔNG"
-NoButton.TextColor3 = Theme.White
-NoButton.TextSize = 16
-NoButton.Font = Enum.Font.GothamBold
-NoButton.BorderSizePixel = 0
-NoButton.ZIndex = 102
-
-Corner(NoButton, 9)
-
-CloseButton.MouseButton1Click:Connect(function()
-    ConfirmOverlay.Visible = true
-end)
-
-NoButton.MouseButton1Click:Connect(function()
-    ConfirmOverlay.Visible = false
-end)
-
-YesButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
---==================================================
--- MINIMIZE / RESTORE
---==================================================
-
-MinimizeButton.MouseButton1Click:Connect(function()
-    Main.Visible = false
-    OpenButton.Visible = true
-end)
-
---==================================================
--- FLOATING BUTTON DRAG + CLICK
---==================================================
-
-local FloatingDragging = false
-local FloatingInput = nil
-local FloatingStart = nil
-local FloatingStartPosition = nil
-local FloatingMoved = false
-
-OpenButton.InputBegan:Connect(function(Input)
-
-    if Input.UserInputType == Enum.UserInputType.MouseButton1
-        or Input.UserInputType == Enum.UserInputType.Touch then
-
-        FloatingDragging = true
-        FloatingInput = Input
-        FloatingStart = Input.Position
-        FloatingStartPosition = OpenButton.Position
-        FloatingMoved = false
-
+local currentViewerText = ""
+local function showViewer(text, title)
+    currentViewerText = tostring(text or "")
+    viewerText.Text = currentViewerText
+    viewerTitle.Text = title or "NỘI DUNG LINK"
+    viewer.Visible = true
+end
+backButton.MouseButton1Click:Connect(function() viewer.Visible = false end)
+viewerCopyButton.MouseButton1Click:Connect(function()
+    if type(setclipboard) == "function" then
+        local ok = pcall(setclipboard, currentViewerText)
+        notify(ok and "Đã sao chép nội dung." or "Không thể sao chép bằng clipboard của Delta.")
+    else
+        notify("Delta không có setclipboard. Hãy chọn văn bản trong khung để sao chép.")
     end
 end)
 
-UIS.InputChanged:Connect(function(Input)
+--==============================================================
+-- PHẦN 7: TAB 2 - DANH SÁCH ĐÃ LƯU
+--==============================================================
+local savedScroll = make("ScrollingFrame", {
+    Name = "SavedList",
+    Size = UDim2.fromScale(1, 1),
+    BackgroundColor3 = Color3.fromRGB(10, 15, 23),
+    BorderSizePixel = 0,
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    ScrollBarThickness = 6,
+    ScrollBarImageColor3 = Color3.fromRGB(74, 145, 220),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+}, tabPages[2])
+addCorner(savedScroll, 10)
+addStroke(savedScroll, Color3.fromRGB(109, 127, 150), 1, 0.3)
+addPadding(savedScroll, 8, 8, 8, 8)
+local savedLayout = make("UIListLayout", {
+    Padding = UDim.new(0, 8),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+}, savedScroll)
 
-    if not FloatingDragging or not FloatingInput then
+local function clearSavedRows()
+    for _, child in ipairs(savedScroll:GetChildren()) do
+        if child:IsA("Frame") then child:Destroy() end
+    end
+end
+
+--==============================================================
+-- PHẦN 8: LỆNH TIỆN ÍCH ĐƯỢC CHO PHÉP - KHÔNG THỰC THI LUA TÙY Ý
+--==============================================================
+local function runSafeCommands(source)
+    local ranSomething = false
+    for line in tostring(source or ""):gmatch("[^\r\n]+") do
+        line = trim(line)
+        if line ~= "" then
+            local command, payload = line:match("^(%w+)%s*:%s*(.*)$")
+            local lower = line:lower()
+            if lower == "help" then
+                notify("Lệnh: help | time | print: nội dung | warn: nội dung | notify: nội dung | clear")
+                ranSomething = true
+            elseif lower == "time" then
+                print("GAU MODS - Thời gian: " .. os.date("%H:%M:%S %d/%m/%Y"))
+                notify("Đã in thời gian ra console.")
+                ranSomething = true
+            elseif lower == "clear" then
+                editor.Text = ""
+                notify("Đã xóa ô nhập văn bản.")
+                ranSomething = true
+            elseif command and command:lower() == "print" then
+                print("[GAU MODS] " .. payload)
+                ranSomething = true
+            elseif command and command:lower() == "warn" then
+                warn("[GAU MODS] " .. payload)
+                ranSomething = true
+            elseif command and command:lower() == "notify" then
+                notify(payload)
+                ranSomething = true
+            else
+                warn("[GAU MODS] Bỏ qua dòng không nằm trong danh sách lệnh an toàn: " .. line)
+            end
+        end
+    end
+    if not ranSomething then
+        notify("Không có lệnh tiện ích hợp lệ. Nhập help để xem danh sách lệnh.")
+    end
+end
+
+local executeLua -- Khai báo trước để nút chạy trong danh sách đã lưu dùng được.
+
+local function refreshSavedList()
+    clearSavedRows()
+    if #savedItems == 0 then
+        local empty = make("TextLabel", {
+            Size = UDim2.new(1, -4, 0, 64),
+            BackgroundTransparency = 1,
+            Text = "Chưa có mục nào được lưu.\nQuay lại TAB 1 và nhấn Lưu.",
+            TextColor3 = Color3.fromRGB(145, 158, 177),
+            TextSize = 13,
+            Font = Enum.Font.Gotham,
+            TextWrapped = true,
+        }, savedScroll)
+        empty.LayoutOrder = 1
         return
     end
 
-    local IsMouse =
-        FloatingInput.UserInputType == Enum.UserInputType.MouseButton1
-        and Input.UserInputType == Enum.UserInputType.MouseMovement
+    for index, item in ipairs(savedItems) do
+        local row = make("Frame", {
+            Name = "SavedItem" .. index,
+            Size = UDim2.new(1, -4, 0, 72),
+            BackgroundColor3 = Color3.fromRGB(22, 31, 46),
+            BorderSizePixel = 0,
+            LayoutOrder = index,
+        }, savedScroll)
+        addCorner(row, 9)
 
-    local IsTouch =
-        FloatingInput.UserInputType == Enum.UserInputType.Touch
-        and Input == FloatingInput
-
-    if IsMouse or IsTouch then
-
-        local Delta = Input.Position - FloatingStart
-
-        if math.abs(Delta.X) > 6 or math.abs(Delta.Y) > 6 then
-            FloatingMoved = true
-        end
-
-        OpenButton.Position = UDim2.new(
-            FloatingStartPosition.X.Scale,
-            FloatingStartPosition.X.Offset + Delta.X,
-            FloatingStartPosition.Y.Scale,
-            FloatingStartPosition.Y.Offset + Delta.Y
-        )
-
-    end
-end)
-
-UIS.InputEnded:Connect(function(Input)
-
-    if not FloatingDragging or not FloatingInput then
-        return
-    end
-
-    local IsMouse =
-        FloatingInput.UserInputType == Enum.UserInputType.MouseButton1
-        and Input.UserInputType == Enum.UserInputType.MouseButton1
-
-    local IsTouch =
-        FloatingInput.UserInputType == Enum.UserInputType.Touch
-        and Input == FloatingInput
-
-    if IsMouse or IsTouch then
-
-        FloatingDragging = false
-        FloatingInput = nil
-
-        if not FloatingMoved then
-            Main.Visible = true
-            OpenButton.Visible = false
-        end
-
-    end
-end)
-
-print("GAU MODS V3.0 đã khởi tạo thành công!")
+        make("TextLabel", {
+            Position = UDim2.fromOffset(10, 5),
+            Size = UDim2.new(1, -150, 0, 25),
+            BackgroundTransparency = 1,
+            Text = tostring(item.name or ("Mục " .. index)),
+            TextColor3 = Color3.fromRGB(236, 244, 255),
+            TextSize = 13,
+            Font = Enum.Font.GothamSemibold,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextTruncate = Enum.TextTruncate.AtEnd,
+        }, row)
+        local preview = tostring(item.content or ""):gsub("\n", " ")
+        make("TextLabel", {
+            Position = UDim2.fromOffset(10, 31),
+            Size = UDim2.new(1, -150, 0, 30),
+            Background
