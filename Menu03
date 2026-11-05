@@ -1,111 +1,892 @@
-local VERSION = "loader/1 2026-08-31"
-local BASE = "https://star-scripts.com/api"
-local CONFIG_TRIES = 3
-local CONFIG_RETRY_WAIT = 1.5
-local VISUAL_DELAY = 0.2
-local SS = getgenv().SS
-if type(SS) ~= "table" or type(SS.ID) ~= "string" or SS.ID == "" then
-  warn("[STARSCRIPTS] no link id — re-copy your script from the dashboard")
-  return
-end
-if type(SS.BASE) == "string" and SS.BASE ~= "" then
-  BASE = SS.BASE
-end
+--[[
+    GIAO DIỆN GAU MODS - PHẦN 1
+]]
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
-local function get(url)
-  local ok, body = pcall(function()
-    return game:HttpGet(url)
-  end)
-  if ok and type(body) == "string" and body ~= "" then
-    return body
-  end
-  return nil
+local TextService = game:GetService("TextService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Xóa UI cũ nếu có
+if CoreGui:FindFirstChild("GauModsUI") then
+    CoreGui.GauModsUI:Destroy()
 end
-local raw
-for attempt = 1, CONFIG_TRIES do
-  raw = get(BASE .. "/cfg/" .. SS.ID)
-  if raw then break end
-  if attempt < CONFIG_TRIES then
-    task.wait(CONFIG_RETRY_WAIT)
-  end
-end
-if not raw then
-  warn("[STARSCRIPTS] couldn't reach the server — try again in a moment")
-  return
-end
-local ok, outer = pcall(function()
-  return HttpService:JSONDecode(raw)
+
+-- Tạo ScreenGui chính
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GauModsUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+pcall(function()
+    screenGui.Parent = CoreGui
 end)
-if not ok or type(outer) ~= "table" then
-  warn("[STARSCRIPTS] bad response from the server")
-  return
+if not screenGui.Parent then
+    screenGui.Parent = playerGui
 end
-local function unpack(payload)
-  local key = {}
-  for h in string.gmatch(payload.k, "%x%x") do
-    key[#key + 1] = tonumber(h, 16)
-  end
-  if #key == 0 then return nil end
-  local out, i = {}, 0
-  for h in string.gmatch(payload.d, "%x%x") do
-    i = i + 1
-    out[i] = string.char(bit32.bxor(tonumber(h, 16), key[(i - 1) % #key + 1]))
-  end
-  return table.concat(out)
+
+--------------------------------------------------------------------------------
+-- 1. NÚT MỞ MENU (TOGGLE BUTTON)
+--------------------------------------------------------------------------------
+local openButton = Instance.new("TextButton")
+openButton.Name = "OpenButton"
+openButton.Size = UDim2.new(0, 55, 0, 55)
+openButton.Position = UDim2.new(0, 30, 0, 200)
+openButton.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+openButton.Text = ""
+openButton.AutoButtonColor = false
+openButton.Parent = screenGui
+
+local openCorner = Instance.new("UICorner")
+openCorner.CornerRadius = UDim.new(0, 16)
+openCorner.Parent = openButton
+
+local openStroke = Instance.new("UIStroke")
+openStroke.Color = Color3.fromRGB(0, 162, 255)
+openStroke.Thickness = 2.5
+openStroke.Parent = openButton
+
+local openIcon = Instance.new("ImageLabel")
+openIcon.Name = "Icon"
+openIcon.Size = UDim2.new(0, 30, 0, 30)
+openIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+openIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+openIcon.BackgroundTransparency = 1
+openIcon.Image = "rbxassetid://6031094678" -- Thay ID ảnh của bạn vào đây
+openIcon.Parent = openButton
+
+--------------------------------------------------------------------------------
+-- 2. MENU CHÍNH (MAIN UI)
+--------------------------------------------------------------------------------
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 520, 0, 370)
+mainFrame.Position = UDim2.new(0.5, -260, 0.5, -185)
+mainFrame.BackgroundColor3 = Color3.fromRGB(13, 13, 18)
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 18)
+mainCorner.Parent = mainFrame
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(0, 162, 255)
+mainStroke.Thickness = 1.8
+mainStroke.Parent = mainFrame
+
+-- Topbar
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1, 0, 0, 50)
+topBar.BackgroundTransparency = 1
+topBar.Parent = mainFrame
+
+local topIcon = Instance.new("ImageLabel")
+topIcon.Size = UDim2.new(0, 26, 0, 26)
+topIcon.Position = UDim2.new(0, 16, 0.5, -13)
+topIcon.BackgroundTransparency = 1
+topIcon.Image = "rbxassetid://6031094678" -- Thay ID ảnh của bạn vào đây
+topIcon.Parent = topBar
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(0, 150, 1, 0)
+titleLabel.Position = UDim2.new(0, 52, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Text = "GAU MODS"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = topBar
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 32, 0, 32)
+closeBtn.Position = UDim2.new(1, -42, 0.5, -16)
+closeBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(220, 80, 80)
+closeBtn.TextSize = 14
+closeBtn.Parent = topBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeBtn
+
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 32, 0, 32)
+minimizeBtn.Position = UDim2.new(1, -82, 0.5, -16)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.Text = "━"
+minimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+minimizeBtn.TextSize = 14
+minimizeBtn.Parent = topBar
+
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 8)
+minCorner.Parent = minimizeBtn
+
+--------------------------------------------------------------------------------
+-- 3. HỆ THỐNG TAB
+--------------------------------------------------------------------------------
+local tabButtonsContainer = Instance.new("Frame")
+tabButtonsContainer.Size = UDim2.new(1, -32, 0, 38)
+tabButtonsContainer.Position = UDim2.new(0, 16, 0, 55)
+tabButtonsContainer.BackgroundTransparency = 1
+tabButtonsContainer.Parent = mainFrame
+
+local uiLayoutTabs = Instance.new("UIListLayout")
+uiLayoutTabs.FillDirection = Enum.FillDirection.Horizontal
+uiLayoutTabs.SortOrder = Enum.SortOrder.LayoutOrder
+uiLayoutTabs.Padding = UDim.new(0, 10)
+uiLayoutTabs.Parent = tabButtonsContainer
+
+local tabs = {}
+local tabContentFrames = {}
+
+local contentContainer = Instance.new("Frame")
+contentContainer.Size = UDim2.new(1, -32, 1, -110)
+contentContainer.Position = UDim2.new(0, 16, 0, 103)
+contentContainer.BackgroundTransparency = 1
+contentContainer.Parent = mainFrame
+
+for i = 1, 3 do
+    local tBtn = Instance.new("TextButton")
+    tBtn.Size = UDim2.new(0.322, 0, 1, 0)
+    tBtn.BackgroundColor3 = i == 1 and Color3.fromRGB(0, 162, 255) or Color3.fromRGB(22, 22, 30)
+    tBtn.Font = Enum.Font.GothamBold
+    tBtn.Text = "Tab " .. i
+    tBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tBtn.TextSize = 13
+    tBtn.AutoButtonColor = false
+    tBtn.LayoutOrder = i
+    tBtn.Parent = tabButtonsContainer
+    
+    local tCorner = Instance.new("UICorner")
+    tCorner.CornerRadius = UDim.new(0, 10)
+    tCorner.Parent = tBtn
+    
+    tabs[i] = tBtn
+
+    local tFrame = Instance.new("ScrollingFrame")
+    tFrame.Size = UDim2.new(1, 0, 1, 0)
+    tFrame.BackgroundTransparency = 1
+    tFrame.BorderSizePixel = 0
+    tFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    tFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    tFrame.ScrollBarThickness = 4
+    tFrame.Visible = (i == 1)
+    tFrame.Parent = contentContainer
+    
+    tabContentFrames[i] = tFrame
 end
-local data = outer
-if type(outer.k) == "string" and type(outer.d) == "string" then
-  local plain = unpack(outer)
-  if not plain then
-    warn("[STARSCRIPTS] bad response from the server")
-    return
-  end
-  local okInner, decoded = pcall(function()
-    return HttpService:JSONDecode(plain)
-  end)
-  if not okInner or type(decoded) ~= "table" then
-    warn("[STARSCRIPTS] bad response from the server")
-    return
-  end
-  data = decoded
+
+--------------------------------------------------------------------------------
+-- NỘI DUNG TAB 1
+--------------------------------------------------------------------------------
+local tab1 = tabContentFrames[1]
+
+local textBoxContainer = Instance.new("Frame")
+textBoxContainer.Size = UDim2.new(1, 0, 0, 140)
+textBoxContainer.Position = UDim2.new(0, 0, 0, 0)
+textBoxContainer.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
+textBoxContainer.ClipsDescendants = true
+textBoxContainer.Parent = tab1
+
+local boxCorner = Instance.new("UICorner")
+boxCorner.CornerRadius = UDim.new(0, 10)
+boxCorner.Parent = textBoxContainer
+
+local boxStroke = Instance.new("UIStroke")
+boxStroke.Color = Color3.fromRGB(40, 40, 55)
+boxStroke.Thickness = 1.2
+boxStroke.Parent = textBoxContainer
+
+local scriptTextBox = Instance.new("TextBox")
+scriptTextBox.Size = UDim2.new(1, -16, 1, -16)
+scriptTextBox.Position = UDim2.new(0, 8, 0, 8)
+scriptTextBox.BackgroundTransparency = 1
+scriptTextBox.Font = Enum.Font.Code
+scriptTextBox.MultiLine = true
+scriptTextBox.ClearTextOnFocus = false
+scriptTextBox.Text = ""
+scriptTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+scriptTextBox.TextSize = 13
+scriptTextBox.TextXAlignment = Enum.TextXAlignment.Left
+scriptTextBox.TextYAlignment = Enum.TextYAlignment.Top
+scriptTextBox.Parent = textBoxContainer
+
+local placeholderLabel = Instance.new("TextLabel")
+placeholderLabel.Size = UDim2.new(1, -16, 1, -16)
+placeholderLabel.Position = UDim2.new(0, 8, 0, 8)
+placeholderLabel.BackgroundTransparency = 1
+placeholderLabel.Font = Enum.Font.Gotham
+placeholderLabel.Text = "nhập văn bản..."
+placeholderLabel.TextColor3 = Color3.fromRGB(110, 110, 130)
+placeholderLabel.TextSize = 13
+placeholderLabel.TextXAlignment = Enum.TextXAlignment.Left
+placeholderLabel.TextYAlignment = Enum.TextYAlignment.Top
+placeholderLabel.Parent = textBoxContainer
+
+scriptTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+    if scriptTextBox.Text == "" then
+        placeholderLabel.Visible = true
+    else
+        placeholderLabel.Visible = false
+    end
+end)
+
+local buttonsGrid = Instance.new("Frame")
+buttonsGrid.Size = UDim2.new(1, 0, 0, 85)
+buttonsGrid.Position = UDim2.new(0, 0, 0, 155)
+buttonsGrid.BackgroundTransparency = 1
+buttonsGrid.Parent = tab1
+
+local gridLayout = Instance.new("UIGridLayout")
+gridLayout.CellSize = UDim2.new(0.48, 0, 0, 36)
+gridLayout.CellPadding = UDim2.new(0.04, 0, 0, 12)
+gridLayout.Parent = buttonsGrid
+
+local function createButton(name, text)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 12
+    btn.AutoButtonColor = false
+    btn.Parent = buttonsGrid
+    
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = btn
+    
+    local s = Instance.new("UIStroke")
+    s.Color = Color3.fromRGB(0, 162, 255)
+    s.Transparency = 0.4
+    s.Parent = btn
+    
+    return btn
 end
-if data.error then
-  if data.error == "receivers_not_set" then
-    warn("[STARSCRIPTS] set your receivers on the dashboard first")
-  else
-    warn("[STARSCRIPTS] " .. tostring(data.error))
-  end
-  return
+
+local executeBtn = createButton("ExecuteBtn", "Execute")
+local openLinkBtn = createButton("OpenLinkBtn", "Mở Link")
+local copyTextBtn = createButton("CopyBtn", "Sao Chép")
+local saveBtn = createButton("SaveBtn", "Lưu")
+--[[
+    GIAO DIỆN GAU MODS - PHẦN 2
+]]
+
+-- EXECUTE SCRIPT
+executeBtn.MouseButton1Click:Connect(function()
+    local text = scriptTextBox.Text
+    if text ~= "" then
+        if text:match("https?://") then
+            pcall(function() loadstring(game:HttpGet(text))() end)
+        else
+            pcall(function()
+                local func = loadstring(text)
+                if func then func() end
+            end)
+        end
+    end
+end)
+
+-- GIAO DIỆN XEM LINK
+local linkViewerUI = Instance.new("Frame")
+linkViewerUI.Size = UDim2.new(1, 0, 1, 0)
+linkViewerUI.Position = UDim2.new(0, 0, 0, 0)
+linkViewerUI.BackgroundColor3 = Color3.fromRGB(13, 13, 18)
+linkViewerUI.Visible = false
+linkViewerUI.Parent = mainFrame
+
+local backBtn = Instance.new("TextButton")
+backBtn.Size = UDim2.new(0, 35, 0, 35)
+backBtn.Position = UDim2.new(0, 10, 0, 8)
+backBtn.BackgroundTransparency = 1
+backBtn.Font = Enum.Font.GothamBold
+backBtn.Text = "←"
+backBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+backBtn.TextSize = 22
+backBtn.Parent = linkViewerUI
+
+local copyLinkContentBtn = Instance.new("TextButton")
+copyLinkContentBtn.Size = UDim2.new(0, 75, 0, 30)
+copyLinkContentBtn.Position = UDim2.new(1, -85, 0, 10)
+copyLinkContentBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+copyLinkContentBtn.Font = Enum.Font.GothamBold
+copyLinkContentBtn.Text = "Copy"
+copyLinkContentBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+copyLinkContentBtn.TextSize = 12
+copyLinkContentBtn.Parent = linkViewerUI
+
+local clcCorner = Instance.new("UICorner")
+clcCorner.CornerRadius = UDim.new(0, 8)
+clcCorner.Parent = copyLinkContentBtn
+
+local largeTextBoxFrame = Instance.new("ScrollingFrame")
+largeTextBoxFrame.Size = UDim2.new(1, -20, 1, -55)
+largeTextBoxFrame.Position = UDim2.new(0, 10, 0, 48)
+largeTextBoxFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
+largeTextBoxFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+largeTextBoxFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+largeTextBoxFrame.ScrollBarThickness = 5
+largeTextBoxFrame.Parent = linkViewerUI
+
+local ltbCorner = Instance.new("UICorner")
+ltbCorner.CornerRadius = UDim.new(0, 10)
+ltbCorner.Parent = largeTextBoxFrame
+
+local ltbStroke = Instance.new("UIStroke")
+ltbStroke.Color = Color3.fromRGB(40, 40, 55)
+ltbStroke.Transparency = 0.5
+ltbStroke.Parent = largeTextBoxFrame
+
+local linkContentText = Instance.new("TextLabel")
+linkContentText.Size = UDim2.new(1, -16, 1, -16)
+linkContentText.Position = UDim2.new(0, 8, 0, 8)
+linkContentText.BackgroundTransparency = 1
+linkContentText.Font = Enum.Font.Code
+linkContentText.Text = "Chưa có nội dung..."
+linkContentText.TextColor3 = Color3.fromRGB(255, 255, 255)
+linkContentText.TextSize = 13
+linkContentText.TextWrapped = true
+linkContentText.TextXAlignment = Enum.TextXAlignment.Left
+linkContentText.TextYAlignment = Enum.TextYAlignment.Top
+linkContentText.Parent = largeTextBoxFrame
+
+openLinkBtn.MouseButton1Click:Connect(function()
+    local link = scriptTextBox.Text
+    if link ~= "" and link:match("https?://") then
+        local success, result = pcall(function() return game:HttpGet(link) end)
+        if success then linkContentText.Text = result else linkContentText.Text = "Lỗi HTTP." end
+    else
+        linkContentText.Text = "Vui lòng nhập link hợp lệ ở Tab 1!"
+    end
+    linkViewerUI.Visible = true
+end)
+
+backBtn.MouseButton1Click:Connect(function() linkViewerUI.Visible = false end)
+
+copyLinkContentBtn.MouseButton1Click:Connect(function()
+    if syn and syn.write_clipboard then syn.write_clipboard(linkContentText.Text)
+    elseif setclipboard then setclipboard(linkContentText.Text) end
+end)
+
+-- SAO CHÉP VĂN BẢN
+copyTextBtn.MouseButton1Click:Connect(function()
+    if scriptTextBox.Text ~= "" then
+        if syn and syn.write_clipboard then syn.write_clipboard(scriptTextBox.Text)
+        elseif setclipboard then setclipboard(scriptTextBox.Text) end
+    end
+end)
+
+-- LƯU DỮ LIỆU
+local savedScripts = {}
+local SAVE_FILE_NAME = "GauMods_SavedScripts.json"
+
+local function saveToDisk()
+    if writefile then pcall(function() writefile(SAVE_FILE_NAME, HttpService:JSONEncode(savedScripts)) end) end
 end
-if type(data.config) ~= "table" or type(data.script) ~= "string" then
-  warn("[STARSCRIPTS] incomplete config")
-  return
+
+local function loadFromDisk()
+    if readfile and isfile and isfile(SAVE_FILE_NAME) then
+        local success, data = pcall(function() return HttpService:JSONDecode(readfile(SAVE_FILE_NAME)) end)
+        if success and type(data) == "table" then savedScripts = data end
+    end
 end
-getgenv().StarScriptsConfig = data.config
-local function run(source)
-  if type(source) ~= "string" or source == "" then return false end
-  local fn = loadstring(source)
-  if not fn then return false end
-  local okRun = pcall(fn)
-  return okRun
+loadFromDisk()
+
+-- POPUP LƯU TÊN (MAX 15 KÝ TỰ)
+local savePopupBg = Instance.new("Frame")
+savePopupBg.Size = UDim2.new(1, 0, 1, 0)
+savePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+savePopupBg.BackgroundTransparency = 0.6
+savePopupBg.Visible = false
+savePopupBg.Parent = mainFrame
+
+local savePopupBox = Instance.new("Frame")
+savePopupBox.Size = UDim2.new(0, 320, 0, 160)
+savePopupBox.Position = UDim2.new(0.5, -160, 0.5, -80)
+savePopupBox.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
+savePopupBox.Parent = savePopupBg
+
+local spCorner = Instance.new("UICorner")
+spCorner.CornerRadius = UDim.new(0, 12)
+spCorner.Parent = savePopupBox
+
+local spStroke = Instance.new("UIStroke")
+spStroke.Color = Color3.fromRGB(0, 162, 255)
+spStroke.Parent = savePopupBox
+
+local spTitle = Instance.new("TextLabel")
+spTitle.Size = UDim2.new(1, 0, 0, 35)
+spTitle.Position = UDim2.new(0, 0, 0, 10)
+spTitle.BackgroundTransparency = 1
+spTitle.Font = Enum.Font.GothamBold
+spTitle.Text = "Nhập tên để lưu (Tối đa 15 ký tự)"
+spTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+spTitle.TextSize = 13
+spTitle.Parent = savePopupBox
+
+local nameTextBox = Instance.new("TextBox")
+nameTextBox.Size = UDim2.new(0.85, 0, 0, 38)
+nameTextBox.Position = UDim2.new(0.075, 0, 0, 50)
+nameTextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+nameTextBox.Font = Enum.Font.Gotham
+nameTextBox.PlaceholderText = "Tên script..."
+nameTextBox.Text = ""
+nameTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+nameTextBox.TextSize = 13
+nameTextBox.Parent = savePopupBox
+
+local nCorner = Instance.new("UICorner")
+nCorner.CornerRadius = UDim.new(0, 8)
+nCorner.Parent = nameTextBox
+
+nameTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+    if utf8.len(nameTextBox.Text) > 15 then
+        nameTextBox.Text = utf8.sub(nameTextBox.Text, 1, 15)
+    end
+end)
+
+local confirmSaveBtn = Instance.new("TextButton")
+confirmSaveBtn.Size = UDim2.new(0.4, 0, 0, 35)
+confirmSaveBtn.Position = UDim2.new(0.075, 0, 0, 105)
+confirmSaveBtn.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
+confirmSaveBtn.Font = Enum.Font.GothamBold
+confirmSaveBtn.Text = "Lưu"
+confirmSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+confirmSaveBtn.TextSize = 13
+confirmSaveBtn.Parent = savePopupBox
+
+local csCorner = Instance.new("UICorner")
+csCorner.CornerRadius = UDim.new(0, 8)
+csCorner.Parent = confirmSaveBtn
+
+local cancelSaveBtn = Instance.new("TextButton")
+cancelSaveBtn.Size = UDim2.new(0.4, 0, 0, 35)
+cancelSaveBtn.Position = UDim2.new(0.525, 0, 0, 105)
+cancelSaveBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+cancelSaveBtn.Font = Enum.Font.GothamBold
+cancelSaveBtn.Text = "Hủy"
+cancelSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+cancelSaveBtn.TextSize = 13
+cancelSaveBtn.Parent = savePopupBox
+
+local ccsCorner = Instance.new("UICorner")
+ccsCorner.CornerRadius = UDim.new(0, 8)
+ccsCorner.Parent = cancelSaveBtn
+
+saveBtn.MouseButton1Click:Connect(function()
+    if scriptTextBox.Text ~= "" then
+        nameTextBox.Text = ""
+        savePopupBg.Visible = true
+    end
+end)
+
+cancelSaveBtn.MouseButton1Click:Connect(function() savePopupBg.Visible = false end)
+
+-- NỘI DUNG TAB 2 (MENU XÁC NHẬN XÓA)
+local tab2 = tabContentFrames[2]
+
+local tab2Layout = Instance.new("UIListLayout")
+tab2Layout.SortOrder = Enum.SortOrder.LayoutOrder
+tab2Layout.Padding = UDim.new(0, 10)
+tab2Layout.Parent = tab2
+
+local confirmDeletePopup = Instance.new("Frame")
+confirmDeletePopup.Size = UDim2.new(0, 280, 0, 130)
+confirmDeletePopup.Position = UDim2.new(0.5, -140, 0.5, -65)
+confirmDeletePopup.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
+confirmDeletePopup.Visible = false
+confirmDeletePopup.ZIndex = 10
+confirmDeletePopup.Parent = mainFrame
+
+local cdpCorner = Instance.new("UICorner")
+cdpCorner.CornerRadius = UDim.new(0, 12)
+cdpCorner.Parent = confirmDeletePopup
+
+local cdpStroke = Instance.new("UIStroke")
+cdpStroke.Color = Color3.fromRGB(220, 80, 80)
+cdpStroke.Parent = confirmDeletePopup
+
+local cdpText = Instance.new("TextLabel")
+cdpText.Size = UDim2.new(1, 0, 0, 45)
+cdpText.Position = UDim2.new(0, 0, 0, 15)
+cdpText.BackgroundTransparency = 1
+cdpText.Font = Enum.Font.GothamBold
+cdpText.Text = "Bạn có muốn xóa không?"
+cdpText.TextColor3 = Color3.fromRGB(255, 255, 255)
+cdpText.TextSize = 14
+cdpText.ZIndex = 10
+cdpText.Parent = confirmDeletePopup
+
+local yesDelBtn = Instance.new("TextButton")
+yesDelBtn.Size = UDim2.new(0.4, 0, 0, 35)
+yesDelBtn.Position = UDim2.new(0.075, 0, 0, 75)
+yesDelBtn.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
+yesDelBtn.Font = Enum.Font.GothamBold
+yesDelBtn.Text = "Có"
+yesDelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+yesDelBtn.TextSize = 13
+yesDelBtn.ZIndex = 10
+yesDelBtn.Parent = confirmDeletePopup
+
+local ydCorner = Instance.new("UICorner")
+ydCorner.CornerRadius = UDim.new(0, 8)
+ydCorner.Parent = yesDelBtn
+
+local noDelBtn = Instance.new("TextButton")
+noDelBtn.Size = UDim2.new(0.4, 0, 0, 35)
+noDelBtn.Position = UDim2.new(0.525, 0, 0, 75)
+noDelBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+noDelBtn.Font = Enum.Font.GothamBold
+noDelBtn.Text = "Không"
+noDelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+noDelBtn.TextSize = 13
+noDelBtn.ZIndex = 10
+noDelBtn.Parent = confirmDeletePopup
+
+local ndCorner = Instance.new("UICorner")
+ndCorner.CornerRadius = UDim.new(0, 8)
+ndCorner.Parent = noDelBtn
+
+local itemIndexToDelete = nil
+
+local function refreshSavedList()
+    for _, child in ipairs(tab2:GetChildren()) do
+        if child:IsA("Frame") then child:Destroy() end
+    end
+    for index, item in ipairs(savedScripts) do
+        local card = Instance.new("Frame")
+        card.Size = UDim2.new(1, 0, 0, 52)
+        card.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
+        card.Parent = tab2
+        
+        local cCorner = Instance.new("UICorner")
+        cCorner.CornerRadius = UDim.new(0, 10)
+        cCorner.Parent = card
+        
+        local nameLab = Instance.new("TextLabel")
+        nameLab.Size = UDim2.new(0.42, 0, 1, 0)
+        nameLab.Position = UDim2.new(0, 12, 0, 0)
+        nameLab.BackgroundTransparency = 1
+        nameLab.Font = Enum.Font.GothamBold
+        nameLab.Text = item.name
+        nameLab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nameLab.TextSize = 13
+        nameLab.TextXAlignment = Enum.TextXAlignment.Left
+        nameLab.Parent = card
+        
+        local exItemBtn = Instance.new("TextButton")
+        exItemBtn.Size = UDim2.new(0, 62, 0, 32)
+        exItemBtn.Position = UDim2.new(0.45, 0, 0.5, -16)
+        exItemBtn.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
+        exItemBtn.Font = Enum.Font.GothamBold
+        exItemBtn.Text = "Execute"
+        exItemBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        exItemBtn.TextSize = 11
+        exItemBtn.Parent = card
+        
+        local eic = Instance.new("UICorner")
+        eic.CornerRadius = UDim.new(0, 8)
+        eic.Parent = exItemBtn
+        
+        exItemBtn.MouseButton1Click:Connect(function()
+            local text = item.content
+            if text:match("https?://") then
+                pcall(function() loadstring(game:HttpGet(text))() end)
+            else
+                pcall(function() loadstring(text)() end)
+            end
+        end)
+        
+        local viewItemBtn = Instance.new("TextButton")
+        viewItemBtn.Size = UDim2.new(0, 52, 0, 32)
+        viewItemBtn.Position = UDim2.new(0.68, 0, 0.5, -16)
+        viewItemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        viewItemBtn.Font = Enum.Font.GothamBold
+        viewItemBtn.Text = "Xem"
+        viewItemBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        viewItemBtn.TextSize = 11
+        viewItemBtn.Parent = card
+        
+        local vic = Instance.new("UICorner")
+        vic.CornerRadius = UDim.new(0, 8)
+        vic.Parent = viewItemBtn
+        
+        viewItemBtn.MouseButton1Click:Connect(function()
+            linkContentText.Text = item.content
+            linkViewerUI.Visible = true
+        end)
+        
+        local delItemBtn = Instance.new("TextButton")
+        delItemBtn.Size = UDim2.new(0, 32, 0, 32)
+        delItemBtn.Position = UDim2.new(0.88, 0, 0.5, -16)
+        delItemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        delItemBtn.Font = Enum.Font.GothamBold
+        delItemBtn.Text = "✕"
+        delItemBtn.TextColor3 = Color3.fromRGB(220, 80, 80)
+        delItemBtn.TextSize = 13
+        delItemBtn.Parent = card
+        
+        local dic = Instance.new("UICorner")
+        dic.CornerRadius = UDim.new(0, 8)
+        dic.Parent = delItemBtn
+        
+        delItemBtn.MouseButton1Click:Connect(function()
+            itemIndexToDelete = index
+            confirmDeletePopup.Visible = true
+        end)
+    end
 end
-local src = get(data.script)
-if not src then
-  warn("[STARSCRIPTS] couldn't load the script for " .. tostring(data.game))
-  return
+
+yesDelBtn.MouseButton1Click:Connect(function()
+    if itemIndexToDelete then
+        table.remove(savedScripts, itemIndexToDelete)
+        saveToDisk()
+        refreshSavedList()
+    end
+    confirmDeletePopup.Visible = false
+    itemIndexToDelete = nil
+end)
+
+noDelBtn.MouseButton1Click:Connect(function()
+    confirmDeletePopup.Visible = false
+    itemIndexToDelete = nil
+end)
+
+confirmSaveBtn.MouseButton1Click:Connect(function()
+    local name = nameTextBox.Text
+    if name ~= "" then
+        table.insert(savedScripts, { name = name, content = scriptTextBox.Text })
+        saveToDisk()
+        refreshSavedList()
+        savePopupBg.Visible = false
+    end
+end)
+
+refreshSavedList()
+
+-- NỘI DUNG TAB 3
+local tab3 = tabContentFrames[3]
+
+local authorLabel = Instance.new("TextLabel")
+authorLabel.Size = UDim2.new(1, 0, 0, 40)
+authorLabel.BackgroundTransparency = 1
+authorLabel.Font = Enum.Font.GothamBold
+authorLabel.Text = "Thông Tin Tác Giả - GAU MODS"
+authorLabel.TextColor3 = Color3.fromRGB(0, 162, 255)
+authorLabel.TextSize = 15
+authorLabel.Parent = tab3
+
+local function createSocialButton(name, text, link)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 42)
+    btn.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 13
+    btn.Parent = tab3
+    
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 10)
+    c.Parent = btn
+    
+    local s = Instance.new("UIStroke")
+    s.Color = Color3.fromRGB(0, 162, 255)
+    s.Transparency = 0.5
+    s.Parent = btn
+    
+    btn.MouseButton1Click:Connect(function()
+        if syn and syn.write_clipboard then syn.write_clipboard(link)
+        elseif setclipboard then setclipboard(link) end
+        btn.Text = "Đã sao chép link!"
+        task.wait(1.5)
+        btn.Text = text
+    end)
 end
-if not run(src) then
-  warn("[STARSCRIPTS] the script failed to start")
-  return
+
+createSocialButton("TikTokBtn", "Sao chép link TikTok", "https://www.tiktok.com/@gaumods")
+createSocialButton("YouTubeBtn", "Sao chép link YouTube", "https://www.youtube.com/@gaumods")
+createSocialButton("DiscordBtn", "Sao chép link Discord", "https://discord.gg/gaumods")
+
+local tab3Layout = Instance.new("UIListLayout")
+tab3Layout.SortOrder = Enum.SortOrder.LayoutOrder
+tab3Layout.Padding = UDim.new(0, 12)
+tab3Layout.Parent = tab3
+--[[
+    GIAO DIỆN GAU MODS - PHẦN 3
+]]
+
+-- CHUYỂN TAB QUA LẠI
+for i, btn in ipairs(tabs) do
+    btn.MouseButton1Click:Connect(function()
+        for j, otherBtn in ipairs(tabs) do
+            otherBtn.BackgroundColor3 = (j == i) and Color3.fromRGB(0, 162, 255) or Color3.fromRGB(22, 22, 30)
+            tabContentFrames[j].Visible = (j == i)
+        end
+        linkViewerUI.Visible = false
+        confirmDeletePopup.Visible = false
+    end)
 end
-local visual = data.visual
-if type(visual) == "table" then
-  task.wait(VISUAL_DELAY)
-  local vsrc = visual.lua
-  if type(visual.url) == "string" and visual.url ~= "" then
-    vsrc = get(visual.url)
-  end
-  if vsrc then
-    run(vsrc)
-  end
+
+-- POPUP ĐẾM NGƯỢC XÁC NHẬN TẮT MENU
+local confirmSmallUI = Instance.new("Frame")
+confirmSmallUI.Size = UDim2.new(0, 280, 0, 130)
+confirmSmallUI.Position = UDim2.new(0.5, -140, 0.5, -65)
+confirmSmallUI.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
+confirmSmallUI.Visible = false
+confirmSmallUI.Parent = screenGui
+
+local csCornerMain = Instance.new("UICorner")
+csCornerMain.CornerRadius = UDim.new(0, 12)
+csCornerMain.Parent = confirmSmallUI
+
+local csStroke = Instance.new("UIStroke")
+csStroke.Color = Color3.fromRGB(0, 162, 255)
+csStroke.Parent = confirmSmallUI
+
+local csText = Instance.new("TextLabel")
+csText.Size = UDim2.new(1, 0, 0, 45)
+csText.Position = UDim2.new(0, 0, 0, 15)
+csText.BackgroundTransparency = 1
+csText.Font = Enum.Font.GothamBold
+csText.Text = "Bạn có muốn tắt menu không?"
+csText.TextColor3 = Color3.fromRGB(255, 255, 255)
+csText.TextSize = 14
+csText.Parent = confirmSmallUI
+
+local yesBtn = Instance.new("TextButton")
+yesBtn.Size = UDim2.new(0.4, 0, 0, 35)
+yesBtn.Position = UDim2.new(0.075, 0, 0, 75)
+yesBtn.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
+yesBtn.Font = Enum.Font.GothamBold
+yesBtn.Text = "Có"
+yesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+yesBtn.TextSize = 13
+yesBtn.Parent = confirmSmallUI
+
+local ybc = Instance.new("UICorner")
+ybc.CornerRadius = UDim.new(0, 8)
+ybc.Parent = yesBtn
+
+local noBtn = Instance.new("TextButton")
+noBtn.Size = UDim2.new(0.4, 0, 0, 35)
+noBtn.Position = UDim2.new(0.525, 0, 0, 75)
+noBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+noBtn.Font = Enum.Font.GothamBold
+noBtn.Text = "Không"
+noBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+noBtn.TextSize = 13
+noBtn.Parent = confirmSmallUI
+
+local nbc = Instance.new("UICorner")
+nbc.CornerRadius = UDim.new(0, 8)
+nbc.Parent = noBtn
+
+closeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    confirmSmallUI.Visible = true
+end)
+
+noBtn.MouseButton1Click:Connect(function()
+    confirmSmallUI.Visible = false
+    mainFrame.Visible = true
+end)
+
+yesBtn.MouseButton1Click:Connect(function()
+    confirmSmallUI.Visible = false
+    for i = 3, 0, -1 do
+        csText.Text = "Đang tắt menu trong " .. i .. "s..."
+        confirmSmallUI.Visible = true
+        task.wait(1)
+    end
+    screenGui:Destroy()
+end)
+
+minimizeBtn.MouseButton1Click:Connect(function() mainFrame.Visible = false end)
+openButton.MouseButton1Click:Connect(function() mainFrame.Visible = not mainFrame.Visible end)
+
+--------------------------------------------------------------------------------
+-- TÍNH NĂNG KÉO THẢ (DRAGGING)
+--------------------------------------------------------------------------------
+local UserInputService = game:GetService("UserInputService")
+
+local function makeDraggableButton(btn)
+    local dragging, dragInput, dragStart, startPos
+    btn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = btn.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    btn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
 end
+makeDraggableButton(openButton)
+
+-- KÉO MENU CHÍNH (GIỮ 0.5 GIÂY)
+local function makeDraggableMain(frame, handle)
+    local dragging, dragInput, dragStart, startPos
+    local holdTimer = 0
+    local isHolding = false
+    
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isHolding = true
+            holdTimer = tick()
+            dragStart = input.Position
+            startPos = frame.Position
+            
+            task.spawn(function()
+                while isHolding do
+                    if tick() - holdTimer >= 0.5 then
+                        dragging = true
+                        break
+                    end
+                    task.wait(0.05)
+                end
+            end)
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    isHolding = false
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+makeDraggableMain(mainFrame, topBar)
+
+print("GAU MODS UI đã tải hoàn tất!")
