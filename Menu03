@@ -55,7 +55,7 @@ openIcon.Size = UDim2.new(0, 30, 0, 30)
 openIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 openIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 openIcon.BackgroundTransparency = 1
-openIcon.Image = "rbxassetid://11759193017" -- Thay ID ảnh của bạn vào đây
+openIcon.Image = "rbxassetid://8425069728" -- Thay ID ảnh của bạn vào đây
 openIcon.Parent = openButton
 
 --------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ local topIcon = Instance.new("ImageLabel")
 topIcon.Size = UDim2.new(0, 26, 0, 26)
 topIcon.Position = UDim2.new(0, 16, 0.5, -13)
 topIcon.BackgroundTransparency = 1
-topIcon.Image = "rbxassetid://11759193017" -- Thay ID ảnh của bạn vào đây
+topIcon.Image = "rbxassetid://8425069728" -- Thay ID ảnh của bạn vào đây
 topIcon.Parent = topBar
 
 local titleLabel = Instance.new("TextLabel")
