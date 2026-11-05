@@ -1,0 +1,327 @@
+-- [[ GAU MODS - VIP AUTHENTICATION SYSTEM ]] --
+
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local parentUI = nil
+pcall(function() parentUI = CoreGui end)
+if not parentUI then parentUI = LocalPlayer:WaitForChild("PlayerGui") end
+
+-- Xóa UI cũ nếu đang tồn tại
+if parentUI:FindFirstChild("GAU_MODS_AuthUI") then
+    parentUI["GAU_MODS_AuthUI"]:Destroy()
+end
+
+-- [[ CẤU HÌNH TRỰC TIẾP ]] --
+local key1 = "GauMods2026VIP"        -- Mật khẩu thứ nhất
+local key2 = "VIPCode999"            -- Mật khẩu thứ hai (Nhập 1 trong 2 cái đều được)
+local linkGet = "https://gtraffic.io/QM93EZB" -- Link lấy key
+
+-- Danh sách 2 link script sẽ được loadstring khi nhập đúng key
+local scriptUrl1 = "https://raw.githubusercontent.com/robvxs24/freemium/refs/heads/main/whub.lua"
+local scriptUrl2 = "https://raw.githubusercontent.com/robvxs24/freemium/refs/heads/main/whub2.lua"
+
+-- Tạo ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "GAU_MODS_AuthUI"
+ScreenGui.Parent = parentUI
+ScreenGui.ResetOnSpawn = false
+ScreenGui.DisplayOrder = 99999
+
+-- Thông báo nổi Toast Notification phong cách GAU MODS (Tông Xanh Dương - Tím)
+local function showNotify(msgText)
+    local Toast = Instance.new("Frame")
+    Toast.Size = UDim2.new(0, 320, 0, 42)
+    Toast.Position = UDim2.new(0.5, -160, -0.1, 0)
+    Toast.BackgroundColor3 = Color3.fromHex("#0B0F19")
+    Toast.Parent = ScreenGui
+    
+    local ToastCorner = Instance.new("UICorner", Toast)
+    ToastCorner.CornerRadius = UDim.new(0, 8)
+    
+    local ToastStroke = Instance.new("UIStroke", Toast)
+    ToastStroke.Color = Color3.fromHex("#00A2FF")
+    ToastStroke.Thickness = 1.5
+    
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -20, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = "💎 " .. msgText
+    Label.TextColor3 = Color3.fromHex("#F3F4F6")
+    Label.Font = Enum.Font.GothamBold
+    Label.TextSize = 11
+    Label.Parent = Toast
+
+    -- Animation Trượt Xuống
+    TweenService:Create(Toast, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, -160, 0.04, 0)
+    }):Play()
+    
+    task.delay(3, function()
+        local tweenOut = TweenService:Create(Toast, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Position = UDim2.new(0.5, -160, -0.1, 0)
+        })
+        tweenOut:Play()
+        tweenOut.Completed:Connect(function() Toast:Destroy() end)
+    end)
+end
+
+-- Main Window (Bảng Chính GAU MODS)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromHex("#070A12")
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.Size = UDim2.new(0, 0, 0, 0)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true
+
+local MainCorner = Instance.new("UICorner", MainFrame)
+MainCorner.CornerRadius = UDim.new(0, 14)
+
+-- Viền Phát Sáng Neon Xanh Dương Đặc Trưng GAU MODS
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Thickness = 1.8
+MainStroke.Color = Color3.fromHex("#00A2FF")
+
+-- Thanh Đèn Neon Dọc Bên Trái
+local GlowBar = Instance.new("Frame")
+GlowBar.Size = UDim2.new(0, 4, 1, 0)
+GlowBar.Position = UDim2.new(0, 0, 0, 0)
+GlowBar.BackgroundColor3 = Color3.fromHex("#00A2FF")
+GlowBar.Parent = MainFrame
+
+local GlowCorner = Instance.new("UICorner", GlowBar)
+GlowCorner.CornerRadius = UDim.new(0, 14)
+
+-- Header Bar
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, -20, 0, 45)
+Header.Position = UDim2.new(0, 15, 0, 10)
+Header.BackgroundTransparency = 1
+Header.Parent = MainFrame
+
+local Badge = Instance.new("TextLabel")
+Badge.Size = UDim2.new(0, 75, 0, 18)
+Badge.Position = UDim2.new(0, 0, 0, 2)
+Badge.BackgroundColor3 = Color3.fromHex("#08203E")
+Badge.Text = "GAU EXCLUSIVE"
+Badge.TextColor3 = Color3.fromHex("#00A2FF")
+Badge.Font = Enum.Font.GothamBold
+Badge.TextSize = 8
+Badge.Parent = Header
+
+local BadgeCorner = Instance.new("UICorner", Badge)
+BadgeCorner.CornerRadius = UDim.new(0, 4)
+
+local BadgeStroke = Instance.new("UIStroke", Badge)
+BadgeStroke.Color = Color3.fromHex("#0055CC")
+BadgeStroke.Thickness = 1
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0.7, 0, 0, 22)
+Title.Position = UDim2.new(0, 83, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "GAU <font color=\"#00A2FF\">- MODS GATEWAY</font>"
+Title.RichText = true
+Title.TextColor3 = Color3.fromHex("#FFFFFF")
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Size = UDim2.new(1, 0, 0, 15)
+Subtitle.Position = UDim2.new(0, 0, 0, 22)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Text = "Secure Authentication • Enter Key To Proceed"
+Subtitle.TextColor3 = Color3.fromHex("#6B7280")
+Subtitle.Font = Enum.Font.GothamMedium
+Subtitle.TextSize = 10
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+Subtitle.Parent = Header
+
+-- Nút Đóng (Close Button)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -26, 0, 0)
+CloseBtn.BackgroundColor3 = Color3.fromHex("#111827")
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromHex("#9CA3AF")
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 11
+CloseBtn.Parent = Header
+
+local CloseCorner = Instance.new("UICorner", CloseBtn)
+CloseCorner.CornerRadius = UDim.new(0, 6)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Ô Nhập Key (Input Field)
+local InputContainer = Instance.new("Frame")
+InputContainer.Size = UDim2.new(1, -30, 0, 42)
+InputContainer.Position = UDim2.new(0, 15, 0, 66)
+InputContainer.BackgroundColor3 = Color3.fromHex("#0D1322")
+InputContainer.Parent = MainFrame
+
+local InputCorner = Instance.new("UICorner", InputContainer)
+InputCorner.CornerRadius = UDim.new(0, 8)
+
+local InputStroke = Instance.new("UIStroke", InputContainer)
+InputStroke.Color = Color3.fromHex("#1E293B")
+InputStroke.Thickness = 1
+
+local KeyInput = Instance.new("TextBox")
+KeyInput.Size = UDim2.new(1, -20, 1, 0)
+KeyInput.Position = UDim2.new(0, 10, 0, 0)
+KeyInput.BackgroundTransparency = 1
+KeyInput.PlaceholderText = "Nhập mật khẩu / Key tại đây..."
+KeyInput.PlaceholderColor3 = Color3.fromHex("#4B5563")
+KeyInput.Text = ""
+KeyInput.TextColor3 = Color3.fromHex("#F9FAFB")
+KeyInput.Font = Enum.Font.GothamSemibold
+KeyInput.TextSize = 12
+KeyInput.TextXAlignment = Enum.TextXAlignment.Left
+KeyInput.Parent = InputContainer
+
+-- Hàng Nút Bấm
+local ButtonGroup = Instance.new("Frame")
+ButtonGroup.Size = UDim2.new(1, -30, 0, 40)
+ButtonGroup.Position = UDim2.new(0, 15, 0, 120)
+ButtonGroup.BackgroundTransparency = 1
+ButtonGroup.Parent = MainFrame
+
+-- Nút Lấy Key (Get Key Button)
+local GetKeyBtn = Instance.new("TextButton")
+GetKeyBtn.Size = UDim2.new(0.48, 0, 1, 0)
+GetKeyBtn.Position = UDim2.new(0, 0, 0, 0)
+GetKeyBtn.BackgroundColor3 = Color3.fromHex("#0A192F")
+GetKeyBtn.Text = "🔑 LẤY KEY"
+GetKeyBtn.TextColor3 = Color3.fromHex("#00A2FF")
+GetKeyBtn.Font = Enum.Font.GothamBold
+GetKeyBtn.TextSize = 11
+GetKeyBtn.Parent = ButtonGroup
+
+local GetKeyCorner = Instance.new("UICorner", GetKeyBtn)
+GetKeyCorner.CornerRadius = UDim.new(0, 8)
+
+local GetKeyStroke = Instance.new("UIStroke", GetKeyBtn)
+GetKeyStroke.Color = Color3.fromHex("#00A2FF")
+GetKeyStroke.Thickness = 1.2
+
+-- Nút Kích Hoạt (Submit Button)
+local SubmitBtn = Instance.new("TextButton")
+SubmitBtn.Size = UDim2.new(0.48, 0, 1, 0)
+SubmitBtn.Position = UDim2.new(0.52, 0, 0, 0)
+SubmitBtn.BackgroundColor3 = Color3.fromHex("#00A2FF")
+SubmitBtn.Text = "KÍCH HOẠT SCRIPT"
+SubmitBtn.TextColor3 = Color3.fromHex("#FFFFFF")
+SubmitBtn.Font = Enum.Font.GothamBold
+SubmitBtn.TextSize = 11
+SubmitBtn.Parent = ButtonGroup
+
+local SubmitCorner = Instance.new("UICorner", SubmitBtn)
+SubmitCorner.CornerRadius = UDim.new(0, 8)
+
+-- Footer Note
+local Footer = Instance.new("Frame")
+Footer.Size = UDim2.new(1, -30, 0, 46)
+Footer.Position = UDim2.new(0, 15, 0, 172)
+Footer.BackgroundColor3 = Color3.fromHex("#0B0F19")
+Footer.Parent = MainFrame
+
+local FooterCorner = Instance.new("UICorner", Footer)
+FooterCorner.CornerRadius = UDim.new(0, 8)
+
+local FooterText = Instance.new("TextLabel")
+FooterText.Size = UDim2.new(1, -16, 1, 0)
+FooterText.Position = UDim2.new(0, 8, 0, 0)
+FooterText.BackgroundTransparency = 1
+FooterText.Text = "🚀 Chào mừng bạn đến với GAU MODS! Vui lòng nhập key hợp lệ để tiếp tục."
+FooterText.TextColor3 = Color3.fromHex("#9CA3AF")
+FooterText.Font = Enum.Font.GothamMedium
+FooterText.TextSize = 10
+FooterText.TextWrapped = true
+FooterText.TextYAlignment = Enum.TextYAlignment.Center
+FooterText.Parent = Footer
+
+-- Animation Mở Bảng Menu (Scale Pop-In)
+TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 410, 0, 235)
+}):Play()
+
+-- Hiệu ứng Hover Nút Bấm
+local function addHover(btn, normalBg, hoverBg)
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = hoverBg}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = normalBg}):Play()
+    end)
+end
+
+addHover(GetKeyBtn, Color3.fromHex("#0A192F"), Color3.fromHex("#102A45"))
+addHover(SubmitBtn, Color3.fromHex("#00A2FF"), Color3.fromHex("#0088CC"))
+
+-- Logic Nút Lấy Key
+GetKeyBtn.MouseButton1Click:Connect(function()
+    setclipboard(linkGet)
+    showNotify("Đã sao chép link! Hãy dán vào trình duyệt để lấy key")
+    GetKeyBtn.Text = "✓ ĐÃ SAO CHÉP"
+    task.wait(2)
+    GetKeyBtn.Text = "🔑 LẤY KEY"
+end)
+
+-- Logic Nút Xác Nhận Key (Hỗ trợ 2 mật khẩu độc lập)
+SubmitBtn.MouseButton1Click:Connect(function()
+    local input = KeyInput.Text
+    
+    if input == key1 or input == key2 then
+        SubmitBtn.Text = "✓ THÀNH CÔNG!"
+        SubmitBtn.BackgroundColor3 = Color3.fromHex("#10B981")
+        
+        task.wait(0.6)
+        
+        -- Animation Thu Nhỏ & Tắt Menu
+        local tweenClose = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 0, 0, 0)
+        })
+        tweenClose:Play()
+        tweenClose.Completed:Connect(function()
+            ScreenGui:Destroy()
+            
+            -- Chạy đồng thời 2 đường link script theo yêu cầu
+            task.spawn(function()
+                local success1, err1 = pcall(function()
+                    loadstring(game:HttpGet(scriptUrl1))()
+                end)
+                if not success1 then
+                    warn("[GAU MODS] Lỗi khởi chạy script 1: " .. tostring(err1))
+                end
+            end)
+
+            task.spawn(function()
+                local success2, err2 = pcall(function()
+                    loadstring(game:HttpGet(scriptUrl2))()
+                end)
+                if not success2 then
+                    warn("[GAU MODS] Lỗi khởi chạy script 2: " .. tostring(err2))
+                end
+            end)
+        end)
+    else
+        SubmitBtn.Text = "✕ SAI KEY!"
+        SubmitBtn.BackgroundColor3 = Color3.fromHex("#EF4444")
+        
+        task.wait(1.5)
+        SubmitBtn.Text = "KÍCH HOẠT SCRIPT"
+        SubmitBtn.BackgroundColor3 = Color3.fromHex("#00A2FF")
+    end
+end)
