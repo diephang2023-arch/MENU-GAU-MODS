@@ -93,44 +93,50 @@ mainStroke.Color = Color3.fromRGB(0, 162, 255)
 mainStroke.Thickness = 1.8
 
 local topBar = Instance.new("Frame", mainFrame)
-topBar.Size = UDim2.new(1, 0, 0, 55)
+topBar.Size = UDim2.new(1, 0, 0, 45)
 topBar.BackgroundTransparency = 1
 
 local topIcon = Instance.new("ImageLabel", topBar)
-topIcon.Size = UDim2.new(0, 26, 0, 26)
-topIcon.Position = UDim2.new(0, 18, 0.5, -13)
+topIcon.Size = UDim2.new(0, 24, 0, 24)
+topIcon.Position = UDim2.new(0, 14, 0, 10)
 topIcon.BackgroundTransparency = 1
 topIcon.Image = "rbxassetid://6031094678"
 
 local titleLabel = Instance.new("TextLabel", topBar)
-titleLabel.Size = UDim2.new(0, 200, 1, 0)
-titleLabel.Position = UDim2.new(0, 54, 0, 0)
+titleLabel.Size = UDim2.new(0, 200, 0, 24)
+titleLabel.Position = UDim2.new(0, 44, 0, 10)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.Text = "GAU MODS"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 18
+titleLabel.TextSize = 16
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+local horizontalLine = Instance.new("Frame", mainFrame)
+horizontalLine.Size = UDim2.new(1, 0, 0, 1)
+horizontalLine.Position = UDim2.new(0, 0, 0, 45)
+horizontalLine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+horizontalLine.BackgroundTransparency = 0.7
+
 local closeBtn = Instance.new("TextButton", topBar)
-closeBtn.Size = UDim2.new(0, 34, 0, 34)
-closeBtn.Position = UDim2.new(1, -44, 0.5, -17)
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -38, 0, 8)
 closeBtn.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.Text = "✕"
 closeBtn.TextColor3 = Color3.fromRGB(240, 80, 80)
-closeBtn.TextSize = 13
+closeBtn.TextSize = 12
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(closeBtn, Color3.fromRGB(18, 22, 32))
 
 local minimizeBtn = Instance.new("TextButton", topBar)
-minimizeBtn.Size = UDim2.new(0, 34, 0, 34)
-minimizeBtn.Position = UDim2.new(1, -86, 0.5, -17)
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -74, 0, 8)
 minimizeBtn.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
 minimizeBtn.Font = Enum.Font.GothamBold
 minimizeBtn.Text = "━"
 minimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-minimizeBtn.TextSize = 13
+minimizeBtn.TextSize = 12
 Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(minimizeBtn, Color3.fromRGB(18, 22, 32))
 --[[
@@ -138,20 +144,22 @@ playButtonEffect(minimizeBtn, Color3.fromRGB(18, 22, 32))
 ]]
 
 local sideMenuContainer = Instance.new("Frame", mainFrame)
-sideMenuContainer.Size = UDim2.new(0, 130, 1, -120)
-sideMenuContainer.Position = UDim2.new(0, 18, 0, 110)
+sideMenuContainer.Size = UDim2.new(0, 130, 1, -55)
+sideMenuContainer.Position = UDim2.new(0, 0, 0, 46)
 sideMenuContainer.BackgroundTransparency = 1
 
 local sideLayout = Instance.new("UIListLayout", sideMenuContainer)
 sideLayout.SortOrder = Enum.SortOrder.LayoutOrder
 sideLayout.Padding = UDim.new(0, 6)
+sideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local sideButtons = {}
 local sideCategories = {"⚡  Main", "🛡️  Extra", "📂  Tools", "⚙️  Settings"}
+local sidePageFrames = {}
 
 for i, catName in ipairs(sideCategories) do
     local sBtn = Instance.new("TextButton", sideMenuContainer)
-    sBtn.Size = UDim2.new(1, 0, 0, 32)
+    sBtn.Size = UDim2.new(1, -8, 0, 34)
     sBtn.BackgroundColor3 = (i == 1) and Color3.fromRGB(210, 220, 240) or Color3.fromRGB(14, 18, 26)
     sBtn.Font = Enum.Font.GothamBold
     sBtn.Text = catName
@@ -159,29 +167,30 @@ for i, catName in ipairs(sideCategories) do
     sBtn.TextSize, sBtn.TextXAlignment, sBtn.AutoButtonColor = 12, Enum.TextXAlignment.Left, false
     
     local pad = Instance.new("UIPadding", sBtn)
-    pad.PaddingLeft = UDim.new(0, 12)
+    pad.PaddingLeft = UDim.new(0, 10)
     Instance.new("UICorner", sBtn).CornerRadius = UDim.new(0, 8)
     
     sideButtons[i] = sBtn
+
+    local pageFrame = Instance.new("Frame", mainFrame)
+    pageFrame.Size = UDim2.new(1, -145, 1, -55)
+    pageFrame.Position = UDim2.new(0, 145, 0, 46)
+    pageFrame.BackgroundTransparency = 1
+    pageFrame.Visible = (i == 1)
+    sidePageFrames[i] = pageFrame
 end
 
-for i, btn in ipairs(sideButtons) do
-    btn.MouseButton1Click:Connect(function()
-        for j, b in ipairs(sideButtons) do
-            if j == i then
-                b.BackgroundColor3 = Color3.fromRGB(210, 220, 240)
-                b.TextColor3 = Color3.fromRGB(10, 12, 17)
-            else
-                b.BackgroundColor3 = Color3.fromRGB(14, 18, 26)
-                b.TextColor3 = Color3.fromRGB(200, 205, 220)
-            end
-        end
-    end)
-end
+local verticalLine = Instance.new("Frame", mainFrame)
+verticalLine.Size = UDim2.new(0, 1, 1, -45)
+verticalLine.Position = UDim2.new(0, 135, 0, 45)
+verticalLine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+verticalLine.BackgroundTransparency = 0.7
 
-local tabButtonsContainer = Instance.new("Frame", mainFrame)
-tabButtonsContainer.Size = UDim2.new(1, -165, 0, 42)
-tabButtonsContainer.Position = UDim2.new(0, 155, 0, 58)
+local mainTabPage = sidePageFrames[1]
+
+local tabButtonsContainer = Instance.new("Frame", mainTabPage)
+tabButtonsContainer.Size = UDim2.new(1, -15, 0, 38)
+tabButtonsContainer.Position = UDim2.new(0, 0, 0, 10)
 tabButtonsContainer.BackgroundTransparency = 1
 
 local uiLayoutTabs = Instance.new("UIListLayout", tabButtonsContainer)
@@ -192,9 +201,9 @@ uiLayoutTabs.Padding = UDim.new(0, 8)
 local tabs = {}
 local tabContentFrames = {}
 
-local contentContainer = Instance.new("Frame", mainFrame)
-contentContainer.Size = UDim2.new(1, -165, 1, -120)
-contentContainer.Position = UDim2.new(0, 155, 0, 110)
+local contentContainer = Instance.new("Frame", mainTabPage)
+contentContainer.Size = UDim2.new(1, -15, 1, -60)
+contentContainer.Position = UDim2.new(0, 0, 0, 52)
 contentContainer.BackgroundTransparency = 1
 
 local tabData = {
@@ -228,6 +237,34 @@ for i = 1, 3 do
     
     tabContentFrames[i] = tFrame
 end
+
+for i = 2, 4 do
+    local pFrame = sidePageFrames[i]
+    local lbl = Instance.new("TextLabel", pFrame)
+    lbl.Size = UDim2.new(1, -15, 1, -20)
+    lbl.Position = UDim2.new(0, 0, 0, 10)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.GothamBold
+    lbl.Text = "Trang " .. sideCategories[i] .. " đang phát triển..."
+    lbl.TextColor3 = Color3.fromRGB(150, 160, 185)
+    lbl.TextSize = 14
+end
+
+for i, btn in ipairs(sideButtons) do
+    btn.MouseButton1Click:Connect(function()
+        for j, b in ipairs(sideButtons) do
+            if j == i then
+                b.BackgroundColor3 = Color3.fromRGB(210, 220, 240)
+                b.TextColor3 = Color3.fromRGB(10, 12, 17)
+                sidePageFrames[j].Visible = true
+            else
+                b.BackgroundColor3 = Color3.fromRGB(14, 18, 26)
+                b.TextColor3 = Color3.fromRGB(200, 205, 220)
+                sidePageFrames[j].Visible = false
+            end
+        end
+    end)
+end
 --[[
     GAU MODS UI - PHẦN 4/6
 ]]
@@ -235,7 +272,7 @@ end
 local tab1 = tabContentFrames[1]
 
 local textBoxContainer = Instance.new("Frame", tab1)
-textBoxContainer.Size = UDim2.new(1, -15, 0, 150)
+textBoxContainer.Size = UDim2.new(1, 0, 0, 150)
 textBoxContainer.Position = UDim2.new(0, 0, 0, 0)
 textBoxContainer.BackgroundColor3 = Color3.fromRGB(12, 15, 22)
 textBoxContainer.ClipsDescendants = true
@@ -274,13 +311,13 @@ scriptTextBox:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 local buttonsGrid = Instance.new("Frame", tab1)
-buttonsGrid.Size = UDim2.new(1, -15, 0, 85)
-buttonsGrid.Position = UDim2.new(0, 0, 0, 165)
+buttonsGrid.Size = UDim2.new(1, 0, 0, 85)
+buttonsGrid.Position = UDim2.new(0, 0, 0, 160)
 buttonsGrid.BackgroundTransparency = 1
 
 local gridLayout = Instance.new("UIGridLayout", buttonsGrid)
-gridLayout.CellSize = UDim2.new(0.48, 0, 0, 38)
-gridLayout.CellPadding = UDim2.new(0.04, 0, 0, 10)
+gridLayout.CellSize = UDim2.new(0.48, 0, 0, 36)
+gridLayout.CellPadding = UDim2.new(0.04, 0, 0, 8)
 
 local function createButton(name, text)
     local btn = Instance.new("TextButton", buttonsGrid)
@@ -324,6 +361,7 @@ local linkViewerUI = Instance.new("Frame", mainFrame)
 linkViewerUI.Size = UDim2.new(1, 0, 1, 0)
 linkViewerUI.BackgroundColor3 = Color3.fromRGB(8, 10, 15)
 linkViewerUI.Visible = false
+linkViewerUI.ZIndex = 5
 
 local backBtn = Instance.new("TextButton", linkViewerUI)
 backBtn.Size = UDim2.new(0, 35, 0, 35)
@@ -333,6 +371,7 @@ backBtn.Font = Enum.Font.GothamBold
 backBtn.Text = "←"
 backBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 backBtn.TextSize = 22
+backBtn.ZIndex = 6
 
 local copyLinkContentBtn = Instance.new("TextButton", linkViewerUI)
 copyLinkContentBtn.Size = UDim2.new(0, 75, 0, 32)
@@ -342,6 +381,7 @@ copyLinkContentBtn.Font = Enum.Font.GothamBold
 copyLinkContentBtn.Text = "Copy"
 copyLinkContentBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 copyLinkContentBtn.TextSize = 12
+copyLinkContentBtn.ZIndex = 6
 Instance.new("UICorner", copyLinkContentBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(copyLinkContentBtn, Color3.fromRGB(16, 20, 30))
 
@@ -352,6 +392,7 @@ largeTextBoxFrame.BackgroundColor3 = Color3.fromRGB(12, 15, 22)
 largeTextBoxFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 largeTextBoxFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 largeTextBoxFrame.ScrollBarThickness = 6
+largeTextBoxFrame.ZIndex = 6
 
 Instance.new("UICorner", largeTextBoxFrame).CornerRadius = UDim.new(0, 10)
 local ltbStroke = Instance.new("UIStroke", largeTextBoxFrame)
@@ -369,6 +410,7 @@ linkContentText.TextSize = 13
 linkContentText.TextWrapped = true
 linkContentText.TextXAlignment = Enum.TextXAlignment.Left
 linkContentText.TextYAlignment = Enum.TextYAlignment.Top
+linkContentText.ZIndex = 6
 
 openLinkBtn.MouseButton1Click:Connect(function()
     local link = scriptTextBox.Text
@@ -418,11 +460,13 @@ savePopupBg.Size = UDim2.new(1, 0, 1, 0)
 savePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 savePopupBg.BackgroundTransparency = 0.6
 savePopupBg.Visible = false
+savePopupBg.ZIndex = 15
 
 local savePopupBox = Instance.new("Frame", savePopupBg)
 savePopupBox.Size = UDim2.new(0, 330, 0, 165)
 savePopupBox.Position = UDim2.new(0.5, -165, 0.5, -82)
 savePopupBox.BackgroundColor3 = Color3.fromRGB(12, 15, 22)
+savePopupBox.ZIndex = 16
 Instance.new("UICorner", savePopupBox).CornerRadius = UDim.new(0, 14)
 local spStroke = Instance.new("UIStroke", savePopupBox)
 spStroke.Color = Color3.fromRGB(0, 162, 255)
@@ -435,6 +479,7 @@ spTitle.Font = Enum.Font.GothamBold
 spTitle.Text = "Nhập tên để lưu (Tối đa 15 ký tự)"
 spTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 spTitle.TextSize = 13
+spTitle.ZIndex = 16
 
 local nameTextBox = Instance.new("TextBox", savePopupBox)
 nameTextBox.Size = UDim2.new(0.85, 0, 0, 38)
@@ -445,6 +490,7 @@ nameTextBox.PlaceholderText = "Tên script..."
 nameTextBox.Text = ""
 nameTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 nameTextBox.TextSize = 13
+nameTextBox.ZIndex = 16
 Instance.new("UICorner", nameTextBox).CornerRadius = UDim.new(0, 8)
 
 nameTextBox:GetPropertyChangedSignal("Text"):Connect(function()
@@ -461,6 +507,7 @@ confirmSaveBtn.Font = Enum.Font.GothamBold
 confirmSaveBtn.Text = "Lưu"
 confirmSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 confirmSaveBtn.TextSize = 13
+confirmSaveBtn.ZIndex = 16
 Instance.new("UICorner", confirmSaveBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(confirmSaveBtn, Color3.fromRGB(0, 162, 255))
 
@@ -472,6 +519,7 @@ cancelSaveBtn.Font = Enum.Font.GothamBold
 cancelSaveBtn.Text = "Hủy"
 cancelSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 cancelSaveBtn.TextSize = 13
+cancelSaveBtn.ZIndex = 16
 Instance.new("UICorner", cancelSaveBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(cancelSaveBtn, Color3.fromRGB(24, 30, 42))
 
@@ -563,7 +611,7 @@ confirmDeletePopup.Size = UDim2.new(0, 280, 0, 130)
 confirmDeletePopup.Position = UDim2.new(0.5, -140, 0.5, -65)
 confirmDeletePopup.BackgroundColor3 = Color3.fromRGB(12, 15, 22)
 confirmDeletePopup.Visible = false
-confirmDeletePopup.ZIndex = 10
+confirmDeletePopup.ZIndex = 20
 Instance.new("UICorner", confirmDeletePopup).CornerRadius = UDim.new(0, 12)
 local cdpStroke = Instance.new("UIStroke", confirmDeletePopup)
 cdpStroke.Color = Color3.fromRGB(240, 80, 80)
@@ -576,7 +624,7 @@ cdpText.Font = Enum.Font.GothamBold
 cdpText.Text = "Bạn có muốn xóa không?"
 cdpText.TextColor3 = Color3.fromRGB(255, 255, 255)
 cdpText.TextSize = 14
-cdpText.ZIndex = 10
+cdpText.ZIndex = 20
 
 local yesDelBtn = Instance.new("TextButton", confirmDeletePopup)
 yesDelBtn.Size = UDim2.new(0.4, 0, 0, 35)
@@ -586,7 +634,7 @@ yesDelBtn.Font = Enum.Font.GothamBold
 yesDelBtn.Text = "Có"
 yesDelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 yesDelBtn.TextSize = 13
-yesDelBtn.ZIndex = 10
+yesDelBtn.ZIndex = 20
 Instance.new("UICorner", yesDelBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(yesDelBtn, Color3.fromRGB(240, 80, 80))
 
@@ -598,7 +646,7 @@ noDelBtn.Font = Enum.Font.GothamBold
 noDelBtn.Text = "Không"
 noDelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 noDelBtn.TextSize = 13
-noDelBtn.ZIndex = 10
+noDelBtn.ZIndex = 20
 Instance.new("UICorner", noDelBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(noDelBtn, Color3.fromRGB(24, 30, 42))
 
@@ -610,7 +658,7 @@ local function refreshSavedList()
     end
     for index, item in ipairs(savedScripts) do
         local card = Instance.new("Frame", tab2)
-        card.Size = UDim2.new(1, -15, 0, 52)
+        card.Size = UDim2.new(1, 0, 0, 52)
         card.BackgroundColor3 = Color3.fromRGB(12, 15, 22)
         Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
         
@@ -708,7 +756,7 @@ refreshSavedList()
 local tab3 = tabContentFrames[3]
 
 local chatDisplayFrame = Instance.new("ScrollingFrame", tab3)
-chatDisplayFrame.Size = UDim2.new(1, -15, 1, -50)
+chatDisplayFrame.Size = UDim2.new(1, 0, 1, -50)
 chatDisplayFrame.Position = UDim2.new(0, 0, 0, 0)
 chatDisplayFrame.BackgroundTransparency = 1
 chatDisplayFrame.BorderSizePixel = 0
@@ -720,8 +768,52 @@ local chatListLayout = Instance.new("UIListLayout", chatDisplayFrame)
 chatListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 chatListLayout.Padding = UDim.new(0, 8)
 
+local onlineCounterLabel = Instance.new("TextLabel", tab3)
+onlineCounterLabel.Size = UDim2.new(0, 180, 0, 24)
+onlineCounterLabel.AnchorPoint = Vector2.new(1, 0)
+onlineCounterLabel.Position = UDim2.new(1, 0, 0, 2)
+onlineCounterLabel.BackgroundTransparency = 1
+onlineCounterLabel.Font = Enum.Font.GothamBold
+onlineCounterLabel.TextSize = 12
+onlineCounterLabel.TextColor3 = Color3.fromRGB(150, 160, 185)
+onlineCounterLabel.TextXAlignment = Enum.TextXAlignment.Right
+onlineCounterLabel.ZIndex = 5
+
+local function updateOnlineCount()
+    local count = 0
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p.PlayerGui:FindFirstChild("GauModsUI") then
+            count = count + 1
+        end
+    end
+    if count == 0 then count = 1 end
+    onlineCounterLabel.Text = count .. " người đang hoạt động"
+end
+updateOnlineCount()
+
+Players.PlayerRemoving:Connect(updateOnlineCount)
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterAdded:Connect(function()
+        task.wait(1)
+        updateOnlineCount()
+    end)
+end)
+
+chatDisplayFrame:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+    local maxScroll = chatDisplayFrame.AbsoluteCanvasSize.Y - chatDisplayFrame.AbsoluteWindowSize.Y
+    if maxScroll > 0 then
+        if chatDisplayFrame.CanvasPosition.Y < (maxScroll - 30) then
+            onlineCounterLabel.Visible = false
+        else
+            onlineCounterLabel.Visible = true
+        end
+    else
+        onlineCounterLabel.Visible = true
+    end
+end)
+
 local chatInputBar = Instance.new("Frame", tab3)
-chatInputBar.Size = UDim2.new(1, -15, 0, 40)
+chatInputBar.Size = UDim2.new(1, 0, 0, 40)
 chatInputBar.Position = UDim2.new(0, 0, 1, -40)
 chatInputBar.BackgroundTransparency = 1
 
@@ -792,7 +884,6 @@ local function sendGlobalMessage()
     local text = chatTextBox.Text:gsub("^%s*(.-)%s*$", "%1")
     if text ~= "" then
         local nameToSend = (myChatName ~= "" and myChatName) or player.Name
-        appendChatMessage(nameToSend, text)
         chatTextBox.Text = ""
         
         pcall(function()
@@ -832,6 +923,7 @@ confirmSmallUI.Size = UDim2.new(0, 280, 0, 130)
 confirmSmallUI.Position = UDim2.new(0.5, -140, 0.5, -65)
 confirmSmallUI.BackgroundColor3 = Color3.fromRGB(12, 15, 22)
 confirmSmallUI.Visible = false
+confirmSmallUI.ZIndex = 30
 Instance.new("UICorner", confirmSmallUI).CornerRadius = UDim.new(0, 12)
 local csStroke = Instance.new("UIStroke", confirmSmallUI)
 csStroke.Color = Color3.fromRGB(0, 162, 255)
@@ -844,6 +936,7 @@ csText.Font = Enum.Font.GothamBold
 csText.Text = "Bạn có muốn tắt menu không?"
 csText.TextColor3 = Color3.fromRGB(255, 255, 255)
 csText.TextSize = 14
+csText.ZIndex = 30
 
 local yesBtn = Instance.new("TextButton", confirmSmallUI)
 yesBtn.Size = UDim2.new(0.4, 0, 0, 35)
@@ -853,6 +946,7 @@ yesBtn.Font = Enum.Font.GothamBold
 yesBtn.Text = "Có"
 yesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 yesBtn.TextSize = 13
+yesBtn.ZIndex = 30
 Instance.new("UICorner", yesBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(yesBtn, Color3.fromRGB(0, 162, 255))
 
@@ -864,6 +958,7 @@ noBtn.Font = Enum.Font.GothamBold
 noBtn.Text = "Không"
 noBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 noBtn.TextSize = 13
+noBtn.ZIndex = 30
 Instance.new("UICorner", noBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(noBtn, Color3.fromRGB(24, 30, 42))
 
@@ -960,4 +1055,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI đã tải thành công toàn bộ 6 phần!")
+print("GAU MODS UI - Đã hoàn tất full toàn bộ tính năng tuyệt vời! 🚀")
