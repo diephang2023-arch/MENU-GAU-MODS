@@ -82,7 +82,7 @@ openIcon.Size = UDim2.new(0, 28, 0, 28)
 openIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 openIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 openIcon.BackgroundTransparency = 1
-openIcon.Image = "rbxassetid://6031094678"
+openIcon.Image = "rbxassetid://107259392886808"
 
 playButtonEffect(openButton, Color3.fromRGB(12, 14, 20))
 
@@ -110,7 +110,7 @@ local topIcon = Instance.new("ImageLabel", topBar)
 topIcon.Size = UDim2.new(0, 26, 0, 26)
 topIcon.Position = UDim2.new(0, 18, 0.5, -13)
 topIcon.BackgroundTransparency = 1
-topIcon.Image = "rbxassetid://6031094678"
+topIcon.Image = "rbxassetid://107259392886808"
 
 local titleLabel = Instance.new("TextLabel", topBar)
 titleLabel.Size = UDim2.new(0, 200, 1, 0)
