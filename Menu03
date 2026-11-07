@@ -1,6 +1,17 @@
 --[[
-    GAU MODS UI - PHẦN 1 (KHỞI TẠO, 4 TAB, TRANG CHỦ & LƯU SCRIPT)
+    GAU MODS UI - PHẦN 1 (AUTOEXEC, KHỞI TẠO, 4 TAB, TRANG CHỦ & ĐÃ LƯU)
 ]]
+
+-- TỰ ĐỘNG TẠO FILE AUTO-EXECUTE TRONG THƯ MỤC AUTOEXEC CỦA DELTA
+pcall(function()
+    if writefile and makefolder then
+        if not isfolder("autoexec") then
+            makefolder("autoexec")
+        end
+        local autoCode = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/diephang2023-arch/MENU-GAU-MODS/refs/heads/main/Menu03"))()'
+        writefile("autoexec/GauMods_Auto.lua", autoCode)
+    end
+end)
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -507,7 +518,7 @@ saveChatNameBtn.MouseButton1Click:Connect(function()
     end
 end)
 --[[
-    GAU MODS UI - PHẦN 2 (TAB ĐÃ LƯU, SCRIPT, CHAT & KÉO THẢ)
+    GAU MODS UI - PHẦN 2 (TAB SCRIPT, CHAT, KÉO THẢ & TỰ ĐỘNG CUỘN)
 ]]
 
 local tab2 = tabContentFrames[2]
@@ -1019,4 +1030,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI đã chia thành 2 phần thành công!")
+print("GAU MODS UI đã sẵn sàng và thiết lập Auto-Execute thành công!")
