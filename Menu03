@@ -1,5 +1,5 @@
 --[[
-    GAU MODS UI - PHẦN 1/5 (KHỞI TẠO & TRANG CHỦ)
+    GAU MODS UI - PHẦN 1/5 (KHỞI TẠO, TRANG CHỦ & TRANG ADMIN ẨN)
 ]]
 
 pcall(function()
@@ -157,6 +157,72 @@ titleLabel.Text = "GAU MODS"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 16
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- THIẾT LẬP KÍCH HOẠT ADMIN BẰNG CÁCH BẤM 5 LẦN VÀO ẢNH TOPICON
+local adminClickCount = 0
+local lastClickTick = 0
+
+local adminPageFrame = Instance.new("Frame", mainFrame)
+adminPageFrame.Size = UDim2.new(1, 0, 1, -50)
+adminPageFrame.Position = UDim2.new(0, 0, 0, 50)
+adminPageFrame.BackgroundColor3 = Color3.fromRGB(11, 13, 19)
+adminPageFrame.Visible = false
+adminPageFrame.ZIndex = 30
+
+local adminTitle = Instance.new("TextLabel", adminPageFrame)
+adminTitle.Size = UDim2.new(1, 0, 0, 40)
+adminTitle.Position = UDim2.new(0, 0, 0, 10)
+adminTitle.BackgroundTransparency = 1
+adminTitle.Font = Enum.Font.GothamBold
+adminTitle.Text = "🛠️ TRANG QUẢN TRỊ ADMIN"
+adminTitle.TextColor3 = Color3.fromRGB(255, 90, 90)
+adminTitle.TextSize = 15
+adminTitle.ZIndex = 31
+
+local closeAdminBtn = Instance.new("TextButton", adminPageFrame)
+closeAdminBtn.Size = UDim2.new(0, 140, 0, 36)
+closeAdminBtn.Position = UDim2.new(0.5, -70, 1, -50)
+closeAdminBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
+closeAdminBtn.Font = Enum.Font.GothamBold
+closeAdminBtn.Text = "Quay lại Menu"
+closeAdminBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeAdminBtn.TextSize = 12
+closeAdminBtn.ZIndex = 31
+Instance.new("UICorner", closeAdminBtn).CornerRadius = UDim.new(0, 8)
+playButtonEffect(closeAdminBtn, Color3.fromRGB(25, 32, 45))
+
+closeAdminBtn.MouseButton1Click:Connect(function()
+    adminPageFrame.Visible = false
+end)
+
+local adminTriggerBtn = Instance.new("TextButton", topBar)
+adminTriggerBtn.Size = UDim2.new(0, 24, 0, 24)
+adminTriggerBtn.Position = UDim2.new(0, 16, 0.5, -12)
+adminTriggerBtn.BackgroundTransparency = 1
+adminTriggerBtn.Text = ""
+adminTriggerBtn.ZIndex = 15
+
+adminTriggerBtn.MouseButton1Click:Connect(function()
+    local currentTick = tick()
+    if currentTick - lastClickTick > 1.5 then
+        adminClickCount = 1
+    else
+        adminClickCount = adminClickCount + 1
+    end
+    lastClickTick = currentTick
+
+    if adminClickCount >= 5 then
+        adminClickCount = 0
+        adminPageFrame.Visible = not adminPageFrame.Visible
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {
+                Title = "Hệ thống Admin",
+                Text = adminPageFrame.Visible and "Đã kích hoạt trang Admin ẩn!" or "Đã đóng trang Admin!",
+                Duration = 2
+            })
+        end)
+    end
+end)
 
 local closeBtn = Instance.new("TextButton", topBar)
 closeBtn.Size = UDim2.new(0, 32, 0, 32)
@@ -515,7 +581,7 @@ cancelShareBtn.MouseButton1Click:Connect(function()
     mainFrame.Visible = true
 end)
 --[[
-    GAU MODS UI - PHẦN 3/5 (QUẢN LÝ LƯU TRỮ, TXT & TAB 2)
+    GAU MODS UI - PHẦN 3/5 (QUẢN LÝ LƯU TRỮ & TAB 2)
 ]]
 
 local savedScripts = {}
@@ -759,7 +825,6 @@ confirmSaveBtn.MouseButton1Click:Connect(function()
         refreshSavedList()
         savePopupBg.Visible = false
         
-        -- Tự động ghi file .txt vào thư mục workspace của Delta
         if writefile then
             pcall(function()
                 writefile(name .. ".txt", content)
@@ -982,7 +1047,7 @@ pcall(function()
     end
 end)
 --[[
-    GAU MODS UI - PHẦN 5/5 (TAB 4 SCRIPT CỘNG ĐỒNG, ĐIỀU KHIỂN & KÉO THẢ)
+    GAU MODS UI - PHẦN 5/5 (TAB 4 SCRIPT CỘNG ĐỒNG & ĐIỀU KHIỂN KÉO THẢ)
 ]]
 
 local tab4 = tabContentFrames[4]
@@ -1437,4 +1502,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI - Hoàn tất chia 5 phần và tích hợp lưu file .txt vào Workspace Delta thành công!")
+print("GAU MODS UI - Đã hoàn tất chia 5 phần và tích hợp thành công Trang Admin ẩn qua 5 click logo!")
