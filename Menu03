@@ -1,5 +1,5 @@
 --[[
-    GAU MODS UI - PHẦN 1/5 (KHỞI TẠO & GIAO DIỆN CHÍNH)
+    GAU MODS UI - PHẦN 1/5 (KHỞI TẠO & TRANG CHỦ)
 ]]
 
 pcall(function()
@@ -17,6 +17,7 @@ local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -39,6 +40,21 @@ local function playButtonEffect(btn, originalColor)
         task.delay(0.25, function()
             TweenService:Create(btn, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = originalColor}):Play()
         end)
+    end)
+end
+
+local function copyToClipboard(text)
+    if setclipboard then
+        pcall(function() setclipboard(text) end)
+    elseif syn and syn.write_clipboard then
+        pcall(function() syn.write_clipboard(text) end)
+    end
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = "Thành công",
+            Text = "Đã sao chép nội dung vào bộ nhớ tạm!",
+            Duration = 2
+        })
     end)
 end
 
@@ -89,7 +105,6 @@ local function saveSharedScriptsToDisk()
     end
 end
 
--- Nút mở menu nổi (Floating Open Button)
 local openButton = Instance.new("TextButton", screenGui)
 openButton.Name = "OpenButton"
 openButton.Size = UDim2.new(0, 56, 0, 56)
@@ -102,7 +117,6 @@ Instance.new("UICorner", openButton).CornerRadius = UDim.new(0, 16)
 local openStroke = Instance.new("UIStroke", openButton)
 openStroke.Color = Color3.fromRGB(0, 136, 255)
 openStroke.Thickness = 2
-local openShadow = Instance.new("UIAspectRatioConstraint", openButton) -- Định hình tỷ lệ
 
 local openIcon = Instance.new("ImageLabel", openButton)
 openIcon.Size = UDim2.new(0, 28, 0, 28)
@@ -112,7 +126,6 @@ openIcon.BackgroundTransparency = 1
 openIcon.Image = "rbxassetid://6031094678"
 playButtonEffect(openButton, Color3.fromRGB(15, 18, 25))
 
--- Menu chính (Main Frame)
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 550, 0, 400)
@@ -125,7 +138,6 @@ local mainStroke = Instance.new("UIStroke", mainFrame)
 mainStroke.Color = Color3.fromRGB(25, 35, 55)
 mainStroke.Thickness = 1.5
 
--- Thanh tiêu đề (Top Bar)
 local topBar = Instance.new("Frame", mainFrame)
 topBar.Size = UDim2.new(1, 0, 0, 50)
 topBar.BackgroundTransparency = 1
@@ -146,7 +158,6 @@ titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 16
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Nút Đóng (✕)
 local closeBtn = Instance.new("TextButton", topBar)
 closeBtn.Size = UDim2.new(0, 32, 0, 32)
 closeBtn.Position = UDim2.new(1, -44, 0.5, -16)
@@ -158,7 +169,6 @@ closeBtn.TextSize = 12
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(closeBtn, Color3.fromRGB(20, 25, 36))
 
--- Nút Thu nhỏ (━)
 local minimizeBtn = Instance.new("TextButton", topBar)
 minimizeBtn.Size = UDim2.new(0, 32, 0, 32)
 minimizeBtn.Position = UDim2.new(1, -84, 0.5, -16)
@@ -170,7 +180,6 @@ minimizeBtn.TextSize = 12
 Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(minimizeBtn, Color3.fromRGB(20, 25, 36))
 
--- Thanh chuyển Tab (Tabs Header)
 local tabButtonsContainer = Instance.new("Frame", mainFrame)
 tabButtonsContainer.Size = UDim2.new(1, -32, 0, 40)
 tabButtonsContainer.Position = UDim2.new(0, 16, 0, 52)
@@ -224,7 +233,6 @@ end
 
 local tab1 = tabContentFrames[1]
 
--- Khung nhập Script (TextBox Container)
 local textBoxContainer = Instance.new("Frame", tab1)
 textBoxContainer.Size = UDim2.new(1, 0, 0, 160)
 textBoxContainer.Position = UDim2.new(0, 0, 0, 0)
@@ -263,7 +271,6 @@ scriptTextBox:GetPropertyChangedSignal("Text"):Connect(function()
     placeholderLabel.Visible = (scriptTextBox.Text == "")
 end)
 
--- Lưới nút chức năng (Buttons Grid)
 local buttonsGrid = Instance.new("Frame", tab1)
 buttonsGrid.Size = UDim2.new(1, 0, 0, 85)
 buttonsGrid.Position = UDim2.new(0, 0, 0, 175)
@@ -363,7 +370,6 @@ end)
 
 backBtn.MouseButton1Click:Connect(function() linkViewerUI.Visible = false end)
 
--- Popup Chia Sẻ (Đảm bảo ẩn menu chính khi nhập)
 local sharePopupBg = Instance.new("Frame", screenGui)
 sharePopupBg.Size = UDim2.new(1, 0, 1, 0)
 sharePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -509,7 +515,7 @@ cancelShareBtn.MouseButton1Click:Connect(function()
     mainFrame.Visible = true
 end)
 --[[
-    GAU MODS UI - PHẦN 3/5 (QUẢN LÝ LƯU TRỮ & TAB 2)
+    GAU MODS UI - PHẦN 3/5 (QUẢN LÝ LƯU TRỮ, TXT & TAB 2)
 ]]
 
 local savedScripts = {}
@@ -707,6 +713,8 @@ local function refreshSavedList()
         viewItemBtn.MouseButton1Click:Connect(function()
             linkContentText.Text = item.content
             linkViewerUI.Visible = true
+            if rawget(_G, "saveFromViewerBtn") then _G.saveFromViewerBtn.Visible = false end
+            if rawget(_G, "copyFromViewerBtn") then _G.copyFromViewerBtn.Visible = true end
         end)
         
         local delItemBtn = Instance.new("TextButton", card)
@@ -745,116 +753,38 @@ end)
 confirmSaveBtn.MouseButton1Click:Connect(function()
     local name = nameTextBox.Text
     if name ~= "" then
-        table.insert(savedScripts, { name = name, content = scriptTextBox.Text })
+        local content = scriptTextBox.Text
+        table.insert(savedScripts, { name = name, content = content })
         saveToDisk()
         refreshSavedList()
         savePopupBg.Visible = false
+        
+        -- Tự động ghi file .txt vào thư mục workspace của Delta
+        if writefile then
+            pcall(function()
+                writefile(name .. ".txt", content)
+            end)
+        end
     end
 end)
 
 refreshSavedList()
 
-local saveFromViewerBtn = Instance.new("TextButton", linkViewerUI)
-saveFromViewerBtn.Size = UDim2.new(0, 75, 0, 32)
-saveFromViewerBtn.Position = UDim2.new(1, -85, 0, 10)
-saveFromViewerBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-saveFromViewerBtn.Font = Enum.Font.GothamBold
-saveFromViewerBtn.Text = "Lưu"
-saveFromViewerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-saveFromViewerBtn.TextSize = 12
-Instance.new("UICorner", saveFromViewerBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(saveFromViewerBtn, Color3.fromRGB(0, 122, 255))
+local copyFromViewerBtn = Instance.new("TextButton", linkViewerUI)
+copyFromViewerBtn.Size = UDim2.new(0, 85, 0, 32)
+copyFromViewerBtn.Position = UDim2.new(1, -95, 0, 10)
+copyFromViewerBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+copyFromViewerBtn.Font = Enum.Font.GothamBold
+copyFromViewerBtn.Text = "Sao chép"
+copyFromViewerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+copyFromViewerBtn.TextSize = 12
+copyFromViewerBtn.Visible = false
+Instance.new("UICorner", copyFromViewerBtn).CornerRadius = UDim.new(0, 8)
+playButtonEffect(copyFromViewerBtn, Color3.fromRGB(0, 122, 255))
+_G.copyFromViewerBtn = copyFromViewerBtn
 
-local viewerSavePopupBg = Instance.new("Frame", linkViewerUI)
-viewerSavePopupBg.Size = UDim2.new(1, 0, 1, 0)
-viewerSavePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-viewerSavePopupBg.BackgroundTransparency = 0.65
-viewerSavePopupBg.ZIndex = 50
-viewerSavePopupBg.Visible = false
-
-local viewerSavePopupBox = Instance.new("Frame", viewerSavePopupBg)
-viewerSavePopupBox.Size = UDim2.new(0, 340, 0, 175)
-viewerSavePopupBox.Position = UDim2.new(0.5, -170, 0.5, -87)
-viewerSavePopupBox.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-viewerSavePopupBox.ZIndex = 51
-Instance.new("UICorner", viewerSavePopupBox).CornerRadius = UDim.new(0, 14)
-local vspStroke = Instance.new("UIStroke", viewerSavePopupBox)
-vspStroke.Color = Color3.fromRGB(0, 122, 255)
-
-local vspTitle = Instance.new("TextLabel", viewerSavePopupBox)
-vspTitle.Size = UDim2.new(1, 0, 0, 40)
-vspTitle.Position = UDim2.new(0, 0, 0, 10)
-vspTitle.BackgroundTransparency = 1
-vspTitle.Font = Enum.Font.GothamBold
-vspTitle.Text = "Nhập tên script để lưu (Tối đa 12 ký tự)"
-vspTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-vspTitle.TextSize = 13
-vspTitle.ZIndex = 51
-
-local viewerNameInput = Instance.new("TextBox", viewerSavePopupBox)
-viewerNameInput.Size = UDim2.new(0.86, 0, 0, 40)
-viewerNameInput.Position = UDim2.new(0.07, 0, 0, 55)
-viewerNameInput.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-viewerNameInput.Font = Enum.Font.Gotham
-viewerNameInput.PlaceholderText = "Tên script..."
-viewerNameInput.Text = ""
-viewerNameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-viewerNameInput.TextSize = 13
-viewerNameInput.ZIndex = 51
-Instance.new("UICorner", viewerNameInput).CornerRadius = UDim.new(0, 10)
-
-viewerNameInput:GetPropertyChangedSignal("Text"):Connect(function()
-    local currentText = viewerNameInput.Text
-    local success, length = pcall(function() return utf8.len(currentText) end)
-    if success and length and length > 12 then
-        local utf8Pos = 1
-        for i = 1, 12 do
-            local _, bytes = utf8.offset(currentText, i)
-            if bytes then utf8Pos = bytes end
-        end
-        viewerNameInput.Text = string.sub(currentText, 1, utf8Pos)
-    end
-end)
-
-local viewerConfirmBtn = Instance.new("TextButton", viewerSavePopupBox)
-viewerConfirmBtn.Size = UDim2.new(0.42, 0, 0, 38)
-viewerConfirmBtn.Position = UDim2.new(0.07, 0, 0, 115)
-viewerConfirmBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-viewerConfirmBtn.Font = Enum.Font.GothamBold
-viewerConfirmBtn.Text = "Lưu"
-viewerConfirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-viewerConfirmBtn.TextSize = 13
-viewerConfirmBtn.ZIndex = 51
-Instance.new("UICorner", viewerConfirmBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(viewerConfirmBtn, Color3.fromRGB(0, 122, 255))
-
-local viewerCancelBtn = Instance.new("TextButton", viewerSavePopupBox)
-viewerCancelBtn.Size = UDim2.new(0.42, 0, 0, 38)
-viewerCancelBtn.Position = UDim2.new(0.51, 0, 0, 115)
-viewerCancelBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-viewerCancelBtn.Font = Enum.Font.GothamBold
-viewerCancelBtn.Text = "Hủy"
-viewerCancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-viewerCancelBtn.TextSize = 13
-viewerCancelBtn.ZIndex = 51
-Instance.new("UICorner", viewerCancelBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(viewerCancelBtn, Color3.fromRGB(25, 32, 45))
-
-saveFromViewerBtn.MouseButton1Click:Connect(function()
-    viewerNameInput.Text = ""
-    viewerSavePopupBg.Visible = true
-end)
-
-viewerCancelBtn.MouseButton1Click:Connect(function() viewerSavePopupBg.Visible = false end)
-
-viewerConfirmBtn.MouseButton1Click:Connect(function()
-    local name = viewerNameInput.Text
-    if name ~= "" then
-        table.insert(savedScripts, { name = name, content = linkContentText.Text })
-        saveToDisk()
-        refreshSavedList()
-        viewerSavePopupBg.Visible = false
-    end
+copyFromViewerBtn.MouseButton1Click:Connect(function()
+    copyToClipboard(linkContentText.Text)
 end)
 --[[
     GAU MODS UI - PHẦN 4/5 (TAB CHAT & HỆ THỐNG ĐẶT TÊN)
@@ -1152,6 +1082,9 @@ local function renderSharedScripts(filterText)
             viewBtn.MouseButton1Click:Connect(function()
                 linkContentText.Text = data.content
                 linkViewerUI.Visible = true
+                if rawget(_G, "saveFromViewerBtn") then _G.saveFromViewerBtn.Visible = true end
+                if rawget(_G, "copyFromViewerTab4") then _G.copyFromViewerTab4.Visible = true end
+                if rawget(_G, "copyFromViewerBtn") then _G.copyFromViewerBtn.Visible = false end
             end)
             
             local execItemBtn = Instance.new("TextButton", card)
@@ -1223,6 +1156,133 @@ pcall(function()
     end
 end)
 
+local saveFromViewerBtn = Instance.new("TextButton", linkViewerUI)
+saveFromViewerBtn.Size = UDim2.new(0, 65, 0, 32)
+saveFromViewerBtn.Position = UDim2.new(1, -75, 0, 10)
+saveFromViewerBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+saveFromViewerBtn.Font = Enum.Font.GothamBold
+saveFromViewerBtn.Text = "Lưu"
+saveFromViewerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+saveFromViewerBtn.TextSize = 12
+Instance.new("UICorner", saveFromViewerBtn).CornerRadius = UDim.new(0, 8)
+playButtonEffect(saveFromViewerBtn, Color3.fromRGB(0, 122, 255))
+_G.saveFromViewerBtn = saveFromViewerBtn
+
+local copyFromViewerTab4 = Instance.new("TextButton", linkViewerUI)
+copyFromViewerTab4.Size = UDim2.new(0, 80, 0, 32)
+copyFromViewerTab4.Position = UDim2.new(1, -162, 0, 10)
+copyFromViewerTab4.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
+copyFromViewerTab4.Font = Enum.Font.GothamBold
+copyFromViewerTab4.Text = "Sao chép"
+copyFromViewerTab4.TextColor3 = Color3.fromRGB(255, 255, 255)
+copyFromViewerTab4.TextSize = 12
+Instance.new("UICorner", copyFromViewerTab4).CornerRadius = UDim.new(0, 8)
+playButtonEffect(copyFromViewerTab4, Color3.fromRGB(25, 32, 45))
+_G.copyFromViewerTab4 = copyFromViewerTab4
+
+copyFromViewerTab4.MouseButton1Click:Connect(function()
+    copyToClipboard(linkContentText.Text)
+end)
+
+local viewerSavePopupBg = Instance.new("Frame", linkViewerUI)
+viewerSavePopupBg.Size = UDim2.new(1, 0, 1, 0)
+viewerSavePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+viewerSavePopupBg.BackgroundTransparency = 0.65
+viewerSavePopupBg.ZIndex = 50
+viewerSavePopupBg.Visible = false
+
+local viewerSavePopupBox = Instance.new("Frame", viewerSavePopupBg)
+viewerSavePopupBox.Size = UDim2.new(0, 340, 0, 175)
+viewerSavePopupBox.Position = UDim2.new(0.5, -170, 0.5, -87)
+viewerSavePopupBox.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
+viewerSavePopupBox.ZIndex = 51
+Instance.new("UICorner", viewerSavePopupBox).CornerRadius = UDim.new(0, 14)
+local vspStroke = Instance.new("UIStroke", viewerSavePopupBox)
+vspStroke.Color = Color3.fromRGB(0, 122, 255)
+
+local vspTitle = Instance.new("TextLabel", viewerSavePopupBox)
+vspTitle.Size = UDim2.new(1, 0, 0, 40)
+vspTitle.Position = UDim2.new(0, 0, 0, 10)
+vspTitle.BackgroundTransparency = 1
+vspTitle.Font = Enum.Font.GothamBold
+vspTitle.Text = "Nhập tên script để lưu (Tối đa 12 ký tự)"
+vspTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+vspTitle.TextSize = 13
+vspTitle.ZIndex = 51
+
+local viewerNameInput = Instance.new("TextBox", viewerSavePopupBox)
+viewerNameInput.Size = UDim2.new(0.86, 0, 0, 40)
+viewerNameInput.Position = UDim2.new(0.07, 0, 0, 55)
+viewerNameInput.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
+viewerNameInput.Font = Enum.Font.Gotham
+viewerNameInput.PlaceholderText = "Tên script..."
+viewerNameInput.Text = ""
+viewerNameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+viewerNameInput.TextSize = 13
+viewerNameInput.ZIndex = 51
+Instance.new("UICorner", viewerNameInput).CornerRadius = UDim.new(0, 10)
+
+viewerNameInput:GetPropertyChangedSignal("Text"):Connect(function()
+    local currentText = viewerNameInput.Text
+    local success, length = pcall(function() return utf8.len(currentText) end)
+    if success and length and length > 12 then
+        local utf8Pos = 1
+        for i = 1, 12 do
+            local _, bytes = utf8.offset(currentText, i)
+            if bytes then utf8Pos = bytes end
+        end
+        viewerNameInput.Text = string.sub(currentText, 1, utf8Pos)
+    end
+end)
+
+local viewerConfirmBtn = Instance.new("TextButton", viewerSavePopupBox)
+viewerConfirmBtn.Size = UDim2.new(0.42, 0, 0, 38)
+viewerConfirmBtn.Position = UDim2.new(0.07, 0, 0, 115)
+viewerConfirmBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+viewerConfirmBtn.Font = Enum.Font.GothamBold
+viewerConfirmBtn.Text = "Lưu"
+viewerConfirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+viewerConfirmBtn.TextSize = 13
+viewerConfirmBtn.ZIndex = 51
+Instance.new("UICorner", viewerConfirmBtn).CornerRadius = UDim.new(0, 10)
+playButtonEffect(viewerConfirmBtn, Color3.fromRGB(0, 122, 255))
+
+local viewerCancelBtn = Instance.new("TextButton", viewerSavePopupBox)
+viewerCancelBtn.Size = UDim2.new(0.42, 0, 0, 38)
+viewerCancelBtn.Position = UDim2.new(0.51, 0, 0, 115)
+viewerCancelBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
+viewerCancelBtn.Font = Enum.Font.GothamBold
+viewerCancelBtn.Text = "Hủy"
+viewerCancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+viewerCancelBtn.TextSize = 13
+viewerCancelBtn.ZIndex = 51
+Instance.new("UICorner", viewerCancelBtn).CornerRadius = UDim.new(0, 10)
+playButtonEffect(viewerCancelBtn, Color3.fromRGB(25, 32, 45))
+
+saveFromViewerBtn.MouseButton1Click:Connect(function()
+    viewerNameInput.Text = ""
+    viewerSavePopupBg.Visible = true
+end)
+
+viewerCancelBtn.MouseButton1Click:Connect(function() viewerSavePopupBg.Visible = false end)
+
+viewerConfirmBtn.MouseButton1Click:Connect(function()
+    local name = viewerNameInput.Text
+    if name ~= "" then
+        local content = linkContentText.Text
+        table.insert(savedScripts, { name = name, content = content })
+        saveToDisk()
+        refreshSavedList()
+        viewerSavePopupBg.Visible = false
+        
+        if writefile then
+            pcall(function()
+                writefile(name .. ".txt", content)
+            end)
+        end
+    end
+end)
+
 for i, btn in ipairs(tabs) do
     btn.MouseButton1Click:Connect(function()
         for j, otherBtn in ipairs(tabs) do
@@ -1232,6 +1292,12 @@ for i, btn in ipairs(tabs) do
         linkViewerUI.Visible = false
         confirmDeletePopup.Visible = false
         
+        if i == 2 then
+            if rawget(_G, "saveFromViewerBtn") then _G.saveFromViewerBtn.Visible = false end
+            if rawget(_G, "copyFromViewerTab4") then _G.copyFromViewerTab4.Visible = false end
+            if rawget(_G, "copyFromViewerBtn") then _G.copyFromViewerBtn.Visible = true end
+        end
+        
         if i == 3 then
             task.defer(function()
                 chatDisplayFrame.CanvasPosition = Vector2.new(0, chatDisplayFrame.AbsoluteCanvasSize.Y)
@@ -1240,7 +1306,6 @@ for i, btn in ipairs(tabs) do
     end)
 end
 
--- Xác nhận tắt menu
 local confirmSmallUI = Instance.new("Frame", screenGui)
 confirmSmallUI.Size = UDim2.new(0, 280, 0, 130)
 confirmSmallUI.Position = UDim2.new(0.5, -140, 0.5, -65)
@@ -1304,7 +1369,6 @@ end)
 minimizeBtn.MouseButton1Click:Connect(function() mainFrame.Visible = false end)
 openButton.MouseButton1Click:Connect(function() mainFrame.Visible = not mainFrame.Visible end)
 
--- Kéo thả nút mở menu nổi
 local function makeDraggableButton(btn)
     local dragging, dragInput, dragStart, startPos
     btn.InputBegan:Connect(function(input)
@@ -1329,7 +1393,6 @@ local function makeDraggableButton(btn)
 end
 makeDraggableButton(openButton)
 
--- Kéo thả bảng menu chính (Giữ 0.5s để kéo)
 local function makeDraggableMain(frame, handle)
     local dragging, dragInput, dragStart, startPos
     local holdTimer = 0
@@ -1374,4 +1437,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI - Nâng cấp toàn diện giao diện đẹp nhất đã sẵn sàng!")
+print("GAU MODS UI - Hoàn tất chia 5 phần và tích hợp lưu file .txt vào Workspace Delta thành công!")
