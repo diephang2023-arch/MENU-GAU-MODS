@@ -1,5 +1,5 @@
 --[[
-    GAU MODS UI - PHẦN 1/5 (KHỞI TẠO, TAB 5 CÀI ĐẶT & TRANG CHỦ)
+    GAU MODS UI - PHẦN 1/6 (KHỞI TẠO & TOPBAR)
 ]]
 
 pcall(function()
@@ -18,6 +18,7 @@ local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -105,10 +106,55 @@ local function saveSharedScriptsToDisk()
     end
 end
 
+local overlayChatFrame = Instance.new("ScrollingFrame", screenGui)
+overlayChatFrame.Name = "OverlayAdminChat"
+overlayChatFrame.Size = UDim2.new(0, 320, 0, 180)
+overlayChatFrame.Position = UDim2.new(0, 20, 0, 80)
+overlayChatFrame.BackgroundColor3 = Color3.fromRGB(10, 12, 18)
+overlayChatFrame.BackgroundTransparency = 0.3
+overlayChatFrame.BorderSizePixel = 0
+overlayChatFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+overlayChatFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+overlayChatFrame.ScrollBarThickness = 3
+overlayChatFrame.ZIndex = 5
+
+Instance.new("UICorner", overlayChatFrame).CornerRadius = UDim.new(0, 10)
+local ocStroke = Instance.new("UIStroke", overlayChatFrame)
+ocStroke.Color = Color3.fromRGB(255, 90, 90)
+ocStroke.Thickness = 1.2
+
+local overlayLayout = Instance.new("UIListLayout", overlayChatFrame)
+overlayLayout.SortOrder = Enum.SortOrder.LayoutOrder
+overlayLayout.Padding = UDim.new(0, 4)
+
+local function appendOverlayMessage(senderName, messageText)
+    local msgContainer = Instance.new("Frame", overlayChatFrame)
+    msgContainer.Size = UDim2.new(1, 0, 0, 0)
+    msgContainer.AutomaticSize = Enum.AutomaticSize.Y
+    msgContainer.BackgroundTransparency = 1
+    
+    local msgLabel = Instance.new("TextLabel", msgContainer)
+    msgLabel.Size = UDim2.new(1, -12, 0, 0)
+    msgLabel.Position = UDim2.new(0, 6, 0, 0)
+    msgLabel.AutomaticSize = Enum.AutomaticSize.Y
+    msgLabel.BackgroundTransparency = 1
+    msgLabel.Font = Enum.Font.GothamBold
+    msgLabel.TextSize = 12
+    msgLabel.TextWrapped = true
+    msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+    msgLabel.RichText = true
+    msgLabel.Text = "<font color=\"#FF5555\">📢 <b>[" .. senderName .. "]:</b></font> " .. messageText
+    msgLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    
+    task.defer(function()
+        overlayChatFrame.CanvasPosition = Vector2.new(0, overlayChatFrame.AbsoluteCanvasSize.Y)
+    end)
+end
+
 local openButton = Instance.new("TextButton", screenGui)
 openButton.Name = "OpenButton"
 openButton.Size = UDim2.new(0, 56, 0, 56)
-openButton.Position = UDim2.new(0, 30, 0, 200)
+openButton.Position = UDim2.new(0, 30, 0, 280)
 openButton.BackgroundColor3 = Color3.fromRGB(15, 18, 25)
 openButton.Text = ""
 openButton.AutoButtonColor = false
@@ -157,6 +203,9 @@ titleLabel.Text = "GAU MODS"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 16
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+--[[
+    GAU MODS UI - PHẦN 2/6 (ADMIN & TRANG CHỦ)
+]]
 
 local adminClickCount = 0
 local lastClickTick = 0
@@ -169,29 +218,81 @@ adminPageFrame.Visible = false
 adminPageFrame.ZIndex = 30
 
 local adminTitle = Instance.new("TextLabel", adminPageFrame)
-adminTitle.Size = UDim2.new(1, 0, 0, 40)
-adminTitle.Position = UDim2.new(0, 0, 0, 10)
+adminTitle.Size = UDim2.new(1, 0, 0, 35)
+adminTitle.Position = UDim2.new(0, 0, 0, 5)
 adminTitle.BackgroundTransparency = 1
 adminTitle.Font = Enum.Font.GothamBold
-adminTitle.Text = "🛠️ TRANG QUẢN TRỊ ADMIN"
+adminTitle.Text = "🛠️ TRANG QUẢN TRỊ ADMIN - TAB 1: CHAT MÀN HÌNH"
 adminTitle.TextColor3 = Color3.fromRGB(255, 90, 90)
-adminTitle.TextSize = 15
+adminTitle.TextSize = 13
 adminTitle.ZIndex = 31
 
-local closeAdminBtn = Instance.new("TextButton", adminPageFrame)
-closeAdminBtn.Size = UDim2.new(0, 140, 0, 36)
-closeAdminBtn.Position = UDim2.new(0.5, -70, 1, -50)
-closeAdminBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-closeAdminBtn.Font = Enum.Font.GothamBold
-closeAdminBtn.Text = "Quay lại Menu"
-closeAdminBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeAdminBtn.TextSize = 12
-closeAdminBtn.ZIndex = 31
-Instance.new("UICorner", closeAdminBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(closeAdminBtn, Color3.fromRGB(25, 32, 45))
+local adminChatBoxContainer = Instance.new("Frame", adminPageFrame)
+adminChatBoxContainer.Size = UDim2.new(1, -30, 0, 140)
+adminChatBoxContainer.Position = UDim2.new(0, 15, 0, 45)
+adminChatBoxContainer.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
+adminChatBoxContainer.ZIndex = 31
+Instance.new("UICorner", adminChatBoxContainer).CornerRadius = UDim.new(0, 10)
+local acbStroke = Instance.new("UIStroke", adminChatBoxContainer)
+acbStroke.Color = Color3.fromRGB(255, 90, 90)
 
-closeAdminBtn.MouseButton1Click:Connect(function()
-    adminPageFrame.Visible = false
+local adminChatInput = Instance.new("TextBox", adminChatBoxContainer)
+adminChatInput.Size = UDim2.new(1, -20, 1, -50)
+adminChatInput.Position = UDim2.new(0, 10, 0, 10)
+adminChatInput.BackgroundTransparency = 1
+adminChatInput.Font = Enum.Font.Gotham
+adminChatInput.PlaceholderText = "Nhập văn bản để đăng lên màn hình tất cả người dùng..."
+adminChatInput.Text = ""
+adminChatInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+adminChatInput.TextSize = 13
+adminChatInput.MultiLine = true
+adminChatInput.ClearTextOnFocus = false
+adminChatInput.TextXAlignment = Enum.TextXAlignment.Left
+adminChatInput.TextYAlignment = Enum.TextYAlignment.Top
+adminChatInput.ZIndex = 32
+
+local postAdminChatBtn = Instance.new("TextButton", adminChatBoxContainer)
+postAdminChatBtn.Size = UDim2.new(0, 120, 0, 32)
+postAdminChatBtn.Position = UDim2.new(1, -130, 1, -40)
+postAdminChatBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+postAdminChatBtn.Font = Enum.Font.GothamBold
+postAdminChatBtn.Text = "Đăng Chat"
+postAdminChatBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+postAdminChatBtn.TextSize = 12
+postAdminChatBtn.ZIndex = 32
+Instance.new("UICorner", postAdminChatBtn).CornerRadius = UDim.new(0, 8)
+playButtonEffect(postAdminChatBtn, Color3.fromRGB(255, 80, 80))
+
+local adminChatRemoteName = "GauMods_AdminOverlayChatEvent"
+pcall(function()
+    if not playerGui:FindFirstChild(adminChatRemoteName) then
+        local ev = Instance.new("BindableEvent", playerGui)
+        ev.Name = adminChatRemoteName
+    end
+end)
+
+postAdminChatBtn.MouseButton1Click:Connect(function()
+    local text = adminChatInput.Text:gsub("^%s*(.-)%s*$", "%1")
+    if text ~= "" then
+        local senderName = (myChatName ~= "" and myChatName) or player.Name
+        adminChatInput.Text = ""
+        appendOverlayMessage(senderName, text)
+        pcall(function()
+            local ev = playerGui:FindFirstChild(adminChatRemoteName)
+            if ev then ev:Fire(senderName, text) end
+        end)
+    end
+end)
+
+pcall(function()
+    local ev = playerGui:WaitForChild(adminChatRemoteName, 2)
+    if ev then
+        ev.Event:Connect(function(sender, msg)
+            if sender ~= ((myChatName ~= "" and myChatName) or player.Name) then
+                appendOverlayMessage(sender, msg)
+            end
+        end)
+    end
 end)
 
 local adminTriggerBtn = Instance.new("TextButton", topBar)
@@ -216,7 +317,7 @@ adminTriggerBtn.MouseButton1Click:Connect(function()
         pcall(function()
             StarterGui:SetCore("SendNotification", {
                 Title = "Hệ thống Admin",
-                Text = adminPageFrame.Visible and "Đã kích hoạt trang Admin ẩn!" or "Đã đóng trang Admin!",
+                Text = adminPageFrame.Visible and "Đã kích hoạt trang Admin ẩn!" or "Đã ẩn trang Admin!",
                 Duration = 2
             })
         end)
@@ -244,6 +345,17 @@ minimizeBtn.TextColor3 = Color3.fromRGB(180, 190, 210)
 minimizeBtn.TextSize = 12
 Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(minimizeBtn, Color3.fromRGB(20, 25, 36))
+
+local musicPageBtn = Instance.new("TextButton", topBar)
+musicPageBtn.Size = UDim2.new(0, 32, 0, 32)
+musicPageBtn.Position = UDim2.new(1, -124, 0.5, -16)
+musicPageBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
+musicPageBtn.Font = Enum.Font.GothamBold
+musicPageBtn.Text = "🎧"
+musicPageBtn.TextColor3 = Color3.fromRGB(0, 170, 255)
+musicPageBtn.TextSize = 13
+Instance.new("UICorner", musicPageBtn).CornerRadius = UDim.new(0, 8)
+playButtonEffect(musicPageBtn, Color3.fromRGB(20, 25, 36))
 
 local tabButtonsContainer = Instance.new("Frame", mainFrame)
 tabButtonsContainer.Size = UDim2.new(1, -32, 0, 40)
@@ -382,7 +494,7 @@ executeBtn.MouseButton1Click:Connect(function()
     end
 end)
 --[[
-    GAU MODS UI - PHẦN 2/5 (XEM LINK & POPUP CHIA SẺ)
+    GAU MODS UI - PHẦN 3/6 (XEM LINK & TAB ĐÃ LƯU)
 ]]
 
 local linkViewerUI = Instance.new("Frame", mainFrame)
@@ -580,9 +692,6 @@ cancelShareBtn.MouseButton1Click:Connect(function()
     sharePopupBg.Visible = false
     mainFrame.Visible = true
 end)
---[[
-    GAU MODS UI - PHẦN 3/5 (QUẢN LÝ LƯU TRỮ & TAB 2)
-]]
 
 local savedScripts = {}
 local SAVE_FILE_NAME = "GauMods_SavedScripts.json"
@@ -748,7 +857,6 @@ local function refreshSavedList()
         Instance.new("UICorner", delItemBtn).CornerRadius = UDim.new(0, 8)
         playButtonEffect(delItemBtn, Color3.fromRGB(25, 32, 45))
         
-        -- Xóa trực tiếp không cần hỏi
         delItemBtn.MouseButton1Click:Connect(function()
             table.remove(savedScripts, index)
             saveToDisk()
@@ -765,11 +873,8 @@ confirmSaveBtn.MouseButton1Click:Connect(function()
         saveToDisk()
         refreshSavedList()
         savePopupBg.Visible = false
-        
         if writefile then
-            pcall(function()
-                writefile(name .. ".txt", content)
-            end)
+            pcall(function() writefile(name .. ".txt", content) end)
         end
     end
 end)
@@ -793,7 +898,7 @@ copyFromViewerBtn.MouseButton1Click:Connect(function()
     copyToClipboard(linkContentText.Text)
 end)
 --[[
-    GAU MODS UI - PHẦN 4/5 (TAB CHAT & TAB 5 CÀI ĐẶT GIAO DIỆN)
+    GAU MODS UI - PHẦN 4/6 (TAB CHAT & CÀI ĐẶT)
 ]]
 
 local namePopupBg = Instance.new("Frame", screenGui)
@@ -883,6 +988,12 @@ chatDisplayFrame.ScrollBarThickness = 3
 local chatListLayout = Instance.new("UIListLayout", chatDisplayFrame)
 chatListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 chatListLayout.Padding = UDim.new(0, 8)
+
+local function clearChatDisplay()
+    for _, child in ipairs(chatDisplayFrame:GetChildren()) do
+        if child:IsA("Frame") then child:Destroy() end
+    end
+end
 
 local function appendChatMessage(senderName, messageText)
     local msgContainer = Instance.new("Frame", chatDisplayFrame)
@@ -1070,6 +1181,9 @@ for i, opt in ipairs(colorOptions) do
         end
     end)
 end
+--[[
+    GAU MODS UI - PHẦN 5/6 (CÀI ĐẶT NÂNG CAO)
+]]
 
 createSettingLabel("🪟 Điều chỉnh độ mờ của Menu:")
 
@@ -1227,9 +1341,215 @@ for i, opt in ipairs(shapeOptions) do
         end
     end)
 end
+
+createSettingLabel("🔄 Tự động chạy Script khi chuyển Server:")
+
+local autoExecFrame = Instance.new("Frame", tab5)
+autoExecFrame.Size = UDim2.new(1, 0, 0, 40)
+autoExecFrame.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
+Instance.new("UICorner", autoExecFrame).CornerRadius = UDim.new(0, 10)
+local aeStroke = Instance.new("UIStroke", autoExecFrame)
+aeStroke.Color = Color3.fromRGB(30, 40, 60)
+
+local autoExecLabel = Instance.new("TextLabel", autoExecFrame)
+autoExecLabel.Size = UDim2.new(0.7, 0, 1, 0)
+autoExecLabel.Position = UDim2.new(0, 12, 0, 0)
+autoExecLabel.BackgroundTransparency = 1
+autoExecLabel.Font = Enum.Font.Gotham
+autoExecLabel.Text = "Auto Execute on Teleport"
+autoExecLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoExecLabel.TextSize = 12
+autoExecLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local toggleBtn = Instance.new("TextButton", autoExecFrame)
+toggleBtn.Size = UDim2.new(0, 50, 0, 24)
+toggleBtn.Position = UDim2.new(1, -62, 0.5, -12)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 40, 55)
+toggleBtn.Text = ""
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+
+local toggleCircle = Instance.new("Frame", toggleBtn)
+toggleCircle.Size = UDim2.new(0, 18, 0, 18)
+toggleCircle.Position = UDim2.new(0, 3, 0.5, -9)
+toggleCircle.BackgroundColor3 = Color3.fromRGB(180, 190, 210)
+Instance.new("UICorner", toggleCircle).CornerRadius = UDim.new(1, 0)
+
+local isAutoExecEnabled = false
+local AUTO_EXEC_FILE = "autoexec/GauMods_CurrentAuto.lua"
+
+toggleBtn.MouseButton1Click:Connect(function()
+    isAutoExecEnabled = not isAutoExecEnabled
+    if isAutoExecEnabled then
+        TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 122, 255)}):Play()
+        TweenService:Create(toggleCircle, TweenInfo.new(0.2), {Position = UDim2.new(1, -21, 0.5, -9), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        if writefile and scriptTextBox.Text ~= "" then
+            pcall(function() writefile(AUTO_EXEC_FILE, scriptTextBox.Text) end)
+        end
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {Title = "Auto Execute", Text = "Đã bật tự động chạy script khi đổi Server!", Duration = 2})
+        end)
+    else
+        TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 40, 55)}):Play()
+        TweenService:Create(toggleCircle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -9), BackgroundColor3 = Color3.fromRGB(180, 190, 210)}):Play()
+        if delfile and isfile and isfile(AUTO_EXEC_FILE) then
+            pcall(function() delfile(AUTO_EXEC_FILE) end)
+        end
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {Title = "Auto Execute", Text = "Đã tắt tự động chạy script!", Duration = 2})
+        end)
+    end
+end)
 --[[
-    GAU MODS UI - PHẦN 5/5 (TAB 4 SCRIPT CỘNG ĐỒNG, ĐÓNG/THU NHỎ TRỰC TIẾP & KÉO THẢ)
+    GAU MODS UI - PHẦN 6/7 (TRANG NHẠC & TÌM KIẾM SCRIPT - PHẦN 1)
 ]]
+
+local musicPageFrame = Instance.new("Frame", mainFrame)
+musicPageFrame.Name = "MusicPageFrame"
+musicPageFrame.Size = UDim2.new(1, 0, 1, -50)
+musicPageFrame.Position = UDim2.new(0, 0, 0, 50)
+musicPageFrame.BackgroundColor3 = Color3.fromRGB(11, 13, 19)
+musicPageFrame.Visible = false
+musicPageFrame.ZIndex = 40
+
+local musicBackBtn = Instance.new("TextButton", musicPageFrame)
+musicBackBtn.Size = UDim2.new(0, 35, 0, 35)
+musicBackBtn.Position = UDim2.new(0, 12, 0, 10)
+musicBackBtn.BackgroundTransparency = 1
+musicBackBtn.Font = Enum.Font.GothamBold
+musicBackBtn.Text = "←"
+musicBackBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+musicBackBtn.TextSize = 22
+musicBackBtn.ZIndex = 41
+
+local musicTitleLab = Instance.new("TextLabel", musicPageFrame)
+musicTitleLab.Size = UDim2.new(1, -100, 0, 35)
+musicTitleLab.Position = UDim2.new(0, 55, 0, 10)
+musicTitleLab.BackgroundTransparency = 1
+musicTitleLab.Font = Enum.Font.GothamBold
+musicTitleLab.Text = "🎧 GAU MODS MUSIC PLAYER"
+musicTitleLab.TextColor3 = Color3.fromRGB(0, 170, 255)
+musicTitleLab.TextSize = 14
+musicTitleLab.TextXAlignment = Enum.TextXAlignment.Left
+musicTitleLab.ZIndex = 41
+
+local discFrame = Instance.new("Frame", musicPageFrame)
+discFrame.Size = UDim2.new(0, 110, 0, 110)
+discFrame.AnchorPoint = Vector2.new(0.5, 0)
+discFrame.Position = UDim2.new(0.5, 0, 0, 60)
+discFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
+discFrame.ZIndex = 41
+Instance.new("UICorner", discFrame).CornerRadius = UDim.new(1, 0)
+local discStroke = Instance.new("UIStroke", discFrame)
+discStroke.Color = Color3.fromRGB(0, 170, 255)
+discStroke.Thickness = 2
+
+local discCenter = Instance.new("Frame", discFrame)
+discCenter.Size = UDim2.new(0, 30, 0, 30)
+discCenter.AnchorPoint = Vector2.new(0.5, 0.5)
+discCenter.Position = UDim2.new(0.5, 0, 0.5, 0)
+discCenter.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+discCenter.ZIndex = 42
+Instance.new("UICorner", discCenter).CornerRadius = UDim.new(1, 0)
+
+local arrowIcon = Instance.new("TextLabel", discFrame)
+arrowIcon.Size = UDim2.new(0, 30, 0, 30)
+arrowIcon.Position = UDim2.new(0.7, 0, 0.1, 0)
+arrowIcon.BackgroundTransparency = 1
+arrowIcon.Font = Enum.Font.GothamBold
+arrowIcon.Text = "▶"
+arrowIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+arrowIcon.TextSize = 14
+arrowIcon.ZIndex = 42
+
+local musicInputBoxContainer = Instance.new("Frame", musicPageFrame)
+musicInputBoxContainer.Size = UDim2.new(1, -40, 0, 45)
+musicInputBoxContainer.Position = UDim2.new(0, 20, 0, 190)
+musicInputBoxContainer.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
+musicInputBoxContainer.ZIndex = 41
+Instance.new("UICorner", musicInputBoxContainer).CornerRadius = UDim.new(0, 10)
+local mibStroke = Instance.new("UIStroke", musicInputBoxContainer)
+mibStroke.Color = Color3.fromRGB(30, 40, 60)
+
+local musicIdInput = Instance.new("TextBox", musicInputBoxContainer)
+musicIdInput.Size = UDim2.new(1, -20, 1, 0)
+musicIdInput.Position = UDim2.new(0, 10, 0, 0)
+musicIdInput.BackgroundTransparency = 1
+musicIdInput.Font = Enum.Font.Gotham
+musicIdInput.PlaceholderText = "Nhập ID nhạc Roblox (Ví dụ: 1845754020)..."
+musicIdInput.Text = ""
+musicIdInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+musicIdInput.TextSize = 13
+musicIdInput.ClearTextOnFocus = false
+musicIdInput.TextXAlignment = Enum.TextXAlignment.Left
+musicIdInput.ZIndex = 42
+
+local playMusicBtn = Instance.new("TextButton", musicPageFrame)
+playMusicBtn.Size = UDim2.new(0.46, 0, 0, 42)
+playMusicBtn.Position = UDim2.new(0.04, 0, 0, 255)
+playMusicBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+playMusicBtn.Font = Enum.Font.GothamBold
+playMusicBtn.Text = "🔊 Mở Nhạc"
+playMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+playMusicBtn.TextSize = 13
+playMusicBtn.ZIndex = 41
+Instance.new("UICorner", playMusicBtn).CornerRadius = UDim.new(0, 10)
+playButtonEffect(playMusicBtn, Color3.fromRGB(0, 122, 255))
+
+local stopMusicBtn = Instance.new("TextButton", musicPageFrame)
+stopMusicBtn.Size = UDim2.new(0.46, 0, 0, 42)
+stopMusicBtn.Position = UDim2.new(0.5, 0, 0, 255)
+stopMusicBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
+stopMusicBtn.Font = Enum.Font.GothamBold
+stopMusicBtn.Text = "🔇 Tắt Nhạc"
+stopMusicBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
+stopMusicBtn.TextSize = 13
+stopMusicBtn.ZIndex = 41
+Instance.new("UICorner", stopMusicBtn).CornerRadius = UDim.new(0, 10)
+playButtonEffect(stopMusicBtn, Color3.fromRGB(25, 32, 45))
+
+local bgMusic = Instance.new("Sound", screenGui)
+bgMusic.Name = "GauModsCustomMusic"
+bgMusic.Volume = 1
+bgMusic.Looped = true
+
+local isRotating = false
+RunService.RenderStepped:Connect(function(dt)
+    if isRotating then
+        discFrame.Rotation = discFrame.Rotation + (90 * dt)
+    end
+end)
+
+playMusicBtn.MouseButton1Click:Connect(function()
+    local idText = musicIdInput.Text:gsub("%D", "")
+    if idText ~= "" then
+        bgMusic.SoundId = "rbxassetid://" .. idText
+        bgMusic:Play()
+        isRotating = true
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {Title = "Trình phát nhạc", Text = "Đang phát bài hát ID: " .. idText, Duration = 2})
+        end)
+    else
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {Title = "Lỗi", Text = "Vui lòng nhập ID nhạc hợp lệ!", Duration = 2})
+        end)
+    end
+end)
+
+stopMusicBtn.MouseButton1Click:Connect(function()
+    bgMusic:Stop()
+    isRotating = false
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {Title = "Trình phát nhạc", Text = "Đã tắt nhạc!", Duration = 2})
+    end)
+end)
+
+musicPageBtn.MouseButton1Click:Connect(function()
+    musicPageFrame.Visible = not musicPageFrame.Visible
+end)
+
+musicBackBtn.MouseButton1Click:Connect(function()
+    musicPageFrame.Visible = false
+end)
 
 local tab4 = tabContentFrames[4]
 
@@ -1274,6 +1594,9 @@ scriptScrollFrame.ScrollBarThickness = 3
 local scriptListLayout = Instance.new("UIListLayout", scriptScrollFrame)
 scriptListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 scriptListLayout.Padding = UDim.new(0, 8)
+--[[
+    GAU MODS UI - PHẦN 7/7 (CỘNG ĐỒNG & DRAG HANDLERS - PHẦN 2)
+]]
 
 local scriptRemoteName = "GauMods_GlobalScriptShareEvent"
 sharedScriptsHistory = sharedScriptsHistory or {}
@@ -1288,9 +1611,7 @@ local function renderSharedScripts(filterText)
     for _, child in ipairs(scriptScrollFrame:GetChildren()) do
         if child:IsA("Frame") then child:Destroy() end
     end
-    
     filterText = filterText:lower():gsub("^%s*(.-)%s*$", "%1")
-    
     for _, data in ipairs(sharedScriptsHistory) do
         local scriptNameLower = data.scriptName:lower()
         if filterText == "" or scriptNameLower:find(filterText) then
@@ -1373,16 +1694,13 @@ confirmShareBtn.MouseButton1Click:Connect(function()
             content = contentToShare, 
             keyStatus = selectedKeyStatus
         }
-        
         table.insert(sharedScriptsHistory, scriptData)
         saveSharedScriptsToDisk()
         renderSharedScripts(searchTextBox.Text)
-        
         pcall(function()
             local ev = playerGui:FindFirstChild(scriptRemoteName)
             if ev then ev:Fire(scriptData) end
         end)
-        
         sharePopupBg.Visible = false
         mainFrame.Visible = true
     end
@@ -1501,7 +1819,7 @@ viewerCancelBtn.Font = Enum.Font.GothamBold
 viewerCancelBtn.Text = "Hủy"
 viewerCancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 viewerCancelBtn.TextSize = 13
-viewerSavePopupBox.ZIndex = 51
+viewerCancelBtn.ZIndex = 51
 Instance.new("UICorner", viewerCancelBtn).CornerRadius = UDim.new(0, 10)
 playButtonEffect(viewerCancelBtn, Color3.fromRGB(25, 32, 45))
 
@@ -1520,11 +1838,8 @@ viewerConfirmBtn.MouseButton1Click:Connect(function()
         saveToDisk()
         refreshSavedList()
         viewerSavePopupBg.Visible = false
-        
         if writefile then
-            pcall(function()
-                writefile(name .. ".txt", content)
-            end)
+            pcall(function() writefile(name .. ".txt", content) end)
         end
     end
 end)
@@ -1537,13 +1852,11 @@ for i, btn in ipairs(tabs) do
             tabContentFrames[j].Visible = (j == i)
         end
         linkViewerUI.Visible = false
-        
         if i == 2 then
             if rawget(_G, "saveFromViewerBtn") then _G.saveFromViewerBtn.Visible = false end
             if rawget(_G, "copyFromViewerTab4") then _G.copyFromViewerTab4.Visible = false end
             if rawget(_G, "copyFromViewerBtn") then _G.copyFromViewerBtn.Visible = true end
         end
-        
         if i == 3 then
             task.defer(function()
                 chatDisplayFrame.CanvasPosition = Vector2.new(0, chatDisplayFrame.AbsoluteCanvasSize.Y)
@@ -1552,7 +1865,6 @@ for i, btn in ipairs(tabs) do
     end)
 end
 
--- Xử lý nút Đóng và Thu nhỏ trực tiếp (Không còn bảng xác nhận hỏi Có/Không)
 closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
@@ -1591,14 +1903,12 @@ local function makeDraggableMain(frame, handle)
     local dragging, dragInput, dragStart, startPos
     local holdTimer = 0
     local isHolding = false
-    
     handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             isHolding = true
             holdTimer = tick()
             dragStart = input.Position
             startPos = frame.Position
-            
             task.spawn(function()
                 while isHolding do
                     if tick() - holdTimer >= 0.5 then
@@ -1608,7 +1918,6 @@ local function makeDraggableMain(frame, handle)
                     task.wait(0.05)
                 end
             end)
-            
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     isHolding = false
@@ -1617,11 +1926,9 @@ local function makeDraggableMain(frame, handle)
             end)
         end
     end)
-    
     handle.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
     end)
-    
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
@@ -1631,4 +1938,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI - Đã gỡ bỏ toàn bộ hộp thoại xác nhận, bấm là ăn ngay!")
+print("GAU MODS UI - Đã chia đôi phần cuối thành công, hoàn tất toàn bộ code mượt mà!")
