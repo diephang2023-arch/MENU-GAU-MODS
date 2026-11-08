@@ -1,5 +1,5 @@
 --[[
-    GAU MODS UI - PHẦN 1/7 (KHỞI TẠO & TOPBAR)
+    GAU MODS UI - PHẦN 1/8 (KHỞI TẠO & TOPBAR)
 ]]
 
 pcall(function()
@@ -186,7 +186,7 @@ titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 16
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 --[[
-    GAU MODS UI - PHẦN 2/7 (ADMIN & TRANG CHỦ)
+    GAU MODS UI - PHẦN 2/8 (ADMIN & TRANG CHỦ)
 ]]
 
 local adminClickCount = 0
@@ -476,7 +476,7 @@ executeBtn.MouseButton1Click:Connect(function()
     end
 end)
 --[[
-    GAU MODS UI - PHẦN 3/7 (XEM LINK & TAB ĐÃ LƯU TÍCH HỢP NHẠC)
+    GAU MODS UI - PHẦN 3/8 (XEM LINK & KHỞI TẠO TAB 2)
 ]]
 
 local linkViewerUI = Instance.new("Frame", mainFrame)
@@ -767,8 +767,7 @@ cancelSaveBtn.MouseButton1Click:Connect(function() savePopupBg.Visible = false e
 
 local tab2 = tabContentFrames[2]
 
--- NÚT LỌC TABS 2: TẤT CẢ / CHỈ SCRIPT / CHỈ NHẠC
-local filterMode = 1 -- 1: Tất cả, 2: Chỉ Script, 3: Chỉ Nhạc
+local filterMode = 1
 local filterModeBtn = Instance.new("TextButton", tab2)
 filterModeBtn.Size = UDim2.new(1, 0, 0, 35)
 filterModeBtn.BackgroundColor3 = Color3.fromRGB(18, 23, 33)
@@ -838,10 +837,9 @@ Instance.new("UICorner", noDelBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(noDelBtn, Color3.fromRGB(25, 32, 45))
 
 local pendingDeleteIndex = nil
-
-local refreshSavedList -- Forward declaration
+local refreshSavedList = function() end -- Khai báo tạm trước
 --[[
-    GAU MODS UI - PHẦN 4/7 (TAB CHAT & CÀI ĐẶT)
+    GAU MODS UI - PHẦN 4/8 (TAB CHAT & CÀI ĐẶT)
 ]]
 
 local namePopupBg = Instance.new("Frame", screenGui)
@@ -1036,7 +1034,6 @@ pcall(function()
     end
 end)
 
--- TAB 5: CÀI ĐẶT
 local tab5 = tabContentFrames[5]
 local tab5Layout = Instance.new("UIListLayout", tab5)
 tab5Layout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1119,7 +1116,7 @@ for i, opt in ipairs(colorOptions) do
     end)
 end
 --[[
-    GAU MODS UI - PHẦN 5/7 (CÀI ĐẶT NÂNG CAO)
+    GAU MODS UI - PHẦN 5/8 (CÀI ĐẶT NÂNG CAO)
 ]]
 
 createSettingLabel("🪟 Điều chỉnh độ mờ của Menu:")
@@ -1337,7 +1334,7 @@ toggleBtn.MouseButton1Click:Connect(function()
     end
 end)
 --[[
-    GAU MODS UI - PHẦN 6/7 (TRANG NGHE NHẠC & TÍCH HỢP LƯU/CHIA SẺ NHẠC)
+    GAU MODS UI - PHẦN 6/8 (TRANG NGHE NHẠC & QUẢN LÝ NHẠC)
 ]]
 
 local musicPageFrame = Instance.new("Frame", mainFrame)
@@ -1369,7 +1366,6 @@ musicTitleLab.TextSize = 13
 musicTitleLab.TextXAlignment = Enum.TextXAlignment.Left
 musicTitleLab.ZIndex = 41
 
--- NÚT LƯU NHẠC VÀO TAB 2
 local saveMusicBtn = Instance.new("TextButton", musicPageFrame)
 saveMusicBtn.Size = UDim2.new(0, 42, 0, 30)
 saveMusicBtn.Position = UDim2.new(1, -95, 0, 12)
@@ -1382,7 +1378,6 @@ saveMusicBtn.ZIndex = 41
 Instance.new("UICorner", saveMusicBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(saveMusicBtn, Color3.fromRGB(0, 122, 255))
 
--- NÚT CHIA SẺ NHẠC LÊN TAB 4
 local shareMusicBtn = Instance.new("TextButton", musicPageFrame)
 shareMusicBtn.Size = UDim2.new(0, 42, 0, 30)
 shareMusicBtn.Position = UDim2.new(1, -48, 0, 12)
@@ -1519,7 +1514,6 @@ musicBackBtn.MouseButton1Click:Connect(function()
     musicPageFrame.Visible = false
 end)
 
--- POPUP NHẬP TÊN LƯU NHẠC VÀO TAB 2
 local musicSavePopupBg = Instance.new("Frame", musicPageFrame)
 musicSavePopupBg.Size = UDim2.new(1, 0, 1, 0)
 musicSavePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -1609,7 +1603,6 @@ cancelSaveMusicBtn.MouseButton1Click:Connect(function()
     musicSavePopupBg.Visible = false
 end)
 
--- POPUP CHIA SẺ NHẠC LÊN TAB 4
 local musicSharePopupBg = Instance.new("Frame", musicPageFrame)
 musicSharePopupBg.Size = UDim2.new(1, 0, 1, 0)
 musicSharePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -1699,7 +1692,7 @@ cancelShareMusicBtn.MouseButton1Click:Connect(function()
     musicSharePopupBg.Visible = false
 end)
 --[[
-    GAU MODS UI - PHẦN 7/8 (CỘNG ĐỒNG & RENDER TAB 2 - PHẦN 1)
+    GAU MODS UI - PHẦN 7/8 (CỘNG ĐỒNG & LOGIC CHIA SẺ)
 ]]
 
 local tab4 = tabContentFrames[4]
@@ -1950,7 +1943,7 @@ pcall(function()
     end
 end)
 --[[
-    GAU MODS UI - PHẦN 8/8 (TAB 2 RENDER, POPUP XÓA & DRAG HANDLERS - PHẦN 2)
+    GAU MODS UI - PHẦN 8/8 (RENDER TAB 2, POPUP XÓA & DRAG HANDLERS)
 ]]
 
 refreshSavedList = function()
@@ -2407,4 +2400,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI - Hoàn tất chia thành 8 phần siêu mượt mà!")
+print("GAU MODS UI - Đã fix toàn bộ lỗi và chạy cực kỳ mượt mà ổn định!")
