@@ -679,52 +679,6 @@ local tab2Layout = Instance.new("UIListLayout", tab2)
 tab2Layout.SortOrder = Enum.SortOrder.LayoutOrder
 tab2Layout.Padding = UDim.new(0, 8)
 
-local confirmDeletePopup = Instance.new("Frame", mainFrame)
-confirmDeletePopup.Size = UDim2.new(0, 280, 0, 130)
-confirmDeletePopup.Position = UDim2.new(0.5, -140, 0.5, -65)
-confirmDeletePopup.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-confirmDeletePopup.Visible = false
-confirmDeletePopup.ZIndex = 10
-Instance.new("UICorner", confirmDeletePopup).CornerRadius = UDim.new(0, 12)
-local cdpStroke = Instance.new("UIStroke", confirmDeletePopup)
-cdpStroke.Color = Color3.fromRGB(255, 90, 90)
-
-local cdpText = Instance.new("TextLabel", confirmDeletePopup)
-cdpText.Size = UDim2.new(1, 0, 0, 45)
-cdpText.Position = UDim2.new(0, 0, 0, 15)
-cdpText.BackgroundTransparency = 1
-cdpText.Font = Enum.Font.GothamBold
-cdpText.Text = "Bạn có muốn xóa không?"
-cdpText.TextColor3 = Color3.fromRGB(255, 255, 255)
-cdpText.TextSize = 14
-cdpText.ZIndex = 10
-
-local yesDelBtn = Instance.new("TextButton", confirmDeletePopup)
-yesDelBtn.Size = UDim2.new(0.4, 0, 0, 35)
-yesDelBtn.Position = UDim2.new(0.075, 0, 0, 75)
-yesDelBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-yesDelBtn.Font = Enum.Font.GothamBold
-yesDelBtn.Text = "Có"
-yesDelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-yesDelBtn.TextSize = 13
-yesDelBtn.ZIndex = 10
-Instance.new("UICorner", yesDelBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(yesDelBtn, Color3.fromRGB(255, 80, 80))
-
-local noDelBtn = Instance.new("TextButton", confirmDeletePopup)
-noDelBtn.Size = UDim2.new(0.4, 0, 0, 35)
-noDelBtn.Position = UDim2.new(0.525, 0, 0, 75)
-noDelBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-noDelBtn.Font = Enum.Font.GothamBold
-noDelBtn.Text = "Không"
-noDelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-noDelBtn.TextSize = 13
-noDelBtn.ZIndex = 10
-Instance.new("UICorner", noDelBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(noDelBtn, Color3.fromRGB(25, 32, 45))
-
-local itemIndexToDelete = nil
-
 local function refreshSavedList()
     for _, child in ipairs(tab2:GetChildren()) do
         if child:IsA("Frame") then child:Destroy() end
@@ -794,27 +748,14 @@ local function refreshSavedList()
         Instance.new("UICorner", delItemBtn).CornerRadius = UDim.new(0, 8)
         playButtonEffect(delItemBtn, Color3.fromRGB(25, 32, 45))
         
+        -- Xóa trực tiếp không cần hỏi
         delItemBtn.MouseButton1Click:Connect(function()
-            itemIndexToDelete = index
-            confirmDeletePopup.Visible = true
+            table.remove(savedScripts, index)
+            saveToDisk()
+            refreshSavedList()
         end)
     end
 end
-
-yesDelBtn.MouseButton1Click:Connect(function()
-    if itemIndexToDelete then
-        table.remove(savedScripts, itemIndexToDelete)
-        saveToDisk()
-        refreshSavedList()
-    end
-    confirmDeletePopup.Visible = false
-    itemIndexToDelete = nil
-end)
-
-noDelBtn.MouseButton1Click:Connect(function()
-    confirmDeletePopup.Visible = false
-    itemIndexToDelete = nil
-end)
 
 confirmSaveBtn.MouseButton1Click:Connect(function()
     local name = nameTextBox.Text
@@ -1287,7 +1228,7 @@ for i, opt in ipairs(shapeOptions) do
     end)
 end
 --[[
-    GAU MODS UI - PHẦN 5/5 (TAB 4 SCRIPT CỘNG ĐỒNG, HỘP THOẠI XÁC NHẬN & KÉO THẢ)
+    GAU MODS UI - PHẦN 5/5 (TAB 4 SCRIPT CỘNG ĐỒNG, ĐÓNG/THU NHỎ TRỰC TIẾP & KÉO THẢ)
 ]]
 
 local tab4 = tabContentFrames[4]
@@ -1560,7 +1501,7 @@ viewerCancelBtn.Font = Enum.Font.GothamBold
 viewerCancelBtn.Text = "Hủy"
 viewerCancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 viewerCancelBtn.TextSize = 13
-viewerCancelBtn.ZIndex = 51
+viewerSavePopupBox.ZIndex = 51
 Instance.new("UICorner", viewerCancelBtn).CornerRadius = UDim.new(0, 10)
 playButtonEffect(viewerCancelBtn, Color3.fromRGB(25, 32, 45))
 
@@ -1596,7 +1537,6 @@ for i, btn in ipairs(tabs) do
             tabContentFrames[j].Visible = (j == i)
         end
         linkViewerUI.Visible = false
-        confirmDeletePopup.Visible = false
         
         if i == 2 then
             if rawget(_G, "saveFromViewerBtn") then _G.saveFromViewerBtn.Visible = false end
@@ -1612,86 +1552,13 @@ for i, btn in ipairs(tabs) do
     end)
 end
 
--- BẢNG XÁC NHẬN "BẠN CÓ CHẮC CHẮN XÓA KHÔNG?" (CHO CẢ NÚT ĐÓNG VÀ NÚT THU NHỎ)
-local confirmSmallUI = Instance.new("Frame", screenGui)
-confirmSmallUI.Size = UDim2.new(0, 280, 0, 130)
-confirmSmallUI.Position = UDim2.new(0.5, -140, 0.5, -65)
-confirmSmallUI.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-confirmSmallUI.Visible = false
-confirmSmallUI.ZIndex = 200
-Instance.new("UICorner", confirmSmallUI).CornerRadius = UDim.new(0, 12)
-local csStroke = Instance.new("UIStroke", confirmSmallUI)
-csStroke.Color = Color3.fromRGB(0, 122, 255)
-
-local csText = Instance.new("TextLabel", confirmSmallUI)
-csText.Size = UDim2.new(1, 0, 0, 45)
-csText.Position = UDim2.new(0, 0, 0, 15)
-csText.BackgroundTransparency = 1
-csText.Font = Enum.Font.GothamBold
-csText.Text = "Bạn có chắc chắn muốn xóa không?"
-csText.TextColor3 = Color3.fromRGB(255, 255, 255)
-csText.TextSize = 14
-csText.ZIndex = 201
-
-local yesBtn = Instance.new("TextButton", confirmSmallUI)
-yesBtn.Size = UDim2.new(0.4, 0, 0, 35)
-yesBtn.Position = UDim2.new(0.075, 0, 0, 75)
-yesBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-yesBtn.Font = Enum.Font.GothamBold
-yesBtn.Text = "Có"
-yesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-yesBtn.TextSize = 13
-yesBtn.ZIndex = 201
-Instance.new("UICorner", yesBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(yesBtn, Color3.fromRGB(0, 122, 255))
-
-local noBtn = Instance.new("TextButton", confirmSmallUI)
-noBtn.Size = UDim2.new(0.4, 0, 0, 35)
-noBtn.Position = UDim2.new(0.525, 0, 0, 75)
-noBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-noBtn.Font = Enum.Font.GothamBold
-noBtn.Text = "Không"
-noBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-noBtn.TextSize = 13
-noBtn.ZIndex = 201
-Instance.new("UICorner", noBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(noBtn, Color3.fromRGB(25, 32, 45))
-
-local pendingAction = nil
-
+-- Xử lý nút Đóng và Thu nhỏ trực tiếp (Không còn bảng xác nhận hỏi Có/Không)
 closeBtn.MouseButton1Click:Connect(function()
-    mainFrame.Visible = false
-    csText.Text = "Bạn có chắc chắn muốn xóa không?"
-    pendingAction = "close"
-    confirmSmallUI.Visible = true
+    screenGui:Destroy()
 end)
 
 minimizeBtn.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
-    csText.Text = "Bạn có chắc chắn muốn xóa không?"
-    pendingAction = "minimize"
-    confirmSmallUI.Visible = true
-end)
-
-noBtn.MouseButton1Click:Connect(function()
-    confirmSmallUI.Visible = false
-    mainFrame.Visible = true
-    pendingAction = nil
-end)
-
-yesBtn.MouseButton1Click:Connect(function()
-    confirmSmallUI.Visible = false
-    if pendingAction == "close" then
-        for i = 3, 0, -1 do
-            csText.Text = "Đang tắt menu trong " .. i .. "s..."
-            confirmSmallUI.Visible = true
-            task.wait(1)
-        end
-        screenGui:Destroy()
-    elseif pendingAction == "minimize" then
-        mainFrame.Visible = false
-    end
-    pendingAction = nil
 end)
 
 openButton.MouseButton1Click:Connect(function() mainFrame.Visible = not mainFrame.Visible end)
@@ -1764,4 +1631,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI - Hoàn tất gửi lại toàn bộ code 5 phần chuẩn xác nhất!")
+print("GAU MODS UI - Đã gỡ bỏ toàn bộ hộp thoại xác nhận, bấm là ăn ngay!")
