@@ -1,12 +1,10 @@
 --[[
-    GAU MODS UI - PHẦN 1/5 (KHỞI TẠO & TOPBAR)
+    GAU MODS UI - ĐOẠN 1/6 (KHỞI TẠO)
 ]]
 
 pcall(function()
     if writefile and makefolder then
-        if not isfolder("autoexec") then
-            makefolder("autoexec")
-        end
+        if not isfolder("autoexec") then makefolder("autoexec") end
         local autoCode = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/diephang2023-arch/MENU-GAU-MODS/refs/heads/main/Menu03"))()'
         writefile("autoexec/GauMods_Auto.lua", autoCode)
     end
@@ -23,9 +21,7 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-if CoreGui:FindFirstChild("GauModsUI") then
-    CoreGui.GauModsUI:Destroy()
-end
+if CoreGui:FindFirstChild("GauModsUI") then CoreGui.GauModsUI:Destroy() end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "GauModsUI"
@@ -45,18 +41,9 @@ local function playButtonEffect(btn, originalColor)
 end
 
 local function copyToClipboard(text)
-    if setclipboard then
-        pcall(function() setclipboard(text) end)
-    elseif syn and syn.write_clipboard then
-        pcall(function() syn.write_clipboard(text) end)
-    end
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = "Thành công",
-            Text = "Đã sao chép nội dung vào bộ nhớ tạm!",
-            Duration = 2
-        })
-    end)
+    if setclipboard then pcall(function() setclipboard(text) end)
+    elseif syn and syn.write_clipboard then pcall(function() syn.write_clipboard(text) end) end
+    pcall(function() StarterGui:SetCore("SendNotification", {Title = "Thành công", Text = "Đã sao chép nội dung!", Duration = 2}) end)
 end
 
 local CHAT_NAME_FILE = "GauMods_ChatName.json"
@@ -72,51 +59,32 @@ local savedMusicList = {}
 local communityMusicList = {}
 
 if readfile and isfile and isfile(CHAT_NAME_FILE) then
-    pcall(function()
-        local data = HttpService:JSONDecode(readfile(CHAT_NAME_FILE))
-        if type(data) == "table" and data.name then myChatName = data.name end
-    end)
+    pcall(function() local data = HttpService:JSONDecode(readfile(CHAT_NAME_FILE)) if type(data) == "table" and data.name then myChatName = data.name end end)
 end
-
 if readfile and isfile and isfile(CHAT_HISTORY_FILE) then
-    pcall(function()
-        local data = HttpService:JSONDecode(readfile(CHAT_HISTORY_FILE))
-        if type(data) == "table" then chatHistory = data end
-    end)
+    pcall(function() local data = HttpService:JSONDecode(readfile(CHAT_HISTORY_FILE)) if type(data) == "table" then chatHistory = data end end)
 end
-
 if readfile and isfile and isfile(SCRIPT_SHARE_FILE) then
-    pcall(function()
-        local data = HttpService:JSONDecode(readfile(SCRIPT_SHARE_FILE))
-        if type(data) == "table" then sharedScriptsHistory = data end
-    end)
+    pcall(function() local data = HttpService:JSONDecode(readfile(SCRIPT_SHARE_FILE)) if type(data) == "table" then sharedScriptsHistory = data end end)
 end
-
 if readfile and isfile and isfile(MUSIC_SAVE_FILE) then
-    pcall(function()
-        local data = HttpService:JSONDecode(readfile(MUSIC_SAVE_FILE))
-        if type(data) == "table" then savedMusicList = data end
-    end)
+    pcall(function() local data = HttpService:JSONDecode(readfile(MUSIC_SAVE_FILE)) if type(data) == "table" then savedMusicList = data end end)
 end
 
 local function saveMusicToDisk()
-    if writefile then
-        pcall(function() writefile(MUSIC_SAVE_FILE, HttpService:JSONEncode(savedMusicList)) end)
-    end
+    if writefile then pcall(function() writefile(MUSIC_SAVE_FILE, HttpService:JSONEncode(savedMusicList)) end) end
 end
 
 if readfile and isfile and isfile(MUSIC_COMMUNITY_FILE) then
-    pcall(function()
-        local data = HttpService:JSONDecode(readfile(MUSIC_COMMUNITY_FILE))
-        if type(data) == "table" then communityMusicList = data end
-    end)
+    pcall(function() local data = HttpService:JSONDecode(readfile(MUSIC_COMMUNITY_FILE)) if type(data) == "table" then communityMusicList = data end end)
 end
 
 local function saveCommunityMusicToDisk()
-    if writefile then
-        pcall(function() writefile(MUSIC_COMMUNITY_FILE, HttpService:JSONEncode(communityMusicList)) end)
-    end
+    if writefile then pcall(function() writefile(MUSIC_COMMUNITY_FILE, HttpService:JSONEncode(communityMusicList)) end) end
 end
+--[[
+    GAU MODS UI - ĐOẠN 2/6 (ADMIN & TOPBAR)
+]]
 
 local function showAdminScreenText(senderName, messageText)
     local existing = screenGui:FindFirstChild("AdminBroadcastText")
@@ -138,11 +106,7 @@ local function showAdminScreenText(senderName, messageText)
     textLabel.Text = "<font color=\"#FF5555\">📢 <b>[" .. senderName .. "]:</b></font> " .. messageText
     textLabel.ZIndex = 9999
 
-    task.delay(5, function()
-        if textLabel and textLabel.Parent then
-            textLabel:Destroy()
-        end
-    end)
+    task.delay(5, function() if textLabel and textLabel.Parent then textLabel:Destroy() end end)
 end
 
 local openButton = Instance.new("TextButton", screenGui)
@@ -152,7 +116,6 @@ openButton.Position = UDim2.new(0, 30, 0, 280)
 openButton.BackgroundColor3 = Color3.fromRGB(15, 18, 25)
 openButton.Text = ""
 openButton.AutoButtonColor = false
-
 Instance.new("UICorner", openButton).CornerRadius = UDim.new(0, 16)
 local openStroke = Instance.new("UIStroke", openButton)
 openStroke.Color = Color3.fromRGB(0, 136, 255)
@@ -172,7 +135,6 @@ mainFrame.Size = UDim2.new(0, 550, 0, 400)
 mainFrame.Position = UDim2.new(0.5, -275, 0.5, -200)
 mainFrame.BackgroundColor3 = Color3.fromRGB(11, 13, 19)
 mainFrame.Visible = true 
-
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 16)
 local mainStroke = Instance.new("UIStroke", mainFrame)
 mainStroke.Color = Color3.fromRGB(25, 35, 55)
@@ -197,9 +159,6 @@ titleLabel.Text = "GAU MODS"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 16
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
---[[
-    GAU MODS UI - PHẦN 2/5 (ADMIN & TRANG CHỦ)
-]]
 
 local adminClickCount = 0
 local lastClickTick = 0
@@ -298,13 +257,8 @@ adminTriggerBtn.ZIndex = 15
 
 adminTriggerBtn.MouseButton1Click:Connect(function()
     local currentTick = tick()
-    if currentTick - lastClickTick > 1.5 then
-        adminClickCount = 1
-    else
-        adminClickCount = adminClickCount + 1
-    end
+    if currentTick - lastClickTick > 1.5 then adminClickCount = 1 else adminClickCount = adminClickCount + 1 end
     lastClickTick = currentTick
-
     if adminClickCount >= 5 then
         adminClickCount = 0
         adminPageFrame.Visible = not adminPageFrame.Visible
@@ -321,10 +275,7 @@ closeBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
 closeBtn.TextSize = 12
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(closeBtn, Color3.fromRGB(20, 25, 36))
-
-closeBtn.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
-end)
+closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
 local minimizeBtn = Instance.new("TextButton", topBar)
 minimizeBtn.Size = UDim2.new(0, 32, 0, 32)
@@ -336,10 +287,7 @@ minimizeBtn.TextColor3 = Color3.fromRGB(180, 190, 210)
 minimizeBtn.TextSize = 12
 Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(minimizeBtn, Color3.fromRGB(20, 25, 36))
-
-minimizeBtn.MouseButton1Click:Connect(function()
-    mainFrame.Visible = not mainFrame.Visible
-end)
+minimizeBtn.MouseButton1Click:Connect(function() mainFrame.Visible = not mainFrame.Visible end)
 
 local musicPageBtn = Instance.new("TextButton", topBar)
 musicPageBtn.Size = UDim2.new(0, 32, 0, 32)
@@ -351,6 +299,9 @@ musicPageBtn.TextColor3 = Color3.fromRGB(0, 170, 255)
 musicPageBtn.TextSize = 13
 Instance.new("UICorner", musicPageBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(musicPageBtn, Color3.fromRGB(20, 25, 36))
+--[[
+    GAU MODS UI - ĐOẠN 3/6 (TABS & TRANG CHỦ)
+]]
 
 local tabButtonsContainer = Instance.new("Frame", mainFrame)
 tabButtonsContainer.Size = UDim2.new(1, -32, 0, 40)
@@ -389,7 +340,6 @@ for i = 1, 5 do
     tBtn.AutoButtonColor = false
     tBtn.LayoutOrder = i
     Instance.new("UICorner", tBtn).CornerRadius = UDim.new(0, 10)
-    
     tabs[i] = tBtn
 
     local tFrame = Instance.new("ScrollingFrame", contentContainer)
@@ -400,7 +350,6 @@ for i = 1, 5 do
     tFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
     tFrame.ScrollBarThickness = 3
     tFrame.Visible = (i == 1)
-    
     tabContentFrames[i] = tFrame
 end
 
@@ -544,7 +493,7 @@ end)
 
 backBtn.MouseButton1Click:Connect(function() linkViewerUI.Visible = false end)
 --[[
-    GAU MODS UI - PHẦN 3/5 (TAB 1 MENU TRÌNH PHÁT NHẠC)
+    GAU MODS UI - ĐOẠN 4/6 (MUSIC PLAYER MENU)
 ]]
 
 local currentSound = Instance.new("Sound", mainFrame)
@@ -591,7 +540,6 @@ for i = 1, 3 do
     mBtn.AutoButtonColor = false
     mBtn.ZIndex = 22
     Instance.new("UICorner", mBtn).CornerRadius = UDim.new(0, 8)
-    
     musicTabs[i] = mBtn
 
     local mContent = Instance.new("Frame", musicContainer)
@@ -599,7 +547,6 @@ for i = 1, 3 do
     mContent.BackgroundTransparency = 1
     mContent.Visible = (i == 1)
     mContent.ZIndex = 22
-    
     musicContentFrames[i] = mContent
 end
 
@@ -616,9 +563,7 @@ end
 
 musicPageBtn.MouseButton1Click:Connect(function()
     musicFrame.Visible = not musicFrame.Visible
-    if musicFrame.Visible then
-        switchMusicTab(1)
-    end
+    if musicFrame.Visible then switchMusicTab(1) end
 end)
 
 local musicModalBg = Instance.new("Frame", screenGui)
@@ -639,12 +584,13 @@ mmbStroke.Color = Color3.fromRGB(0, 122, 255)
 
 local function clearModal()
     for _, child in pairs(musicModalBox:GetChildren()) do
-        if not child:IsA("UICorner") and not child:IsA("UIStroke") then
-            child:Destroy()
-        end
+        if not child:IsA("UICorner") and not child:IsA("UIStroke") then child:Destroy() end
     end
     musicModalBg.Visible = false
 end
+
+local refreshSavedMusicList
+local refreshCommunityMusicList
 
 local mTab1 = musicContentFrames[1]
 
@@ -728,9 +674,7 @@ playButtonEffect(shareMusicBtn, Color3.fromRGB(140, 80, 220))
 
 local isDiscSpinning = false
 RunService.RenderStepped:Connect(function()
-    if isDiscSpinning and discFrame then
-        discFrame.Rotation = (discFrame.Rotation + 2) % 360
-    end
+    if isDiscSpinning and discFrame then discFrame.Rotation = (discFrame.Rotation + 2) % 360 end
 end)
 
 local function playSoundByID(id)
@@ -744,22 +688,12 @@ local function playSoundByID(id)
     end
 end
 
-playMusicBtn.MouseButton1Click:Connect(function()
-    playSoundByID(musicInputBox.Text)
-end)
-
-stopMusicBtn.MouseButton1Click:Connect(function()
-    currentSound:Stop()
-    isDiscSpinning = false
-end)
-
-local refreshSavedMusicList
-local refreshCommunityMusicList
+playMusicBtn.MouseButton1Click:Connect(function() playSoundByID(musicInputBox.Text) end)
+stopMusicBtn.MouseButton1Click:Connect(function() currentSound:Stop() isDiscSpinning = false end)
 
 saveMusicBtn.MouseButton1Click:Connect(function()
     local soundID = musicInputBox.Text:gsub("%D", "")
     if soundID == "" then return end
-
     clearModal()
     musicModalBg.Visible = true
 
@@ -824,14 +758,12 @@ saveMusicBtn.MouseButton1Click:Connect(function()
             clearModal()
         end
     end)
-
     btnCancel.MouseButton1Click:Connect(clearModal)
 end)
 
 shareMusicBtn.MouseButton1Click:Connect(function()
     local soundID = musicInputBox.Text:gsub("%D", "")
     if soundID == "" then return end
-
     clearModal()
     musicModalBg.Visible = true
 
@@ -897,11 +829,10 @@ shareMusicBtn.MouseButton1Click:Connect(function()
             clearModal()
         end
     end)
-
     btnCancel.MouseButton1Click:Connect(clearModal)
 end)
 --[[
-    GAU MODS UI - PHẦN 4/5 (TAB 2 NHẠC ĐÃ LƯU & AUTO-PLAY)
+    GAU MODS UI - ĐOẠN 5/6 (SAVED MUSIC & AUTO-PLAY)
 ]]
 
 local mTab2 = musicContentFrames[2]
@@ -950,19 +881,12 @@ local function playNextAutoTrack()
     if not autoPlayEnabled or #savedMusicList == 0 then return end
     currentPlayingIndex = currentPlayingIndex + 1
     if currentPlayingIndex > #savedMusicList then currentPlayingIndex = 1 end
-    
     local item = savedMusicList[currentPlayingIndex]
-    if item then
-        playSoundByID(item.id)
-    end
+    if item then playSoundByID(item.id) end
 end
 
 currentSound.Ended:Connect(function()
-    if autoPlayEnabled then
-        playNextAutoTrack()
-    else
-        isDiscSpinning = false
-    end
+    if autoPlayEnabled then playNextAutoTrack() else isDiscSpinning = false end
 end)
 
 refreshSavedMusicList = function()
@@ -1068,10 +992,7 @@ refreshSavedMusicList = function()
             closeMBtn.ZIndex = 102
             Instance.new("UICorner", closeMBtn).CornerRadius = UDim.new(0, 8)
 
-            copyBtn.MouseButton1Click:Connect(function()
-                copyToClipboard(data.id)
-                clearModal()
-            end)
+            copyBtn.MouseButton1Click:Connect(function() copyToClipboard(data.id) clearModal() end)
             closeMBtn.MouseButton1Click:Connect(clearModal)
         end)
 
@@ -1146,14 +1067,13 @@ refreshSavedMusicList = function()
                 refreshSavedMusicList()
                 clearModal()
             end)
-
             noBtn.MouseButton1Click:Connect(clearModal)
         end)
     end
 end
 refreshSavedMusicList()
 --[[
-    GAU MODS UI - PHẦN 5/5 (TAB 3 NHẠC CỘNG ĐỒNG & KÉO THẢ)
+    GAU MODS UI - ĐOẠN 6/6 (COMMUNITY MUSIC & DRAGGABLE)
 ]]
 
 local mTab3 = musicContentFrames[3]
@@ -1278,10 +1198,7 @@ refreshCommunityMusicList = function()
             closeMBtn.ZIndex = 102
             Instance.new("UICorner", closeMBtn).CornerRadius = UDim.new(0, 8)
 
-            copyBtn.MouseButton1Click:Connect(function()
-                copyToClipboard(data.id)
-                clearModal()
-            end)
+            copyBtn.MouseButton1Click:Connect(function() copyToClipboard(data.id) clearModal() end)
 
             saveCommunityBtn.MouseButton1Click:Connect(function()
                 clearModal()
@@ -1348,10 +1265,8 @@ refreshCommunityMusicList = function()
                         clearModal()
                     end
                 end)
-
                 btnCancelSave.MouseButton1Click:Connect(clearModal)
             end)
-
             closeMBtn.MouseButton1Click:Connect(clearModal)
         end)
     end
@@ -1365,9 +1280,7 @@ local function makeDraggableButton(btn)
             dragging = true
             dragStart = input.Position
             startPos = btn.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
-            end)
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
         end
     end)
     btn.InputChanged:Connect(function(input)
@@ -1394,19 +1307,11 @@ local function makeDraggableMain(frame, handle)
             startPos = frame.Position
             task.spawn(function()
                 while isHolding do
-                    if tick() - holdTimer >= 0.5 then
-                        dragging = true
-                        break
-                    end
+                    if tick() - holdTimer >= 0.5 then dragging = true break end
                     task.wait(0.05)
                 end
             end)
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    isHolding = false
-                    dragging = false
-                end
-            end)
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then isHolding = false dragging = false end end)
         end
     end)
     handle.InputChanged:Connect(function(input)
@@ -1421,4 +1326,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI - Hoàn tất 5 phần trọn vẹn, chạy mượt mà không lỗi lầm! 🔥")
+print("GAU MODS UI - Hoàn tất 6 đoạn siêu mượt mà!")
