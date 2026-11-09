@@ -62,22 +62,20 @@ end
 local CHAT_NAME_FILE = "GauMods_ChatName.json"
 local CHAT_HISTORY_FILE = "GauMods_ChatHistory.json"
 local SCRIPT_SHARE_FILE = "GauMods_SharedScripts.json"
+local MUSIC_SAVE_FILE = "GauMods_SavedMusic.json"
+local MUSIC_COMMUNITY_FILE = "GauMods_CommunityMusic.json"
+
 local myChatName = ""
 local chatHistory = {}
 local sharedScriptsHistory = {}
+local savedMusicList = {}
+local communityMusicList = {}
 
 if readfile and isfile and isfile(CHAT_NAME_FILE) then
     pcall(function()
         local data = HttpService:JSONDecode(readfile(CHAT_NAME_FILE))
         if type(data) == "table" and data.name then myChatName = data.name end
     end)
-end
-
-local function saveChatName(name)
-    myChatName = name
-    if writefile then
-        pcall(function() writefile(CHAT_NAME_FILE, HttpService:JSONEncode({name = name})) end)
-    end
 end
 
 if readfile and isfile and isfile(CHAT_HISTORY_FILE) then
@@ -87,12 +85,6 @@ if readfile and isfile and isfile(CHAT_HISTORY_FILE) then
     end)
 end
 
-local function saveChatHistoryToDisk()
-    if writefile then
-        pcall(function() writefile(CHAT_HISTORY_FILE, HttpService:JSONEncode(chatHistory)) end)
-    end
-end
-
 if readfile and isfile and isfile(SCRIPT_SHARE_FILE) then
     pcall(function()
         local data = HttpService:JSONDecode(readfile(SCRIPT_SHARE_FILE))
@@ -100,9 +92,29 @@ if readfile and isfile and isfile(SCRIPT_SHARE_FILE) then
     end)
 end
 
-local function saveSharedScriptsToDisk()
+if readfile and isfile and isfile(MUSIC_SAVE_FILE) then
+    pcall(function()
+        local data = HttpService:JSONDecode(readfile(MUSIC_SAVE_FILE))
+        if type(data) == "table" then savedMusicList = data end
+    end)
+end
+
+local function saveMusicToDisk()
     if writefile then
-        pcall(function() writefile(SCRIPT_SHARE_FILE, HttpService:JSONEncode(sharedScriptsHistory)) end)
+        pcall(function() writefile(MUSIC_SAVE_FILE, HttpService:JSONEncode(savedMusicList)) end)
+    end
+end
+
+if readfile and isfile and isfile(MUSIC_COMMUNITY_FILE) then
+    pcall(function()
+        local data = HttpService:JSONDecode(readfile(MUSIC_COMMUNITY_FILE))
+        if type(data) == "table" then communityMusicList = data end
+    end)
+end
+
+local function saveCommunityMusicToDisk()
+    if writefile then
+        pcall(function() writefile(MUSIC_COMMUNITY_FILE, HttpService:JSONEncode(communityMusicList)) end)
     end
 end
 
@@ -186,7 +198,7 @@ titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 16
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 --[[
-    GAU MODS UI - PHẦN 2/5 (ADMIN, TOPBAR BUTTONS & TAB TRANG CHỦ)
+    GAU MODS UI - PHẦN 2/5 (ADMIN & TRANG CHỦ)
 ]]
 
 local adminClickCount = 0
@@ -296,13 +308,6 @@ adminTriggerBtn.MouseButton1Click:Connect(function()
     if adminClickCount >= 5 then
         adminClickCount = 0
         adminPageFrame.Visible = not adminPageFrame.Visible
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {
-                Title = "Hệ thống Admin",
-                Text = adminPageFrame.Visible and "Đã kích hoạt trang Admin ẩn!" or "Đã ẩn trang Admin!",
-                Duration = 2
-            })
-        end)
     end
 end)
 
@@ -317,6 +322,10 @@ closeBtn.TextSize = 12
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(closeBtn, Color3.fromRGB(20, 25, 36))
 
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
 local minimizeBtn = Instance.new("TextButton", topBar)
 minimizeBtn.Size = UDim2.new(0, 32, 0, 32)
 minimizeBtn.Position = UDim2.new(1, -84, 0.5, -16)
@@ -327,6 +336,10 @@ minimizeBtn.TextColor3 = Color3.fromRGB(180, 190, 210)
 minimizeBtn.TextSize = 12
 Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 8)
 playButtonEffect(minimizeBtn, Color3.fromRGB(20, 25, 36))
+
+minimizeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+end)
 
 local musicPageBtn = Instance.new("TextButton", topBar)
 musicPageBtn.Size = UDim2.new(0, 32, 0, 32)
@@ -475,9 +488,6 @@ executeBtn.MouseButton1Click:Connect(function()
         end
     end
 end)
---[[
-    GAU MODS UI - PHẦN 3/5 (XEM LINK & POPUP CHIA SẺ SCRIPT)
-]]
 
 local linkViewerUI = Instance.new("Frame", mainFrame)
 linkViewerUI.Size = UDim2.new(1, 0, 1, 0)
@@ -533,186 +543,9 @@ openLinkBtn.MouseButton1Click:Connect(function()
 end)
 
 backBtn.MouseButton1Click:Connect(function() linkViewerUI.Visible = false end)
-
-local sharePopupBg = Instance.new("Frame", screenGui)
-sharePopupBg.Size = UDim2.new(1, 0, 1, 0)
-sharePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-sharePopupBg.BackgroundTransparency = 0.65
-sharePopupBg.Visible = false
-sharePopupBg.ZIndex = 50
-
-local sharePopupBox = Instance.new("Frame", sharePopupBg)
-sharePopupBox.Size = UDim2.new(0, 340, 0, 220)
-sharePopupBox.Position = UDim2.new(0.5, -170, 0.5, -110)
-sharePopupBox.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-sharePopupBox.ZIndex = 51
-Instance.new("UICorner", sharePopupBox).CornerRadius = UDim.new(0, 14)
-local spStroke = Instance.new("UIStroke", sharePopupBox)
-spStroke.Color = Color3.fromRGB(0, 122, 255)
-
-local spTitle = Instance.new("TextLabel", sharePopupBox)
-spTitle.Size = UDim2.new(1, 0, 0, 40)
-spTitle.Position = UDim2.new(0, 0, 0, 10)
-spTitle.BackgroundTransparency = 1
-spTitle.Font = Enum.Font.GothamBold
-spTitle.Text = "Chia sẻ Script (Tối đa 12 ký tự)"
-spTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-spTitle.TextSize = 14
-spTitle.ZIndex = 51
-
-local shareNameInput = Instance.new("TextBox", sharePopupBox)
-shareNameInput.Size = UDim2.new(0.86, 0, 0, 40)
-shareNameInput.Position = UDim2.new(0.07, 0, 0, 52)
-shareNameInput.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-shareNameInput.Font = Enum.Font.Gotham
-shareNameInput.PlaceholderText = "Nhập tên script..."
-shareNameInput.Text = ""
-shareNameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-shareNameInput.TextSize = 13
-shareNameInput.ZIndex = 51
-Instance.new("UICorner", shareNameInput).CornerRadius = UDim.new(0, 10)
-
-shareNameInput:GetPropertyChangedSignal("Text"):Connect(function()
-    local currentText = shareNameInput.Text
-    local success, length = pcall(function() return utf8.len(currentText) end)
-    if success and length and length > 12 then
-        local utf8Pos = 1
-        for i = 1, 12 do
-            local _, bytes = utf8.offset(currentText, i)
-            if bytes then utf8Pos = bytes end
-        end
-        shareNameInput.Text = string.sub(currentText, 1, utf8Pos)
-    end
-end)
-
-local selectedKeyStatus = "No key"
-
-local function createRadioOption(name, text, yPos, isDefault)
-    local optionFrame = Instance.new("Frame", sharePopupBox)
-    optionFrame.Size = UDim2.new(0, 130, 0, 32)
-    optionFrame.Position = yPos
-    optionFrame.BackgroundTransparency = 1
-    optionFrame.ZIndex = 51
-
-    local radioBtn = Instance.new("TextButton", optionFrame)
-    radioBtn.Size = UDim2.new(0, 20, 0, 20)
-    radioBtn.Position = UDim2.new(0, 0, 0.5, -10)
-    radioBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-    radioBtn.Text = ""
-    radioBtn.ZIndex = 51
-    Instance.new("UICorner", radioBtn).CornerRadius = UDim.new(1, 0)
-    local rStroke = Instance.new("UIStroke", radioBtn)
-    rStroke.Color = Color3.fromRGB(0, 122, 255)
-
-    local innerDot = Instance.new("Frame", radioBtn)
-    innerDot.Size = UDim2.new(0, 10, 0, 10)
-    innerDot.AnchorPoint = Vector2.new(0.5, 0.5)
-    innerDot.Position = UDim2.new(0.5, 0, 0.5, 0)
-    innerDot.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-    innerDot.Visible = isDefault
-    innerDot.ZIndex = 51
-    Instance.new("UICorner", innerDot).CornerRadius = UDim.new(1, 0)
-
-    local label = Instance.new("TextLabel", optionFrame)
-    label.Size = UDim2.new(1, -26, 1, 0)
-    label.Position = UDim2.new(0, 26, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Font = Enum.Font.GothamBold
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 12
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.ZIndex = 51
-
-    return radioBtn, innerDot
-end
-
-local radio1, dot1 = createRadioOption("HasKey", "🔑 Có key", UDim2.new(0.07, 0, 0, 105), false)
-local radio2, dot2 = createRadioOption("NoKey", "🔓 No key", UDim2.new(0.52, 0, 0, 105), true)
-
-radio1.MouseButton1Click:Connect(function()
-    selectedKeyStatus = "Có key"
-    dot1.Visible = true
-    dot2.Visible = false
-end)
-
-radio2.MouseButton1Click:Connect(function()
-    selectedKeyStatus = "No key"
-    dot1.Visible = false
-    dot2.Visible = true
-end)
-
-local confirmShareBtn = Instance.new("TextButton", sharePopupBox)
-confirmShareBtn.Size = UDim2.new(0.42, 0, 0, 38)
-confirmShareBtn.Position = UDim2.new(0.07, 0, 0, 155)
-confirmShareBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-confirmShareBtn.Font = Enum.Font.GothamBold
-confirmShareBtn.Text = "Chia sẻ"
-confirmShareBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-confirmShareBtn.TextSize = 13
-confirmShareBtn.ZIndex = 51
-Instance.new("UICorner", confirmShareBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(confirmShareBtn, Color3.fromRGB(0, 122, 255))
-
-local cancelShareBtn = Instance.new("TextButton", sharePopupBox)
-cancelShareBtn.Size = UDim2.new(0.42, 0, 0, 38)
-cancelShareBtn.Position = UDim2.new(0.51, 0, 0, 155)
-cancelShareBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-cancelShareBtn.Font = Enum.Font.GothamBold
-cancelShareBtn.Text = "Hủy"
-cancelShareBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-cancelShareBtn.TextSize = 13
-cancelShareBtn.ZIndex = 51
-Instance.new("UICorner", cancelShareBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(cancelShareBtn, Color3.fromRGB(25, 32, 45))
-
-shareBtn.MouseButton1Click:Connect(function()
-    if scriptTextBox.Text ~= "" then
-        shareNameInput.Text = ""
-        mainFrame.Visible = false
-        sharePopupBg.Visible = true
-    end
-end)
-
-cancelShareBtn.MouseButton1Click:Connect(function()
-    sharePopupBg.Visible = false
-    mainFrame.Visible = true
-end)
 --[[
-    GAU MODS UI - PHẦN 4/5 (TRÌNH PHÁT NHẠC 3 TABS & MODALS)
+    GAU MODS UI - PHẦN 3/5 (TAB 1 MENU TRÌNH PHÁT NHẠC)
 ]]
-
-local MUSIC_SAVE_FILE = "GauMods_SavedMusic.json"
-local MUSIC_COMMUNITY_FILE = "GauMods_CommunityMusic.json"
-
-local savedMusicList = {}
-local communityMusicList = {}
-
-if readfile and isfile and isfile(MUSIC_SAVE_FILE) then
-    pcall(function()
-        local data = HttpService:JSONDecode(readfile(MUSIC_SAVE_FILE))
-        if type(data) == "table" then savedMusicList = data end
-    end)
-end
-
-local function saveMusicToDisk()
-    if writefile then
-        pcall(function() writefile(MUSIC_SAVE_FILE, HttpService:JSONEncode(savedMusicList)) end)
-    end
-end
-
-if readfile and isfile and isfile(MUSIC_COMMUNITY_FILE) then
-    pcall(function()
-        local data = HttpService:JSONDecode(readfile(MUSIC_COMMUNITY_FILE))
-        if type(data) == "table" then communityMusicList = data end
-    end)
-end
-
-local function saveCommunityMusicToDisk()
-    if writefile then
-        pcall(function() writefile(MUSIC_COMMUNITY_FILE, HttpService:JSONEncode(communityMusicList)) end)
-    end
-end
 
 local currentSound = Instance.new("Sound", mainFrame)
 currentSound.Name = "GauModsMusicSound"
@@ -813,7 +646,6 @@ local function clearModal()
     musicModalBg.Visible = false
 end
 
--- Tab 1: Menu Nhạc
 local mTab1 = musicContentFrames[1]
 
 local discFrame = Instance.new("Frame", mTab1)
@@ -921,8 +753,8 @@ stopMusicBtn.MouseButton1Click:Connect(function()
     isDiscSpinning = false
 end)
 
-local forwardRefreshSavedMusicList
-local forwardRefreshCommunityMusicList
+local refreshSavedMusicList
+local refreshCommunityMusicList
 
 saveMusicBtn.MouseButton1Click:Connect(function()
     local soundID = musicInputBox.Text:gsub("%D", "")
@@ -988,7 +820,7 @@ saveMusicBtn.MouseButton1Click:Connect(function()
         if musicName ~= "" then
             table.insert(savedMusicList, {name = musicName, id = soundID})
             saveMusicToDisk()
-            if forwardRefreshSavedMusicList then forwardRefreshSavedMusicList() end
+            if refreshSavedMusicList then refreshSavedMusicList() end
             clearModal()
         end
     end)
@@ -1061,7 +893,7 @@ shareMusicBtn.MouseButton1Click:Connect(function()
             local author = (myChatName ~= "" and myChatName) or player.Name
             table.insert(communityMusicList, 1, {author = author, name = musicName, id = soundID})
             saveCommunityMusicToDisk()
-            if forwardRefreshCommunityMusicList then forwardRefreshCommunityMusicList() end
+            if refreshCommunityMusicList then refreshCommunityMusicList() end
             clearModal()
         end
     end)
@@ -1069,10 +901,9 @@ shareMusicBtn.MouseButton1Click:Connect(function()
     btnCancel.MouseButton1Click:Connect(clearModal)
 end)
 --[[
-    GAU MODS UI - PHẦN 5/6 (TAB 2 NHẠC ĐÃ LƯU & TAB 3 NHẠC CỘNG ĐỒNG)
+    GAU MODS UI - PHẦN 4/5 (TAB 2 NHẠC ĐÃ LƯU & AUTO-PLAY)
 ]]
 
--- Tab 2: Nhạc Đã Lưu
 local mTab2 = musicContentFrames[2]
 
 local autoPlayEnabled = false
@@ -1134,7 +965,7 @@ currentSound.Ended:Connect(function()
     end
 end)
 
-forwardRefreshSavedMusicList = function()
+refreshSavedMusicList = function()
     for _, item in pairs(savedMusicScroll:GetChildren()) do
         if item:IsA("Frame") then item:Destroy() end
     end
@@ -1177,7 +1008,7 @@ forwardRefreshSavedMusicList = function()
                 savedMusicList[i], savedMusicList[i - 1] = savedMusicList[i - 1], savedMusicList[i]
             end
             saveMusicToDisk()
-            forwardRefreshSavedMusicList()
+            refreshSavedMusicList()
         end)
 
         local viewBtn = Instance.new("TextButton", itemFrame)
@@ -1312,7 +1143,7 @@ forwardRefreshSavedMusicList = function()
             yesBtn.MouseButton1Click:Connect(function()
                 table.remove(savedMusicList, i)
                 saveMusicToDisk()
-                forwardRefreshSavedMusicList()
+                refreshSavedMusicList()
                 clearModal()
             end)
 
@@ -1320,9 +1151,11 @@ forwardRefreshSavedMusicList = function()
         end)
     end
 end
-forwardRefreshSavedMusicList()
+refreshSavedMusicList()
+--[[
+    GAU MODS UI - PHẦN 5/5 (TAB 3 NHẠC CỘNG ĐỒNG & KÉO THẢ)
+]]
 
--- Tab 3: Nhạc Cộng Đồng
 local mTab3 = musicContentFrames[3]
 
 local communityMusicScroll = Instance.new("ScrollingFrame", mTab3)
@@ -1337,7 +1170,7 @@ local communityLayout = Instance.new("UIListLayout", communityMusicScroll)
 communityLayout.SortOrder = Enum.SortOrder.LayoutOrder
 communityLayout.Padding = UDim.new(0, 6)
 
-forwardRefreshCommunityMusicList = function()
+refreshCommunityMusicList = function()
     for _, item in pairs(communityMusicScroll:GetChildren()) do
         if item:IsA("Frame") then item:Destroy() end
     end
@@ -1511,7 +1344,7 @@ forwardRefreshCommunityMusicList = function()
                     if musicName ~= "" then
                         table.insert(savedMusicList, {name = musicName, id = data.id})
                         saveMusicToDisk()
-                        forwardRefreshSavedMusicList()
+                        refreshSavedMusicList()
                         clearModal()
                     end
                 end)
@@ -1523,10 +1356,7 @@ forwardRefreshCommunityMusicList = function()
         end)
     end
 end
-forwardRefreshCommunityMusicList()
---[[
-    GAU MODS UI - PHẦN 6/6 (HÀM KÉO THẢ & HOÀN TẤT HỆ THỐNG)
-]]
+refreshCommunityMusicList()
 
 local function makeDraggableButton(btn)
     local dragging, dragInput, dragStart, startPos
@@ -1591,4 +1421,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI - Hoàn tất toàn bộ 6 phần cực kỳ mượt mà và đỉnh chóp! 🔥🚀")
+print("GAU MODS UI - Hoàn tất 5 phần trọn vẹn, chạy mượt mà không lỗi lầm! 🔥")
