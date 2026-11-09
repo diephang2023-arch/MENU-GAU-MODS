@@ -1,5 +1,5 @@
 --[[
-    GAU MODS UI - PHẦN 1/8 (KHỞI TẠO & TOPBAR)
+    GAU MODS UI - PHẦN 1/5 (KHỞI TẠO & TOPBAR)
 ]]
 
 pcall(function()
@@ -112,13 +112,13 @@ local function showAdminScreenText(senderName, messageText)
 
     local textLabel = Instance.new("TextLabel", screenGui)
     textLabel.Name = "AdminBroadcastText"
-    textLabel.Size = UDim2.new(1, -40, 0, 40)
-    textLabel.Position = UDim2.new(0, 20, 0, 15)
+    textLabel.Size = UDim2.new(1, -40, 0, 60)
+    textLabel.Position = UDim2.new(0, 20, 0, 5)
     textLabel.BackgroundTransparency = 1
     textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextSize = 15
+    textLabel.TextSize = 20
     textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextStrokeTransparency = 0.3
+    textLabel.TextStrokeTransparency = 0.2
     textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     textLabel.TextWrapped = true
     textLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -186,7 +186,7 @@ titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 16
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 --[[
-    GAU MODS UI - PHẦN 2/8 (ADMIN & TRANG CHỦ)
+    GAU MODS UI - PHẦN 2/5 (ADMIN, TOPBAR BUTTONS & TAB TRANG CHỦ)
 ]]
 
 local adminClickCount = 0
@@ -476,13 +476,14 @@ executeBtn.MouseButton1Click:Connect(function()
     end
 end)
 --[[
-    GAU MODS UI - PHẦN 3/8 (XEM LINK & KHỞI TẠO TAB 2)
+    GAU MODS UI - PHẦN 3/5 (XEM LINK & POPUP CHIA SẺ SCRIPT)
 ]]
 
 local linkViewerUI = Instance.new("Frame", mainFrame)
 linkViewerUI.Size = UDim2.new(1, 0, 1, 0)
 linkViewerUI.BackgroundColor3 = Color3.fromRGB(11, 13, 19)
 linkViewerUI.Visible = false
+linkViewerUI.ZIndex = 40
 
 local backBtn = Instance.new("TextButton", linkViewerUI)
 backBtn.Size = UDim2.new(0, 35, 0, 35)
@@ -492,6 +493,7 @@ backBtn.Font = Enum.Font.GothamBold
 backBtn.Text = "←"
 backBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 backBtn.TextSize = 22
+backBtn.ZIndex = 41
 
 local largeTextBoxFrame = Instance.new("ScrollingFrame", linkViewerUI)
 largeTextBoxFrame.Size = UDim2.new(1, -24, 1, -58)
@@ -500,6 +502,7 @@ largeTextBoxFrame.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
 largeTextBoxFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 largeTextBoxFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 largeTextBoxFrame.ScrollBarThickness = 5
+largeTextBoxFrame.ZIndex = 41
 Instance.new("UICorner", largeTextBoxFrame).CornerRadius = UDim.new(0, 12)
 local ltbStroke = Instance.new("UIStroke", largeTextBoxFrame)
 ltbStroke.Color = Color3.fromRGB(30, 40, 60)
@@ -516,6 +519,7 @@ linkContentText.TextSize = 13
 linkContentText.TextWrapped = true
 linkContentText.TextXAlignment = Enum.TextXAlignment.Left
 linkContentText.TextYAlignment = Enum.TextYAlignment.Top
+linkContentText.ZIndex = 42
 
 openLinkBtn.MouseButton1Click:Connect(function()
     local link = scriptTextBox.Text
@@ -674,1668 +678,855 @@ cancelShareBtn.MouseButton1Click:Connect(function()
     sharePopupBg.Visible = false
     mainFrame.Visible = true
 end)
+--[[
+    GAU MODS UI - PHẦN 4/5 (TRÌNH PHÁT NHẠC 3 TABS & MODALS)
+]]
 
-local savedScripts = {}
-local SAVE_FILE_NAME = "GauMods_SavedScripts.json"
-if readfile and isfile and isfile(SAVE_FILE_NAME) then
+local MUSIC_SAVE_FILE = "GauMods_SavedMusic.json"
+local MUSIC_COMMUNITY_FILE = "GauMods_CommunityMusic.json"
+
+local savedMusicList = {}
+local communityMusicList = {}
+
+if readfile and isfile and isfile(MUSIC_SAVE_FILE) then
     pcall(function()
-        local data = HttpService:JSONDecode(readfile(SAVE_FILE_NAME))
-        if type(data) == "table" then savedScripts = data end
+        local data = HttpService:JSONDecode(readfile(MUSIC_SAVE_FILE))
+        if type(data) == "table" then savedMusicList = data end
     end)
 end
 
-local function saveToDisk()
-    if writefile then pcall(function() writefile(SAVE_FILE_NAME, HttpService:JSONEncode(savedScripts)) end) end
+local function saveMusicToDisk()
+    if writefile then
+        pcall(function() writefile(MUSIC_SAVE_FILE, HttpService:JSONEncode(savedMusicList)) end)
+    end
 end
 
-local savePopupBg = Instance.new("Frame", mainFrame)
-savePopupBg.Size = UDim2.new(1, 0, 1, 0)
-savePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-savePopupBg.BackgroundTransparency = 0.65
-savePopupBg.Visible = false
-
-local savePopupBox = Instance.new("Frame", savePopupBg)
-savePopupBox.Size = UDim2.new(0, 340, 0, 175)
-savePopupBox.Position = UDim2.new(0.5, -170, 0.5, -87)
-savePopupBox.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-Instance.new("UICorner", savePopupBox).CornerRadius = UDim.new(0, 14)
-local savePopupStroke = Instance.new("UIStroke", savePopupBox)
-savePopupStroke.Color = Color3.fromRGB(0, 122, 255)
-
-local savePopupTitle = Instance.new("TextLabel", savePopupBox)
-savePopupTitle.Size = UDim2.new(1, 0, 0, 40)
-savePopupTitle.Position = UDim2.new(0, 0, 0, 10)
-savePopupTitle.BackgroundTransparency = 1
-savePopupTitle.Font = Enum.Font.GothamBold
-savePopupTitle.Text = "Nhập tên để lưu (Tối đa 15 ký tự)"
-savePopupTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-savePopupTitle.TextSize = 13
-
-local nameTextBox = Instance.new("TextBox", savePopupBox)
-nameTextBox.Size = UDim2.new(0.86, 0, 0, 40)
-nameTextBox.Position = UDim2.new(0.07, 0, 0, 55)
-nameTextBox.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-nameTextBox.Font = Enum.Font.Gotham
-nameTextBox.PlaceholderText = "Tên script..."
-nameTextBox.Text = ""
-nameTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-nameTextBox.TextSize = 13
-Instance.new("UICorner", nameTextBox).CornerRadius = UDim.new(0, 10)
-
-nameTextBox:GetPropertyChangedSignal("Text"):Connect(function()
-    local currentText = nameTextBox.Text
-    local success, length = pcall(function() return utf8.len(currentText) end)
-    if success and length and length > 15 then
-        local utf8Pos = 1
-        for i = 1, 15 do
-            local _, bytes = utf8.offset(currentText, i)
-            if bytes then utf8Pos = bytes end
-        end
-        nameTextBox.Text = string.sub(currentText, 1, utf8Pos)
-    end
-end)
-
-local confirmSaveBtn = Instance.new("TextButton", savePopupBox)
-confirmSaveBtn.Size = UDim2.new(0.42, 0, 0, 38)
-confirmSaveBtn.Position = UDim2.new(0.07, 0, 0, 115)
-confirmSaveBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-confirmSaveBtn.Font = Enum.Font.GothamBold
-confirmSaveBtn.Text = "Lưu"
-confirmSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-confirmSaveBtn.TextSize = 13
-Instance.new("UICorner", confirmSaveBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(confirmSaveBtn, Color3.fromRGB(0, 122, 255))
-
-local cancelSaveBtn = Instance.new("TextButton", savePopupBox)
-cancelSaveBtn.Size = UDim2.new(0.42, 0, 0, 38)
-cancelSaveBtn.Position = UDim2.new(0.51, 0, 0, 115)
-cancelSaveBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-cancelSaveBtn.Font = Enum.Font.GothamBold
-cancelSaveBtn.Text = "Hủy"
-cancelSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-cancelSaveBtn.TextSize = 13
-Instance.new("UICorner", cancelSaveBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(cancelSaveBtn, Color3.fromRGB(25, 32, 45))
-
-saveBtn.MouseButton1Click:Connect(function()
-    if scriptTextBox.Text ~= "" then
-        nameTextBox.Text = ""
-        savePopupBg.Visible = true
-    end
-end)
-cancelSaveBtn.MouseButton1Click:Connect(function() savePopupBg.Visible = false end)
-
-local tab2 = tabContentFrames[2]
-
-local filterMode = 1
-local filterModeBtn = Instance.new("TextButton", tab2)
-filterModeBtn.Size = UDim2.new(1, 0, 0, 35)
-filterModeBtn.BackgroundColor3 = Color3.fromRGB(18, 23, 33)
-filterModeBtn.Font = Enum.Font.GothamBold
-filterModeBtn.Text = "📂 Lọc: Tất cả (Script & Nhạc)"
-filterModeBtn.TextColor3 = Color3.fromRGB(0, 170, 255)
-filterModeBtn.TextSize = 12
-Instance.new("UICorner", filterModeBtn).CornerRadius = UDim.new(0, 10)
-local fmStroke = Instance.new("UIStroke", filterModeBtn)
-fmStroke.Color = Color3.fromRGB(0, 170, 255)
-
-local savedListContainer = Instance.new("ScrollingFrame", tab2)
-savedListContainer.Size = UDim2.new(1, 0, 1, -43)
-savedListContainer.Position = UDim2.new(0, 0, 0, 43)
-savedListContainer.BackgroundTransparency = 1
-savedListContainer.BorderSizePixel = 0
-savedListContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-savedListContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
-savedListContainer.ScrollBarThickness = 3
-
-local slcLayout = Instance.new("UIListLayout", savedListContainer)
-slcLayout.SortOrder = Enum.SortOrder.LayoutOrder
-slcLayout.Padding = UDim.new(0, 8)
-
-local confirmDeletePopup = Instance.new("Frame", screenGui)
-confirmDeletePopup.Size = UDim2.new(0, 280, 0, 130)
-confirmDeletePopup.Position = UDim2.new(0.5, -140, 0.5, -65)
-confirmDeletePopup.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-confirmDeletePopup.Visible = false
-confirmDeletePopup.ZIndex = 200
-Instance.new("UICorner", confirmDeletePopup).CornerRadius = UDim.new(0, 12)
-local cdpStroke = Instance.new("UIStroke", confirmDeletePopup)
-cdpStroke.Color = Color3.fromRGB(255, 90, 90)
-
-local cdpText = Instance.new("TextLabel", confirmDeletePopup)
-cdpText.Size = UDim2.new(1, 0, 0, 45)
-cdpText.Position = UDim2.new(0, 0, 0, 15)
-cdpText.BackgroundTransparency = 1
-cdpText.Font = Enum.Font.GothamBold
-cdpText.Text = "Bạn có muốn xóa không?"
-cdpText.TextColor3 = Color3.fromRGB(255, 255, 255)
-cdpText.TextSize = 14
-cdpText.ZIndex = 201
-
-local yesDelBtn = Instance.new("TextButton", confirmDeletePopup)
-yesDelBtn.Size = UDim2.new(0.4, 0, 0, 35)
-yesDelBtn.Position = UDim2.new(0.075, 0, 0, 75)
-yesDelBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-yesDelBtn.Font = Enum.Font.GothamBold
-yesDelBtn.Text = "Có"
-yesDelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-yesDelBtn.TextSize = 13
-yesDelBtn.ZIndex = 201
-Instance.new("UICorner", yesDelBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(yesDelBtn, Color3.fromRGB(255, 80, 80))
-
-local noDelBtn = Instance.new("TextButton", confirmDeletePopup)
-noDelBtn.Size = UDim2.new(0.4, 0, 0, 35)
-noDelBtn.Position = UDim2.new(0.525, 0, 0, 75)
-noDelBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-noDelBtn.Font = Enum.Font.GothamBold
-noDelBtn.Text = "Không"
-noDelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-noDelBtn.TextSize = 13
-noDelBtn.ZIndex = 201
-Instance.new("UICorner", noDelBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(noDelBtn, Color3.fromRGB(25, 32, 45))
-
-local pendingDeleteIndex = nil
-local refreshSavedList = function() end -- Khai báo tạm trước
---[[
-    GAU MODS UI - PHẦN 4/8 (TAB CHAT & CÀI ĐẶT)
-]]
-
-local namePopupBg = Instance.new("Frame", screenGui)
-namePopupBg.Size = UDim2.new(1, 0, 1, 0)
-namePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-namePopupBg.BackgroundTransparency = 0.7
-namePopupBg.ZIndex = 100
-namePopupBg.Visible = (myChatName == "")
-
-local namePopupBox = Instance.new("Frame", namePopupBg)
-namePopupBox.Size = UDim2.new(0, 340, 0, 160)
-namePopupBox.Position = UDim2.new(0.5, -170, 0.5, -80)
-namePopupBox.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-namePopupBox.ZIndex = 101
-Instance.new("UICorner", namePopupBox).CornerRadius = UDim.new(0, 14)
-local npStroke = Instance.new("UIStroke", namePopupBox)
-npStroke.Color = Color3.fromRGB(0, 122, 255)
-
-local npTitle = Instance.new("TextLabel", namePopupBox)
-npTitle.Size = UDim2.new(1, 0, 0, 40)
-npTitle.Position = UDim2.new(0, 0, 0, 10)
-npTitle.BackgroundTransparency = 1
-npTitle.Font = Enum.Font.GothamBold
-npTitle.Text = "Đặt tên của bạn (Tối đa 15 ký tự)"
-npTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-npTitle.TextSize = 13
-npTitle.ZIndex = 101
-
-local chatNameInput = Instance.new("TextBox", namePopupBox)
-chatNameInput.Size = UDim2.new(0.86, 0, 0, 40)
-chatNameInput.Position = UDim2.new(0.07, 0, 0, 52)
-chatNameInput.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-chatNameInput.Font = Enum.Font.Gotham
-chatNameInput.PlaceholderText = "Nhập tên hiển thị..."
-chatNameInput.Text = ""
-chatNameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-chatNameInput.TextSize = 13
-chatNameInput.ZIndex = 101
-Instance.new("UICorner", chatNameInput).CornerRadius = UDim.new(0, 10)
-
-chatNameInput:GetPropertyChangedSignal("Text"):Connect(function()
-    local currentText = chatNameInput.Text
-    local success, length = pcall(function() return utf8.len(currentText) end)
-    if success and length and length > 15 then
-        local utf8Pos = 1
-        for i = 1, 15 do
-            local _, bytes = utf8.offset(currentText, i)
-            if bytes then utf8Pos = bytes end
-        end
-        chatNameInput.Text = string.sub(currentText, 1, utf8Pos)
-    end
-end)
-
-local saveChatNameBtn = Instance.new("TextButton", namePopupBox)
-saveChatNameBtn.Size = UDim2.new(0.86, 0, 0, 38)
-saveChatNameBtn.Position = UDim2.new(0.07, 0, 0, 104)
-saveChatNameBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-saveChatNameBtn.Font = Enum.Font.GothamBold
-saveChatNameBtn.Text = "Lưu & Vào Chat"
-saveChatNameBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-saveChatNameBtn.TextSize = 13
-saveChatNameBtn.ZIndex = 101
-Instance.new("UICorner", saveChatNameBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(saveChatNameBtn, Color3.fromRGB(0, 122, 255))
-
-saveChatNameBtn.MouseButton1Click:Connect(function()
-    local enteredName = chatNameInput.Text:gsub("^%s*(.-)%s*$", "%1")
-    if enteredName ~= "" then
-        saveChatName(enteredName)
-        namePopupBg.Visible = false
-    else
-        chatNameInput.PlaceholderText = "Vui lòng không để trống tên!"
-    end
-end)
-
-local tab3 = tabContentFrames[3]
-
-local chatDisplayFrame = Instance.new("ScrollingFrame", tab3)
-chatDisplayFrame.Size = UDim2.new(1, 0, 1, -50)
-chatDisplayFrame.Position = UDim2.new(0, 0, 0, 0)
-chatDisplayFrame.BackgroundTransparency = 1
-chatDisplayFrame.BorderSizePixel = 0
-chatDisplayFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-chatDisplayFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-chatDisplayFrame.ScrollBarThickness = 3
-
-local chatListLayout = Instance.new("UIListLayout", chatDisplayFrame)
-chatListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-chatListLayout.Padding = UDim.new(0, 8)
-
-local function appendChatMessage(senderName, messageText)
-    local msgContainer = Instance.new("Frame", chatDisplayFrame)
-    msgContainer.Size = UDim2.new(1, 0, 0, 0)
-    msgContainer.AutomaticSize = Enum.AutomaticSize.Y
-    msgContainer.BackgroundTransparency = 1
-    
-    local msgLabel = Instance.new("TextLabel", msgContainer)
-    msgLabel.Size = UDim2.new(1, -10, 0, 0)
-    msgLabel.Position = UDim2.new(0, 5, 0, 0)
-    msgLabel.AutomaticSize = Enum.AutomaticSize.Y
-    msgLabel.BackgroundTransparency = 1
-    msgLabel.Font = Enum.Font.Gotham
-    msgLabel.TextSize = 12
-    msgLabel.TextWrapped = true
-    msgLabel.TextXAlignment = Enum.TextXAlignment.Left
-    msgLabel.RichText = true
-    msgLabel.Text = "<font color=\"#00A2FF\"><b>[" .. senderName .. "]:</b></font> " .. messageText
-    msgLabel.TextColor3 = Color3.fromRGB(235, 240, 255)
-    
-    task.defer(function()
-        chatDisplayFrame.CanvasPosition = Vector2.new(0, chatDisplayFrame.AbsoluteCanvasSize.Y)
+if readfile and isfile and isfile(MUSIC_COMMUNITY_FILE) then
+    pcall(function()
+        local data = HttpService:JSONDecode(readfile(MUSIC_COMMUNITY_FILE))
+        if type(data) == "table" then communityMusicList = data end
     end)
 end
 
-for _, chatData in ipairs(chatHistory) do
-    appendChatMessage(chatData.sender, chatData.msg)
-end
-
-local chatInputBar = Instance.new("Frame", tab3)
-chatInputBar.Size = UDim2.new(1, 0, 0, 42)
-chatInputBar.Position = UDim2.new(0, 0, 1, -42)
-chatInputBar.BackgroundTransparency = 1
-
-local chatTextBox = Instance.new("TextBox", chatInputBar)
-chatTextBox.Size = UDim2.new(1, -85, 1, 0)
-chatTextBox.Position = UDim2.new(0, 0, 0, 0)
-chatTextBox.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-chatTextBox.Font = Enum.Font.Gotham
-chatTextBox.PlaceholderText = "Nhập tin nhắn trò chuyện..."
-chatTextBox.Text = ""
-chatTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-chatTextBox.TextSize = 12
-chatTextBox.ClearTextOnFocus = false
-Instance.new("UICorner", chatTextBox).CornerRadius = UDim.new(0, 10)
-local cbStroke = Instance.new("UIStroke", chatTextBox)
-cbStroke.Color = Color3.fromRGB(30, 40, 60)
-
-local sendChatBtn = Instance.new("TextButton", chatInputBar)
-sendChatBtn.Size = UDim2.new(0, 75, 1, 0)
-sendChatBtn.Position = UDim2.new(1, -75, 0, 0)
-sendChatBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-sendChatBtn.Font = Enum.Font.GothamBold
-sendChatBtn.Text = "Gửi"
-sendChatBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-sendChatBtn.TextSize, sendChatBtn.AutoButtonColor = 13, false
-Instance.new("UICorner", sendChatBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(sendChatBtn, Color3.fromRGB(0, 122, 255))
-
-local chatRemoteName = "GauMods_GlobalChatEvent"
-pcall(function()
-    if not playerGui:FindFirstChild(chatRemoteName) then
-        local ev = Instance.new("BindableEvent", playerGui)
-        ev.Name = chatRemoteName
-    end
-end)
-
-local isSending = false
-local function sendGlobalMessage()
-    if isSending then return end
-    local text = chatTextBox.Text:gsub("^%s*(.-)%s*$", "%1")
-    if text ~= "" then
-        isSending = true
-        local nameToSend = (myChatName ~= "" and myChatName) or player.Name
-        chatTextBox.Text = ""
-        
-        table.insert(chatHistory, {sender = nameToSend, msg = text})
-        saveChatHistoryToDisk()
-        appendChatMessage(nameToSend, text)
-        
-        pcall(function()
-            local ev = playerGui:FindFirstChild(chatRemoteName)
-            if ev then ev:Fire(nameToSend, text) end
-        end)
-        
-        task.delay(0.3, function() isSending = false end)
+local function saveCommunityMusicToDisk()
+    if writefile then
+        pcall(function() writefile(MUSIC_COMMUNITY_FILE, HttpService:JSONEncode(communityMusicList)) end)
     end
 end
 
-sendChatBtn.MouseButton1Click:Connect(sendGlobalMessage)
-chatTextBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then sendGlobalMessage() end
-end)
+local currentSound = Instance.new("Sound", mainFrame)
+currentSound.Name = "GauModsMusicSound"
+currentSound.Volume = 1
+currentSound.Looped = false
 
-pcall(function()
-    local ev = playerGui:WaitForChild(chatRemoteName, 2)
-    if ev then
-        ev.Event:Connect(function(sender, msg)
-            if sender ~= ((myChatName ~= "" and myChatName) or player.Name) or chatHistory[#chatHistory].msg ~= msg then
-                appendChatMessage(sender, msg)
-            end
-        end)
-    end
-end)
+local musicFrame = Instance.new("Frame", mainFrame)
+musicFrame.Size = UDim2.new(1, 0, 1, -50)
+musicFrame.Position = UDim2.new(0, 0, 0, 50)
+musicFrame.BackgroundColor3 = Color3.fromRGB(11, 13, 19)
+musicFrame.Visible = false
+musicFrame.ZIndex = 20
 
-local tab5 = tabContentFrames[5]
-local tab5Layout = Instance.new("UIListLayout", tab5)
-tab5Layout.SortOrder = Enum.SortOrder.LayoutOrder
-tab5Layout.Padding = UDim.new(0, 12)
+local musicTopNav = Instance.new("Frame", musicFrame)
+musicTopNav.Size = UDim2.new(1, -32, 0, 36)
+musicTopNav.Position = UDim2.new(0, 16, 0, 8)
+musicTopNav.BackgroundTransparency = 1
+musicTopNav.ZIndex = 21
 
-local function createSettingLabel(text)
-    local lbl = Instance.new("TextLabel", tab5)
-    lbl.Size = UDim2.new(1, 0, 0, 24)
-    lbl.BackgroundTransparency = 1
-    lbl.Font = Enum.Font.GothamBold
-    lbl.Text = text
-    lbl.TextColor3 = Color3.fromRGB(200, 210, 230)
-    lbl.TextSize = 13
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    return lbl
-end
-
-createSettingLabel("🎨 Chọn Màu Sắc Menu Chính:")
-
-local colorDropdownContainer = Instance.new("Frame", tab5)
-colorDropdownContainer.Size = UDim2.new(1, 0, 0, 40)
-colorDropdownContainer.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-colorDropdownContainer.ClipsDescendants = true
-Instance.new("UICorner", colorDropdownContainer).CornerRadius = UDim.new(0, 10)
-local cdStroke = Instance.new("UIStroke", colorDropdownContainer)
-cdStroke.Color = Color3.fromRGB(30, 40, 60)
-
-local colorDropdownBtn = Instance.new("TextButton", colorDropdownContainer)
-colorDropdownBtn.Size = UDim2.new(1, 0, 0, 40)
-colorDropdownBtn.BackgroundTransparency = 1
-colorDropdownBtn.Font = Enum.Font.GothamBold
-colorDropdownBtn.Text = "  🟦 Xanh nước biển (Mặc định)       ▼"
-colorDropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-colorDropdownBtn.TextSize = 13
-colorDropdownBtn.TextXAlignment = Enum.TextXAlignment.Left
-
-local colorListFrame = Instance.new("Frame", colorDropdownContainer)
-colorListFrame.Size = UDim2.new(1, 0, 0, 210)
-colorListFrame.Position = UDim2.new(0, 0, 0, 40)
-colorListFrame.BackgroundTransparency = 1
-
-local colorOptions = {
-    {name = "🌸 Hồng", color = Color3.fromRGB(255, 105, 180)},
-    {name = "🟦 Xanh nước biển", color = Color3.fromRGB(0, 122, 255)},
-    {name = "🟩 Xanh lá cây", color = Color3.fromRGB(50, 205, 50)},
-    {name = "⬜ Trắng", color = Color3.fromRGB(240, 240, 240)},
-    {name = "🟨 Vàng", color = Color3.fromRGB(255, 215, 0)},
-    {name = "🟣 Tím", color = Color3.fromRGB(138, 43, 225)}
+local musicTabs = {}
+local musicContentFrames = {}
+local musicTabData = {
+    {name = "🎧 Menu"},
+    {name = "💾 Đã Lưu"},
+    {name = "🌐 Nhạc"}
 }
 
-local isColorDropdownOpen = false
-colorDropdownBtn.MouseButton1Click:Connect(function()
-    isColorDropdownOpen = not isColorDropdownOpen
-    TweenService:Create(colorDropdownContainer, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, isColorDropdownOpen and 250 or 40)}):Play()
-end)
+local musicContainer = Instance.new("Frame", musicFrame)
+musicContainer.Size = UDim2.new(1, -32, 1, -56)
+musicContainer.Position = UDim2.new(0, 16, 0, 48)
+musicContainer.BackgroundTransparency = 1
+musicContainer.ZIndex = 21
 
-for i, opt in ipairs(colorOptions) do
-    local optBtn = Instance.new("TextButton", colorListFrame)
-    optBtn.Size = UDim2.new(1, 0, 0, 35)
-    optBtn.Position = UDim2.new(0, 0, 0, (i-1)*35)
-    optBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-    optBtn.Font = Enum.Font.Gotham
-    optBtn.Text = "   " .. opt.name
-    optBtn.TextColor3 = opt.color
-    optBtn.TextSize = 13
-    optBtn.TextXAlignment = Enum.TextXAlignment.Left
+for i = 1, 3 do
+    local mBtn = Instance.new("TextButton", musicTopNav)
+    mBtn.Size = UDim2.new(0.32, 0, 1, 0)
+    mBtn.Position = UDim2.new((i - 1) * 0.34, 0, 0, 0)
+    mBtn.BackgroundColor3 = i == 1 and Color3.fromRGB(0, 122, 255) or Color3.fromRGB(18, 23, 33)
+    mBtn.Font = Enum.Font.GothamBold
+    mBtn.Text = musicTabData[i].name
+    mBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    mBtn.TextSize = 11
+    mBtn.AutoButtonColor = false
+    mBtn.ZIndex = 22
+    Instance.new("UICorner", mBtn).CornerRadius = UDim.new(0, 8)
     
-    optBtn.MouseButton1Click:Connect(function()
-        colorDropdownBtn.Text = "  " .. opt.name .. "       ▼"
-        isColorDropdownOpen = false
-        TweenService:Create(colorDropdownContainer, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 40)}):Play()
-        
-        mainStroke.Color = opt.color
-        openStroke.Color = opt.color
-        for _, tB in ipairs(tabs) do
-            if tB.BackgroundColor3 ~= Color3.fromRGB(16, 20, 30) then
-                tB.BackgroundColor3 = opt.color
-            end
-        end
-    end)
-end
---[[
-    GAU MODS UI - PHẦN 5/8 (CÀI ĐẶT NÂNG CAO)
-]]
+    musicTabs[i] = mBtn
 
-createSettingLabel("🪟 Điều chỉnh độ mờ của Menu:")
-
-local opacityBar = Instance.new("Frame", tab5)
-opacityBar.Size = UDim2.new(1, 0, 0, 35)
-opacityBar.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-Instance.new("UICorner", opacityBar).CornerRadius = UDim.new(0, 10)
-local opStroke = Instance.new("UIStroke", opacityBar)
-opStroke.Color = Color3.fromRGB(30, 40, 60)
-
-local opacityFill = Instance.new("Frame", opacityBar)
-opacityFill.Size = UDim2.new(0.85, 0, 1, 0)
-opacityFill.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-opacityFill.BackgroundTransparency = 0.5
-Instance.new("UICorner", opacityFill).CornerRadius = UDim.new(0, 10)
-
-local opacitySliderBtn = Instance.new("TextButton", opacityBar)
-opacitySliderBtn.Size = UDim2.new(1, 0, 1, 0)
-opacitySliderBtn.BackgroundTransparency = 1
-opacitySliderBtn.Text = "Kéo để chỉnh độ mờ (Đang đặt: 15%)"
-opacitySliderBtn.Font = Enum.Font.GothamBold
-opacitySliderBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-opacitySliderBtn.TextSize = 11
-
-local function updateOpacity(input)
-    local pos = math.clamp((input.Position.X - opacityBar.AbsolutePosition.X) / opacityBar.AbsoluteSize.X, 0, 1)
-    opacityFill.Size = UDim2.new(pos, 0, 1, 0)
-    local alpha = 0.05 + (pos * 0.5)
-    mainFrame.BackgroundTransparency = alpha
-    opacitySliderBtn.Text = string.format("Độ mờ: %d%%", math.floor(pos * 100))
-end
-
-local draggingOpacity = false
-opacitySliderBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingOpacity = true
-        updateOpacity(input)
-    end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if draggingOpacity and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        updateOpacity(input)
-    end
-end)
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingOpacity = false
-    end
-end)
-
-createSettingLabel("📐 Điều chỉnh kích thước Menu:")
-
-local sizeBar = Instance.new("Frame", tab5)
-sizeBar.Size = UDim2.new(1, 0, 0, 35)
-sizeBar.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-Instance.new("UICorner", sizeBar).CornerRadius = UDim.new(0, 10)
-local szStroke = Instance.new("UIStroke", sizeBar)
-szStroke.Color = Color3.fromRGB(30, 40, 60)
-
-local sizeFill = Instance.new("Frame", sizeBar)
-sizeFill.Size = UDim2.new(0.5, 0, 1, 0)
-sizeFill.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-sizeFill.BackgroundTransparency = 0.5
-Instance.new("UICorner", sizeFill).CornerRadius = UDim.new(0, 10)
-
-local sizeSliderBtn = Instance.new("TextButton", sizeBar)
-sizeSliderBtn.Size = UDim2.new(1, 0, 1, 0)
-sizeSliderBtn.BackgroundTransparency = 1
-sizeSliderBtn.Text = "Kéo để chỉnh kích thước (Mặc định: 550x400)"
-sizeSliderBtn.Font = Enum.Font.GothamBold
-sizeSliderBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-sizeSliderBtn.TextSize = 11
-
-local function updateSize(input)
-    local pos = math.clamp((input.Position.X - sizeBar.AbsolutePosition.X) / sizeBar.AbsoluteSize.X, 0.2, 1)
-    sizeFill.Size = UDim2.new(pos, 0, 1, 0)
-    local w = math.floor(400 + (pos * 300))
-    local h = math.floor(300 + (pos * 200))
-    mainFrame.Size = UDim2.new(0, w, 0, h)
-    mainFrame.Position = UDim2.new(0.5, -w/2, 0.5, -h/2)
-    sizeSliderBtn.Text = string.format("Kích thước: %dx%d", w, h)
-end
-
-local draggingSize = false
-sizeSliderBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingSize = true
-        updateSize(input)
-    end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if draggingSize and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        updateSize(input)
-    end
-end)
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingSize = false
-    end
-end)
-
-createSettingLabel("🔘 Kiểu dáng nút mở Menu nổi:")
-
-local shapeDropdownContainer = Instance.new("Frame", tab5)
-shapeDropdownContainer.Size = UDim2.new(1, 0, 0, 40)
-shapeDropdownContainer.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-shapeDropdownContainer.ClipsDescendants = true
-Instance.new("UICorner", shapeDropdownContainer).CornerRadius = UDim.new(0, 10)
-local sdStroke = Instance.new("UIStroke", shapeDropdownContainer)
-sdStroke.Color = Color3.fromRGB(30, 40, 60)
-
-local shapeDropdownBtn = Instance.new("TextButton", shapeDropdownContainer)
-shapeDropdownBtn.Size = UDim2.new(1, 0, 0, 40)
-shapeDropdownBtn.BackgroundTransparency = 1
-shapeDropdownBtn.Font = Enum.Font.GothamBold
-shapeDropdownBtn.Text = "  🔲 Hình vuông bo tròn (Mặc định)       ▼"
-shapeDropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-shapeDropdownBtn.TextSize = 13
-shapeDropdownBtn.TextXAlignment = Enum.TextXAlignment.Left
-
-local shapeListFrame = Instance.new("Frame", shapeDropdownContainer)
-shapeListFrame.Size = UDim2.new(1, 0, 0, 70)
-shapeListFrame.Position = UDim2.new(0, 0, 0, 40)
-shapeListFrame.BackgroundTransparency = 1
-
-local shapeOptions = {
-    {name = "🔲 Hình vuông bo tròn", corner = UDim.new(0, 16)},
-    {name = "⭕ Hình tròn hoàn toàn", corner = UDim.new(1, 0)}
-}
-
-local isShapeDropdownOpen = false
-shapeDropdownBtn.MouseButton1Click:Connect(function()
-    isShapeDropdownOpen = not isShapeDropdownOpen
-    TweenService:Create(shapeDropdownContainer, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, isShapeDropdownOpen and 110 or 40)}):Play()
-end)
-
-for i, opt in ipairs(shapeOptions) do
-    local sOptBtn = Instance.new("TextButton", shapeListFrame)
-    sOptBtn.Size = UDim2.new(1, 0, 0, 35)
-    sOptBtn.Position = UDim2.new(0, 0, 0, (i-1)*35)
-    sOptBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-    sOptBtn.Font = Enum.Font.Gotham
-    sOptBtn.Text = "   " .. opt.name
-    sOptBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    sOptBtn.TextSize = 13
-    sOptBtn.TextXAlignment = Enum.TextXAlignment.Left
+    local mContent = Instance.new("Frame", musicContainer)
+    mContent.Size = UDim2.new(1, 0, 1, 0)
+    mContent.BackgroundTransparency = 1
+    mContent.Visible = (i == 1)
+    mContent.ZIndex = 22
     
-    sOptBtn.MouseButton1Click:Connect(function()
-        shapeDropdownBtn.Text = "  " .. opt.name .. "       ▼"
-        isShapeDropdownOpen = false
-        TweenService:Create(shapeDropdownContainer, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 40)}):Play()
-        
-        for _, c in ipairs(openButton:GetChildren()) do
-            if c:IsA("UICorner") then c.CornerRadius = opt.corner end
-        end
-    end)
+    musicContentFrames[i] = mContent
 end
 
-createSettingLabel("🔄 Tự động chạy Script khi chuyển Server:")
+local function switchMusicTab(idx)
+    for i = 1, 3 do
+        musicTabs[i].BackgroundColor3 = (i == idx) and Color3.fromRGB(0, 122, 255) or Color3.fromRGB(18, 23, 33)
+        musicContentFrames[i].Visible = (i == idx)
+    end
+end
 
-local autoExecFrame = Instance.new("Frame", tab5)
-autoExecFrame.Size = UDim2.new(1, 0, 0, 40)
-autoExecFrame.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-Instance.new("UICorner", autoExecFrame).CornerRadius = UDim.new(0, 10)
-local aeStroke = Instance.new("UIStroke", autoExecFrame)
-aeStroke.Color = Color3.fromRGB(30, 40, 60)
+for i = 1, 3 do
+    musicTabs[i].MouseButton1Click:Connect(function() switchMusicTab(i) end)
+end
 
-local autoExecLabel = Instance.new("TextLabel", autoExecFrame)
-autoExecLabel.Size = UDim2.new(0.7, 0, 1, 0)
-autoExecLabel.Position = UDim2.new(0, 12, 0, 0)
-autoExecLabel.BackgroundTransparency = 1
-autoExecLabel.Font = Enum.Font.Gotham
-autoExecLabel.Text = "Auto Execute on Teleport"
-autoExecLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-autoExecLabel.TextSize = 12
-autoExecLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local toggleBtn = Instance.new("TextButton", autoExecFrame)
-toggleBtn.Size = UDim2.new(0, 50, 0, 24)
-toggleBtn.Position = UDim2.new(1, -62, 0.5, -12)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 40, 55)
-toggleBtn.Text = ""
-Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
-
-local toggleCircle = Instance.new("Frame", toggleBtn)
-toggleCircle.Size = UDim2.new(0, 18, 0, 18)
-toggleCircle.Position = UDim2.new(0, 3, 0.5, -9)
-toggleCircle.BackgroundColor3 = Color3.fromRGB(180, 190, 210)
-Instance.new("UICorner", toggleCircle).CornerRadius = UDim.new(1, 0)
-
-local isAutoExecEnabled = false
-local AUTO_EXEC_FILE = "autoexec/GauMods_CurrentAuto.lua"
-
-toggleBtn.MouseButton1Click:Connect(function()
-    isAutoExecEnabled = not isAutoExecEnabled
-    if isAutoExecEnabled then
-        TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 122, 255)}):Play()
-        TweenService:Create(toggleCircle, TweenInfo.new(0.2), {Position = UDim2.new(1, -21, 0.5, -9), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-        if writefile and scriptTextBox.Text ~= "" then
-            pcall(function() writefile(AUTO_EXEC_FILE, scriptTextBox.Text) end)
-        end
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {Title = "Auto Execute", Text = "Đã bật tự động chạy script khi đổi Server!", Duration = 2})
-        end)
-    else
-        TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 40, 55)}):Play()
-        TweenService:Create(toggleCircle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -9), BackgroundColor3 = Color3.fromRGB(180, 190, 210)}):Play()
-        if delfile and isfile and isfile(AUTO_EXEC_FILE) then
-            pcall(function() delfile(AUTO_EXEC_FILE) end)
-        end
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {Title = "Auto Execute", Text = "Đã tắt tự động chạy script!", Duration = 2})
-        end)
+musicPageBtn.MouseButton1Click:Connect(function()
+    musicFrame.Visible = not musicFrame.Visible
+    if musicFrame.Visible then
+        switchMusicTab(1)
     end
 end)
---[[
-    GAU MODS UI - PHẦN 6/8 (TRANG NGHE NHẠC & QUẢN LÝ NHẠC)
-]]
 
-local musicPageFrame = Instance.new("Frame", mainFrame)
-musicPageFrame.Name = "MusicPageFrame"
-musicPageFrame.Size = UDim2.new(1, 0, 1, -50)
-musicPageFrame.Position = UDim2.new(0, 0, 0, 50)
-musicPageFrame.BackgroundColor3 = Color3.fromRGB(11, 13, 19)
-musicPageFrame.Visible = false
-musicPageFrame.ZIndex = 40
+local musicModalBg = Instance.new("Frame", screenGui)
+musicModalBg.Size = UDim2.new(1, 0, 1, 0)
+musicModalBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+musicModalBg.BackgroundTransparency = 0.65
+musicModalBg.Visible = false
+musicModalBg.ZIndex = 100
 
-local musicBackBtn = Instance.new("TextButton", musicPageFrame)
-musicBackBtn.Size = UDim2.new(0, 35, 0, 35)
-musicBackBtn.Position = UDim2.new(0, 12, 0, 10)
-musicBackBtn.BackgroundTransparency = 1
-musicBackBtn.Font = Enum.Font.GothamBold
-musicBackBtn.Text = "←"
-musicBackBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-musicBackBtn.TextSize = 22
-musicBackBtn.ZIndex = 41
+local musicModalBox = Instance.new("Frame", musicModalBg)
+musicModalBox.Size = UDim2.new(0, 320, 0, 200)
+musicModalBox.Position = UDim2.new(0.5, -160, 0.5, -100)
+musicModalBox.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
+musicModalBox.ZIndex = 101
+Instance.new("UICorner", musicModalBox).CornerRadius = UDim.new(0, 12)
+local mmbStroke = Instance.new("UIStroke", musicModalBox)
+mmbStroke.Color = Color3.fromRGB(0, 122, 255)
 
-local musicTitleLab = Instance.new("TextLabel", musicPageFrame)
-musicTitleLab.Size = UDim2.new(1, -140, 0, 35)
-musicTitleLab.Position = UDim2.new(0, 55, 0, 10)
-musicTitleLab.BackgroundTransparency = 1
-musicTitleLab.Font = Enum.Font.GothamBold
-musicTitleLab.Text = "🎧 GAU MODS MUSIC PLAYER"
-musicTitleLab.TextColor3 = Color3.fromRGB(0, 170, 255)
-musicTitleLab.TextSize = 13
-musicTitleLab.TextXAlignment = Enum.TextXAlignment.Left
-musicTitleLab.ZIndex = 41
+local function clearModal()
+    for _, child in pairs(musicModalBox:GetChildren()) do
+        if not child:IsA("UICorner") and not child:IsA("UIStroke") then
+            child:Destroy()
+        end
+    end
+    musicModalBg.Visible = false
+end
 
-local saveMusicBtn = Instance.new("TextButton", musicPageFrame)
-saveMusicBtn.Size = UDim2.new(0, 42, 0, 30)
-saveMusicBtn.Position = UDim2.new(1, -95, 0, 12)
-saveMusicBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-saveMusicBtn.Font = Enum.Font.GothamBold
-saveMusicBtn.Text = "Lưu"
-saveMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-saveMusicBtn.TextSize = 11
-saveMusicBtn.ZIndex = 41
-Instance.new("UICorner", saveMusicBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(saveMusicBtn, Color3.fromRGB(0, 122, 255))
+-- Tab 1: Menu Nhạc
+local mTab1 = musicContentFrames[1]
 
-local shareMusicBtn = Instance.new("TextButton", musicPageFrame)
-shareMusicBtn.Size = UDim2.new(0, 42, 0, 30)
-shareMusicBtn.Position = UDim2.new(1, -48, 0, 12)
-shareMusicBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-shareMusicBtn.Font = Enum.Font.GothamBold
-shareMusicBtn.Text = "Chia sẻ"
-shareMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-shareMusicBtn.TextSize = 10
-shareMusicBtn.ZIndex = 41
-Instance.new("UICorner", shareMusicBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(shareMusicBtn, Color3.fromRGB(25, 32, 45))
-
-local discFrame = Instance.new("Frame", musicPageFrame)
-discFrame.Size = UDim2.new(0, 110, 0, 110)
-discFrame.AnchorPoint = Vector2.new(0.5, 0)
-discFrame.Position = UDim2.new(0.5, 0, 0, 60)
+local discFrame = Instance.new("Frame", mTab1)
+discFrame.Size = UDim2.new(0, 90, 0, 90)
+discFrame.Position = UDim2.new(0.5, -45, 0, 5)
 discFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-discFrame.ZIndex = 41
+discFrame.ZIndex = 23
 Instance.new("UICorner", discFrame).CornerRadius = UDim.new(1, 0)
 local discStroke = Instance.new("UIStroke", discFrame)
-discStroke.Color = Color3.fromRGB(0, 170, 255)
+discStroke.Color = Color3.fromRGB(0, 136, 255)
 discStroke.Thickness = 2
 
-local discCenter = Instance.new("Frame", discFrame)
-discCenter.Size = UDim2.new(0, 30, 0, 30)
-discCenter.AnchorPoint = Vector2.new(0.5, 0.5)
-discCenter.Position = UDim2.new(0.5, 0, 0.5, 0)
-discCenter.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-discCenter.ZIndex = 42
-Instance.new("UICorner", discCenter).CornerRadius = UDim.new(1, 0)
+local discInner = Instance.new("Frame", discFrame)
+discInner.Size = UDim2.new(0, 30, 0, 30)
+discInner.AnchorPoint = Vector2.new(0.5, 0.5)
+discInner.Position = UDim2.new(0.5, 0, 0.5, 0)
+discInner.BackgroundColor3 = Color3.fromRGB(11, 13, 19)
+discInner.ZIndex = 24
+Instance.new("UICorner", discInner).CornerRadius = UDim.new(1, 0)
 
-local arrowIcon = Instance.new("TextLabel", discFrame)
-arrowIcon.Size = UDim2.new(0, 30, 0, 30)
-arrowIcon.Position = UDim2.new(0.7, 0, 0.1, 0)
-arrowIcon.BackgroundTransparency = 1
-arrowIcon.Font = Enum.Font.GothamBold
-arrowIcon.Text = "▶"
-arrowIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-arrowIcon.TextSize = 14
-arrowIcon.ZIndex = 42
+local musicInputBox = Instance.new("TextBox", mTab1)
+musicInputBox.Size = UDim2.new(1, 0, 0, 36)
+musicInputBox.Position = UDim2.new(0, 0, 0, 105)
+musicInputBox.BackgroundColor3 = Color3.fromRGB(18, 23, 33)
+musicInputBox.Font = Enum.Font.Gotham
+musicInputBox.PlaceholderText = "Nhập Roblox Sound ID tại đây..."
+musicInputBox.Text = ""
+musicInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+musicInputBox.TextSize = 12
+musicInputBox.ZIndex = 23
+Instance.new("UICorner", musicInputBox).CornerRadius = UDim.new(0, 8)
 
-local musicInputBoxContainer = Instance.new("Frame", musicPageFrame)
-musicInputBoxContainer.Size = UDim2.new(1, -40, 0, 45)
-musicInputBoxContainer.Position = UDim2.new(0, 20, 0, 190)
-musicInputBoxContainer.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-musicInputBoxContainer.ZIndex = 41
-Instance.new("UICorner", musicInputBoxContainer).CornerRadius = UDim.new(0, 10)
-local mibStroke = Instance.new("UIStroke", musicInputBoxContainer)
-mibStroke.Color = Color3.fromRGB(30, 40, 60)
-
-local musicIdInput = Instance.new("TextBox", musicInputBoxContainer)
-musicIdInput.Size = UDim2.new(1, -20, 1, 0)
-musicIdInput.Position = UDim2.new(0, 10, 0, 0)
-musicIdInput.BackgroundTransparency = 1
-musicIdInput.Font = Enum.Font.Gotham
-musicIdInput.PlaceholderText = "Nhập ID nhạc Roblox (Ví dụ: 1845754020)..."
-musicIdInput.Text = ""
-musicIdInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-musicIdInput.TextSize = 13
-musicIdInput.ClearTextOnFocus = false
-musicIdInput.TextXAlignment = Enum.TextXAlignment.Left
-musicIdInput.ZIndex = 42
-
-local playMusicBtn = Instance.new("TextButton", musicPageFrame)
-playMusicBtn.Size = UDim2.new(0.46, 0, 0, 42)
-playMusicBtn.Position = UDim2.new(0.04, 0, 0, 255)
-playMusicBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+local playMusicBtn = Instance.new("TextButton", mTab1)
+playMusicBtn.Size = UDim2.new(0.48, 0, 0, 36)
+playMusicBtn.Position = UDim2.new(0, 0, 0, 150)
+playMusicBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
 playMusicBtn.Font = Enum.Font.GothamBold
 playMusicBtn.Text = "🔊 Mở Nhạc"
 playMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-playMusicBtn.TextSize = 13
-playMusicBtn.ZIndex = 41
-Instance.new("UICorner", playMusicBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(playMusicBtn, Color3.fromRGB(0, 122, 255))
+playMusicBtn.TextSize = 12
+playMusicBtn.ZIndex = 23
+Instance.new("UICorner", playMusicBtn).CornerRadius = UDim.new(0, 8)
+playButtonEffect(playMusicBtn, Color3.fromRGB(0, 170, 100))
 
-local stopMusicBtn = Instance.new("TextButton", musicPageFrame)
-stopMusicBtn.Size = UDim2.new(0.46, 0, 0, 42)
-stopMusicBtn.Position = UDim2.new(0.5, 0, 0, 255)
-stopMusicBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
+local stopMusicBtn = Instance.new("TextButton", mTab1)
+stopMusicBtn.Size = UDim2.new(0.48, 0, 0, 36)
+stopMusicBtn.Position = UDim2.new(0.52, 0, 0, 150)
+stopMusicBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
 stopMusicBtn.Font = Enum.Font.GothamBold
 stopMusicBtn.Text = "🔇 Tắt Nhạc"
-stopMusicBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
-stopMusicBtn.TextSize = 13
-stopMusicBtn.ZIndex = 41
-Instance.new("UICorner", stopMusicBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(stopMusicBtn, Color3.fromRGB(25, 32, 45))
+stopMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+stopMusicBtn.TextSize = 12
+stopMusicBtn.ZIndex = 23
+Instance.new("UICorner", stopMusicBtn).CornerRadius = UDim.new(0, 8)
+playButtonEffect(stopMusicBtn, Color3.fromRGB(220, 60, 60))
 
-local bgMusic = Instance.new("Sound", screenGui)
-bgMusic.Name = "GauModsCustomMusic"
-bgMusic.Volume = 1
-bgMusic.Looped = true
+local saveMusicBtn = Instance.new("TextButton", mTab1)
+saveMusicBtn.Size = UDim2.new(0.48, 0, 0, 36)
+saveMusicBtn.Position = UDim2.new(0, 0, 0, 195)
+saveMusicBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+saveMusicBtn.Font = Enum.Font.GothamBold
+saveMusicBtn.Text = "💾 Lưu Nhạc"
+saveMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+saveMusicBtn.TextSize = 12
+saveMusicBtn.ZIndex = 23
+Instance.new("UICorner", saveMusicBtn).CornerRadius = UDim.new(0, 8)
+playButtonEffect(saveMusicBtn, Color3.fromRGB(0, 122, 255))
 
-local isRotating = false
-RunService.RenderStepped:Connect(function(dt)
-    if isRotating then
-        discFrame.Rotation = discFrame.Rotation + (90 * dt)
+local shareMusicBtn = Instance.new("TextButton", mTab1)
+shareMusicBtn.Size = UDim2.new(0.48, 0, 0, 36)
+shareMusicBtn.Position = UDim2.new(0.52, 0, 0, 195)
+shareMusicBtn.BackgroundColor3 = Color3.fromRGB(140, 80, 220)
+shareMusicBtn.Font = Enum.Font.GothamBold
+shareMusicBtn.Text = "📤 Chia Sẻ"
+shareMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+shareMusicBtn.TextSize = 12
+shareMusicBtn.ZIndex = 23
+Instance.new("UICorner", shareMusicBtn).CornerRadius = UDim.new(0, 8)
+playButtonEffect(shareMusicBtn, Color3.fromRGB(140, 80, 220))
+
+local isDiscSpinning = false
+RunService.RenderStepped:Connect(function()
+    if isDiscSpinning and discFrame then
+        discFrame.Rotation = (discFrame.Rotation + 2) % 360
     end
 end)
 
-local function playMusicById(idText)
-    bgMusic.SoundId = "rbxassetid://" .. idText
-    bgMusic:Play()
-    isRotating = true
-    musicIdInput.Text = idText
+local function playSoundByID(id)
+    local cleanID = tostring(id):gsub("%D", "")
+    if cleanID ~= "" then
+        currentSound:Stop()
+        currentSound.SoundId = "rbxassetid://" .. cleanID
+        currentSound:Play()
+        isDiscSpinning = true
+        musicInputBox.Text = cleanID
+    end
 end
 
 playMusicBtn.MouseButton1Click:Connect(function()
-    local idText = musicIdInput.Text:gsub("%D", "")
-    if idText ~= "" then
-        playMusicById(idText)
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {Title = "Trình phát nhạc", Text = "Đang phát bài hát ID: " .. idText, Duration = 2})
-        end)
-    else
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {Title = "Lỗi", Text = "Vui lòng nhập ID nhạc hợp lệ!", Duration = 2})
-        end)
-    end
+    playSoundByID(musicInputBox.Text)
 end)
 
 stopMusicBtn.MouseButton1Click:Connect(function()
-    bgMusic:Stop()
-    isRotating = false
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {Title = "Trình phát nhạc", Text = "Đã tắt nhạc!", Duration = 2})
-    end)
+    currentSound:Stop()
+    isDiscSpinning = false
 end)
 
-musicPageBtn.MouseButton1Click:Connect(function()
-    musicPageFrame.Visible = not musicPageFrame.Visible
-end)
-
-musicBackBtn.MouseButton1Click:Connect(function()
-    musicPageFrame.Visible = false
-end)
-
-local musicSavePopupBg = Instance.new("Frame", musicPageFrame)
-musicSavePopupBg.Size = UDim2.new(1, 0, 1, 0)
-musicSavePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-musicSavePopupBg.BackgroundTransparency = 0.65
-musicSavePopupBg.Visible = false
-musicSavePopupBg.ZIndex = 50
-
-local musicSavePopupBox = Instance.new("Frame", musicSavePopupBg)
-musicSavePopupBox.Size = UDim2.new(0, 340, 0, 175)
-musicSavePopupBox.Position = UDim2.new(0.5, -170, 0.5, -87)
-musicSavePopupBox.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-musicSavePopupBox.ZIndex = 51
-Instance.new("UICorner", musicSavePopupBox).CornerRadius = UDim.new(0, 14)
-local mspStroke = Instance.new("UIStroke", musicSavePopupBox)
-mspStroke.Color = Color3.fromRGB(0, 122, 255)
-
-local mspTitle = Instance.new("TextLabel", musicSavePopupBox)
-mspTitle.Size = UDim2.new(1, 0, 0, 40)
-mspTitle.Position = UDim2.new(0, 0, 0, 10)
-mspTitle.BackgroundTransparency = 1
-mspTitle.Font = Enum.Font.GothamBold
-mspTitle.Text = "Nhập tên bài nhạc để lưu (Tối đa 15 ký tự)"
-mspTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-mspTitle.TextSize = 13
-mspTitle.ZIndex = 51
-
-local musicNameInput = Instance.new("TextBox", musicSavePopupBox)
-musicNameInput.Size = UDim2.new(0.86, 0, 0, 40)
-musicNameInput.Position = UDim2.new(0.07, 0, 0, 55)
-musicNameInput.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-musicNameInput.Font = Enum.Font.Gotham
-musicNameInput.PlaceholderText = "Tên bài nhạc..."
-musicNameInput.Text = ""
-musicNameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-musicNameInput.TextSize = 13
-musicNameInput.ZIndex = 51
-Instance.new("UICorner", musicNameInput).CornerRadius = UDim.new(0, 10)
-
-musicNameInput:GetPropertyChangedSignal("Text"):Connect(function()
-    local currentText = musicNameInput.Text
-    local success, length = pcall(function() return utf8.len(currentText) end)
-    if success and length and length > 15 then
-        local utf8Pos = 1
-        for i = 1, 15 do
-            local _, bytes = utf8.offset(currentText, i)
-            if bytes then utf8Pos = bytes end
-        end
-        musicNameInput.Text = string.sub(currentText, 1, utf8Pos)
-    end
-end)
-
-local confirmSaveMusicBtn = Instance.new("TextButton", musicSavePopupBox)
-confirmSaveMusicBtn.Size = UDim2.new(0.42, 0, 0, 38)
-confirmSaveMusicBtn.Position = UDim2.new(0.07, 0, 0, 115)
-confirmSaveMusicBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-confirmSaveMusicBtn.Font = Enum.Font.GothamBold
-confirmSaveMusicBtn.Text = "Lưu"
-confirmSaveMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-confirmSaveMusicBtn.TextSize = 13
-confirmSaveMusicBtn.ZIndex = 51
-Instance.new("UICorner", confirmSaveMusicBtn).CornerRadius = UDim.new(0, 10)
-
-local cancelSaveMusicBtn = Instance.new("TextButton", musicSavePopupBox)
-cancelSaveMusicBtn.Size = UDim2.new(0.42, 0, 0, 38)
-cancelSaveMusicBtn.Position = UDim2.new(0.51, 0, 0, 115)
-cancelSaveMusicBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-cancelSaveMusicBtn.Font = Enum.Font.GothamBold
-cancelSaveMusicBtn.Text = "Hủy"
-cancelSaveMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-cancelSaveMusicBtn.TextSize = 13
-cancelSaveMusicBtn.ZIndex = 51
-Instance.new("UICorner", cancelSaveMusicBtn).CornerRadius = UDim.new(0, 10)
+local forwardRefreshSavedMusicList
+local forwardRefreshCommunityMusicList
 
 saveMusicBtn.MouseButton1Click:Connect(function()
-    local idText = musicIdInput.Text:gsub("%D", "")
-    if idText ~= "" then
-        musicNameInput.Text = ""
-        musicSavePopupBg.Visible = true
-    else
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {Title = "Lỗi", Text = "Vui lòng nhập ID nhạc trước khi lưu!", Duration = 2})
-        end)
-    end
-end)
+    local soundID = musicInputBox.Text:gsub("%D", "")
+    if soundID == "" then return end
 
-cancelSaveMusicBtn.MouseButton1Click:Connect(function()
-    musicSavePopupBg.Visible = false
-end)
+    clearModal()
+    musicModalBg.Visible = true
 
-local musicSharePopupBg = Instance.new("Frame", musicPageFrame)
-musicSharePopupBg.Size = UDim2.new(1, 0, 1, 0)
-musicSharePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-musicSharePopupBg.BackgroundTransparency = 0.65
-musicSharePopupBg.Visible = false
-musicSharePopupBg.ZIndex = 50
+    local title = Instance.new("TextLabel", musicModalBox)
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Position = UDim2.new(0, 0, 0, 10)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.GothamBold
+    title.Text = "Lưu Bài Nhạc (Tối đa 15 ký tự)"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 13
+    title.ZIndex = 102
 
-local musicSharePopupBox = Instance.new("Frame", musicSharePopupBg)
-musicSharePopupBox.Size = UDim2.new(0, 340, 0, 175)
-musicSharePopupBox.Position = UDim2.new(0.5, -170, 0.5, -87)
-musicSharePopupBox.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-musicSharePopupBox.ZIndex = 51
-Instance.new("UICorner", musicSharePopupBox).CornerRadius = UDim.new(0, 14)
-local mspsStroke = Instance.new("UIStroke", musicSharePopupBox)
-mspsStroke.Color = Color3.fromRGB(0, 122, 255)
+    local input = Instance.new("TextBox", musicModalBox)
+    input.Size = UDim2.new(0.85, 0, 0, 36)
+    input.Position = UDim2.new(0.075, 0, 0, 50)
+    input.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
+    input.Font = Enum.Font.Gotham
+    input.PlaceholderText = "Nhập tên bài nhạc..."
+    input.Text = ""
+    input.TextColor3 = Color3.fromRGB(255, 255, 255)
+    input.TextSize = 12
+    input.ZIndex = 102
+    Instance.new("UICorner", input).CornerRadius = UDim.new(0, 8)
 
-local mspsTitle = Instance.new("TextLabel", musicSharePopupBox)
-mspsTitle.Size = UDim2.new(1, 0, 0, 40)
-mspsTitle.Position = UDim2.new(0, 0, 0, 10)
-mspsTitle.BackgroundTransparency = 1
-mspsTitle.Font = Enum.Font.GothamBold
-mspsTitle.Text = "Chia sẻ nhạc (Tối đa 15 ký tự)"
-mspsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-mspsTitle.TextSize = 13
-mspsTitle.ZIndex = 51
-
-local musicShareNameInput = Instance.new("TextBox", musicSharePopupBox)
-musicShareNameInput.Size = UDim2.new(0.86, 0, 0, 40)
-musicShareNameInput.Position = UDim2.new(0.07, 0, 0, 55)
-musicShareNameInput.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-musicShareNameInput.Font = Enum.Font.Gotham
-musicShareNameInput.PlaceholderText = "Tên bài nhạc chia sẻ..."
-musicShareNameInput.Text = ""
-musicShareNameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-musicShareNameInput.TextSize = 13
-musicShareNameInput.ZIndex = 51
-Instance.new("UICorner", musicShareNameInput).CornerRadius = UDim.new(0, 10)
-
-musicShareNameInput:GetPropertyChangedSignal("Text"):Connect(function()
-    local currentText = musicShareNameInput.Text
-    local success, length = pcall(function() return utf8.len(currentText) end)
-    if success and length and length > 15 then
-        local utf8Pos = 1
-        for i = 1, 15 do
-            local _, bytes = utf8.offset(currentText, i)
-            if bytes then utf8Pos = bytes end
+    input:GetPropertyChangedSignal("Text"):Connect(function()
+        local success, len = pcall(function() return utf8.len(input.Text) end)
+        if success and len and len > 15 then
+            local offset = utf8.offset(input.Text, 16)
+            if offset then input.Text = string.sub(input.Text, 1, offset - 1) end
         end
-        musicShareNameInput.Text = string.sub(currentText, 1, utf8Pos)
-    end
+    end)
+
+    local btnSave = Instance.new("TextButton", musicModalBox)
+    btnSave.Size = UDim2.new(0.4, 0, 0, 34)
+    btnSave.Position = UDim2.new(0.075, 0, 0, 140)
+    btnSave.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+    btnSave.Font = Enum.Font.GothamBold
+    btnSave.Text = "Lưu"
+    btnSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btnSave.TextSize = 12
+    btnSave.ZIndex = 102
+    Instance.new("UICorner", btnSave).CornerRadius = UDim.new(0, 8)
+
+    local btnCancel = Instance.new("TextButton", musicModalBox)
+    btnCancel.Size = UDim2.new(0.4, 0, 0, 34)
+    btnCancel.Position = UDim2.new(0.525, 0, 0, 140)
+    btnCancel.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
+    btnCancel.Font = Enum.Font.GothamBold
+    btnCancel.Text = "Hủy"
+    btnCancel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btnCancel.TextSize = 12
+    btnCancel.ZIndex = 102
+    Instance.new("UICorner", btnCancel).CornerRadius = UDim.new(0, 8)
+
+    btnSave.MouseButton1Click:Connect(function()
+        local musicName = input.Text:gsub("^%s*(.-)%s*$", "%1")
+        if musicName ~= "" then
+            table.insert(savedMusicList, {name = musicName, id = soundID})
+            saveMusicToDisk()
+            if forwardRefreshSavedMusicList then forwardRefreshSavedMusicList() end
+            clearModal()
+        end
+    end)
+
+    btnCancel.MouseButton1Click:Connect(clearModal)
 end)
-
-local confirmShareMusicBtn = Instance.new("TextButton", musicSharePopupBox)
-confirmShareMusicBtn.Size = UDim2.new(0.42, 0, 0, 38)
-confirmShareMusicBtn.Position = UDim2.new(0.07, 0, 0, 115)
-confirmShareMusicBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-confirmShareMusicBtn.Font = Enum.Font.GothamBold
-confirmShareMusicBtn.Text = "Chia sẻ"
-confirmShareMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-confirmShareMusicBtn.TextSize = 13
-confirmShareMusicBtn.ZIndex = 51
-Instance.new("UICorner", confirmShareMusicBtn).CornerRadius = UDim.new(0, 10)
-
-local cancelShareMusicBtn = Instance.new("TextButton", musicSharePopupBox)
-cancelShareMusicBtn.Size = UDim2.new(0.42, 0, 0, 38)
-cancelShareMusicBtn.Position = UDim2.new(0.51, 0, 0, 115)
-cancelShareMusicBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-cancelShareMusicBtn.Font = Enum.Font.GothamBold
-cancelShareMusicBtn.Text = "Hủy"
-cancelShareMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-cancelShareMusicBtn.TextSize = 13
-cancelShareMusicBtn.ZIndex = 51
-Instance.new("UICorner", cancelShareMusicBtn).CornerRadius = UDim.new(0, 10)
 
 shareMusicBtn.MouseButton1Click:Connect(function()
-    local idText = musicIdInput.Text:gsub("%D", "")
-    if idText ~= "" then
-        musicShareNameInput.Text = ""
-        musicSharePopupBg.Visible = true
+    local soundID = musicInputBox.Text:gsub("%D", "")
+    if soundID == "" then return end
+
+    clearModal()
+    musicModalBg.Visible = true
+
+    local title = Instance.new("TextLabel", musicModalBox)
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Position = UDim2.new(0, 0, 0, 10)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.GothamBold
+    title.Text = "Chia Sẻ Nhạc (Tối đa 12 ký tự)"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 13
+    title.ZIndex = 102
+
+    local input = Instance.new("TextBox", musicModalBox)
+    input.Size = UDim2.new(0.85, 0, 0, 36)
+    input.Position = UDim2.new(0.075, 0, 0, 50)
+    input.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
+    input.Font = Enum.Font.Gotham
+    input.PlaceholderText = "Nhập tên nhạc muốn chia sẻ..."
+    input.Text = ""
+    input.TextColor3 = Color3.fromRGB(255, 255, 255)
+    input.TextSize = 12
+    input.ZIndex = 102
+    Instance.new("UICorner", input).CornerRadius = UDim.new(0, 8)
+
+    input:GetPropertyChangedSignal("Text"):Connect(function()
+        local success, len = pcall(function() return utf8.len(input.Text) end)
+        if success and len and len > 12 then
+            local offset = utf8.offset(input.Text, 13)
+            if offset then input.Text = string.sub(input.Text, 1, offset - 1) end
+        end
+    end)
+
+    local btnShare = Instance.new("TextButton", musicModalBox)
+    btnShare.Size = UDim2.new(0.4, 0, 0, 34)
+    btnShare.Position = UDim2.new(0.075, 0, 0, 140)
+    btnShare.BackgroundColor3 = Color3.fromRGB(140, 80, 220)
+    btnShare.Font = Enum.Font.GothamBold
+    btnShare.Text = "Chia Sẻ"
+    btnShare.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btnShare.TextSize = 12
+    btnShare.ZIndex = 102
+    Instance.new("UICorner", btnShare).CornerRadius = UDim.new(0, 8)
+
+    local btnCancel = Instance.new("TextButton", musicModalBox)
+    btnCancel.Size = UDim2.new(0.4, 0, 0, 34)
+    btnCancel.Position = UDim2.new(0.525, 0, 0, 140)
+    btnCancel.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
+    btnCancel.Font = Enum.Font.GothamBold
+    btnCancel.Text = "Hủy"
+    btnCancel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btnCancel.TextSize = 12
+    btnCancel.ZIndex = 102
+    Instance.new("UICorner", btnCancel).CornerRadius = UDim.new(0, 8)
+
+    btnShare.MouseButton1Click:Connect(function()
+        local musicName = input.Text:gsub("^%s*(.-)%s*$", "%1")
+        if musicName ~= "" then
+            local author = (myChatName ~= "" and myChatName) or player.Name
+            table.insert(communityMusicList, 1, {author = author, name = musicName, id = soundID})
+            saveCommunityMusicToDisk()
+            if forwardRefreshCommunityMusicList then forwardRefreshCommunityMusicList() end
+            clearModal()
+        end
+    end)
+
+    btnCancel.MouseButton1Click:Connect(clearModal)
+end)
+--[[
+    GAU MODS UI - PHẦN 5/6 (TAB 2 NHẠC ĐÃ LƯU & TAB 3 NHẠC CỘNG ĐỒNG)
+]]
+
+-- Tab 2: Nhạc Đã Lưu
+local mTab2 = musicContentFrames[2]
+
+local autoPlayEnabled = false
+local currentPlayingIndex = 0
+
+local autoPlayBtn = Instance.new("TextButton", mTab2)
+autoPlayBtn.Size = UDim2.new(0, 130, 0, 26)
+autoPlayBtn.Position = UDim2.new(0, 0, 0, 0)
+autoPlayBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+autoPlayBtn.Font = Enum.Font.GothamBold
+autoPlayBtn.Text = "🔄 Auto-Play: OFF"
+autoPlayBtn.TextColor3 = Color3.fromRGB(180, 190, 210)
+autoPlayBtn.TextSize = 10
+autoPlayBtn.ZIndex = 23
+Instance.new("UICorner", autoPlayBtn).CornerRadius = UDim.new(0, 6)
+
+autoPlayBtn.MouseButton1Click:Connect(function()
+    autoPlayEnabled = not autoPlayEnabled
+    if autoPlayEnabled then
+        autoPlayBtn.Text = "🔄 Auto-Play: ON"
+        autoPlayBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+        autoPlayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     else
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {Title = "Lỗi", Text = "Vui lòng nhập ID nhạc trước khi chia sẻ!", Duration = 2})
-        end)
+        autoPlayBtn.Text = "🔄 Auto-Play: OFF"
+        autoPlayBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+        autoPlayBtn.TextColor3 = Color3.fromRGB(180, 190, 210)
     end
 end)
 
-cancelShareMusicBtn.MouseButton1Click:Connect(function()
-    musicSharePopupBg.Visible = false
-end)
---[[
-    GAU MODS UI - PHẦN 7/8 (CỘNG ĐỒNG & LOGIC CHIA SẺ)
-]]
+local savedMusicScroll = Instance.new("ScrollingFrame", mTab2)
+savedMusicScroll.Size = UDim2.new(1, 0, 1, -32)
+savedMusicScroll.Position = UDim2.new(0, 0, 0, 32)
+savedMusicScroll.BackgroundTransparency = 1
+savedMusicScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+savedMusicScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+savedMusicScroll.ScrollBarThickness = 4
+savedMusicScroll.ZIndex = 23
 
-local tab4 = tabContentFrames[4]
+local savedMusicLayout = Instance.new("UIListLayout", savedMusicScroll)
+savedMusicLayout.SortOrder = Enum.SortOrder.LayoutOrder
+savedMusicLayout.Padding = UDim.new(0, 6)
 
-local searchBarContainer = Instance.new("Frame", tab4)
-searchBarContainer.Size = UDim2.new(1, 0, 0, 38)
-searchBarContainer.Position = UDim2.new(0, 0, 0, 0)
-searchBarContainer.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-Instance.new("UICorner", searchBarContainer).CornerRadius = UDim.new(0, 10)
-local sbStroke = Instance.new("UIStroke", searchBarContainer)
-sbStroke.Color = Color3.fromRGB(30, 40, 60)
-
-local searchTextBox = Instance.new("TextBox", searchBarContainer)
-searchTextBox.Size = UDim2.new(1, -40, 1, 0)
-searchTextBox.Position = UDim2.new(0, 12, 0, 0)
-searchTextBox.BackgroundTransparency = 1
-searchTextBox.Font = Enum.Font.Gotham
-searchTextBox.PlaceholderText = "Tìm kiếm tên script/nhạc cộng đồng..."
-searchTextBox.Text = ""
-searchTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-searchTextBox.TextSize = 12
-searchTextBox.ClearTextOnFocus = false
-searchTextBox.TextXAlignment = Enum.TextXAlignment.Left
-
-local searchIcon = Instance.new("TextLabel", searchBarContainer)
-searchIcon.Size = UDim2.new(0, 30, 1, 0)
-searchIcon.Position = UDim2.new(1, -32, 0, 0)
-searchIcon.BackgroundTransparency = 1
-searchIcon.Font = Enum.Font.GothamBold
-searchIcon.Text = "🔍"
-searchIcon.TextColor3 = Color3.fromRGB(150, 160, 180)
-searchIcon.TextSize = 13
-
-local scriptScrollFrame = Instance.new("ScrollingFrame", tab4)
-scriptScrollFrame.Size = UDim2.new(1, 0, 1, -48)
-scriptScrollFrame.Position = UDim2.new(0, 0, 0, 48)
-scriptScrollFrame.BackgroundTransparency = 1
-scriptScrollFrame.BorderSizePixel = 0
-scriptScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-scriptScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-scriptScrollFrame.ScrollBarThickness = 3
-
-local scriptListLayout = Instance.new("UIListLayout", scriptScrollFrame)
-scriptListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-scriptListLayout.Padding = UDim.new(0, 8)
-
-local scriptRemoteName = "GauMods_GlobalScriptShareEvent"
-sharedScriptsHistory = sharedScriptsHistory or {}
-pcall(function()
-    if not playerGui:FindFirstChild(scriptRemoteName) then
-        local ev = Instance.new("BindableEvent", playerGui)
-        ev.Name = scriptRemoteName
-    end
-end)
-
-local function renderSharedScripts(filterText)
-    for _, child in ipairs(scriptScrollFrame:GetChildren()) do
-        if child:IsA("Frame") then child:Destroy() end
-    end
-    filterText = filterText:lower():gsub("^%s*(.-)%s*$", "%1")
-    for _, data in ipairs(sharedScriptsHistory) do
-        local scriptNameLower = data.scriptName:lower()
-        if filterText == "" or scriptNameLower:find(filterText) then
-            local card = Instance.new("Frame", scriptScrollFrame)
-            card.Size = UDim2.new(1, 0, 0, 52)
-            card.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-            Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
-            
-            local isMusic = data.type == "music"
-            local keyStatusText = data.keyStatus or "No key"
-            local keyColor = (keyStatusText == "Có key") and "#FF5555" or "#55FF55"
-            
-            local infoLab = Instance.new("TextLabel", card)
-            infoLab.Size = UDim2.new(0.52, 0, 1, 0)
-            infoLab.Position = UDim2.new(0, 12, 0, 0)
-            infoLab.BackgroundTransparency = 1
-            infoLab.Font = Enum.Font.GothamBold
-            infoLab.RichText = true
-            if isMusic then
-                infoLab.Text = "<font color=\"#00A2FF\">[" .. data.sender .. "]:</font> 🎵 " .. data.scriptName
-            else
-                infoLab.Text = "<font color=\"#00A2FF\">[" .. data.sender .. "]:</font> " .. data.scriptName .. " <font color=\"" .. keyColor .. "\">(" .. keyStatusText .. ")</font>"
-            end
-            infoLab.TextColor3 = Color3.fromRGB(255, 255, 255)
-            infoLab.TextSize = 11
-            infoLab.TextXAlignment = Enum.TextXAlignment.Left
-            infoLab.TextTruncate = Enum.TextTruncate.AtEnd
-            
-            if isMusic then
-                local viewBtn = Instance.new("TextButton", card)
-                viewBtn.Size = UDim2.new(0, 44, 0, 32)
-                viewBtn.Position = UDim2.new(0.55, 0, 0.5, -16)
-                viewBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-                viewBtn.Font = Enum.Font.GothamBold
-                viewBtn.Text = "Xem ID"
-                viewBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                viewBtn.TextSize = 10
-                Instance.new("UICorner", viewBtn).CornerRadius = UDim.new(0, 8)
-                playButtonEffect(viewBtn, Color3.fromRGB(25, 32, 45))
-                
-                viewBtn.MouseButton1Click:Connect(function()
-                    linkContentText.Text = "ID Nhạc: " .. data.content
-                    linkViewerUI.Visible = true
-                    if rawget(_G, "saveFromViewerBtn") then _G.saveFromViewerBtn.Visible = true end
-                    if rawget(_G, "copyFromViewerTab4") then _G.copyFromViewerTab4.Visible = true end
-                    if rawget(_G, "copyFromViewerBtn") then _G.copyFromViewerBtn.Visible = false end
-                end)
-                
-                local playItemBtn = Instance.new("TextButton", card)
-                playItemBtn.Size = UDim2.new(0, 65, 0, 32)
-                playItemBtn.Position = UDim2.new(0.72, 0, 0.5, -16)
-                playItemBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-                playItemBtn.Font = Enum.Font.GothamBold
-                playItemBtn.Text = "Nghe"
-                playItemBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                playItemBtn.TextSize = 11
-                Instance.new("UICorner", playItemBtn).CornerRadius = UDim.new(0, 8)
-                playButtonEffect(playItemBtn, Color3.fromRGB(0, 170, 255))
-                
-                playItemBtn.MouseButton1Click:Connect(function()
-                    playMusicById(data.content)
-                    musicPageFrame.Visible = true
-                end)
-            else
-                local viewBtn = Instance.new("TextButton", card)
-                viewBtn.Size = UDim2.new(0, 44, 0, 32)
-                viewBtn.Position = UDim2.new(0.55, 0, 0.5, -16)
-                viewBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-                viewBtn.Font = Enum.Font.GothamBold
-                viewBtn.Text = "Xem"
-                viewBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                viewBtn.TextSize = 11
-                Instance.new("UICorner", viewBtn).CornerRadius = UDim.new(0, 8)
-                playButtonEffect(viewBtn, Color3.fromRGB(25, 32, 45))
-                
-                viewBtn.MouseButton1Click:Connect(function()
-                    linkContentText.Text = data.content
-                    linkViewerUI.Visible = true
-                    if rawget(_G, "saveFromViewerBtn") then _G.saveFromViewerBtn.Visible = true end
-                    if rawget(_G, "copyFromViewerTab4") then _G.copyFromViewerTab4.Visible = true end
-                    if rawget(_G, "copyFromViewerBtn") then _G.copyFromViewerBtn.Visible = false end
-                end)
-                
-                local execItemBtn = Instance.new("TextButton", card)
-                execItemBtn.Size = UDim2.new(0, 65, 0, 32)
-                execItemBtn.Position = UDim2.new(0.72, 0, 0.5, -16)
-                execItemBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-                execItemBtn.Font = Enum.Font.GothamBold
-                execItemBtn.Text = "Execute"
-                execItemBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                execItemBtn.TextSize = 11
-                Instance.new("UICorner", execItemBtn).CornerRadius = UDim.new(0, 8)
-                playButtonEffect(execItemBtn, Color3.fromRGB(0, 122, 255))
-                
-                execItemBtn.MouseButton1Click:Connect(function()
-                    local text = data.content
-                    if text:match("https?://") then
-                        pcall(function() loadstring(game:HttpGet(text))() end)
-                    else
-                        pcall(function() loadstring(text)() end)
-                    end
-                end)
-            end
-        end
-    end
-end
-
-renderSharedScripts("")
-
-searchTextBox:GetPropertyChangedSignal("Text"):Connect(function()
-    renderSharedScripts(searchTextBox.Text)
-end)
-
-confirmShareBtn.MouseButton1Click:Connect(function()
-    local name = shareNameInput.Text
-    if name ~= "" then
-        local contentToShare = scriptTextBox.Text
-        local senderName = (myChatName ~= "" and myChatName) or player.Name
-        local scriptData = {
-            sender = senderName, 
-            scriptName = name, 
-            content = contentToShare, 
-            keyStatus = selectedKeyStatus,
-            type = "script"
-        }
-        table.insert(sharedScriptsHistory, scriptData)
-        saveSharedScriptsToDisk()
-        renderSharedScripts(searchTextBox.Text)
-        pcall(function()
-            local ev = playerGui:FindFirstChild(scriptRemoteName)
-            if ev then ev:Fire(scriptData) end
-        end)
-        sharePopupBg.Visible = false
-        mainFrame.Visible = true
-    end
-end)
-
-confirmShareMusicBtn.MouseButton1Click:Connect(function()
-    local name = musicShareNameInput.Text
-    local idText = musicIdInput.Text:gsub("%D", "")
-    if name ~= "" and idText ~= "" then
-        local senderName = (myChatName ~= "" and myChatName) or player.Name
-        local musicData = {
-            sender = senderName,
-            scriptName = name,
-            content = idText,
-            type = "music"
-        }
-        table.insert(sharedScriptsHistory, musicData)
-        saveSharedScriptsToDisk()
-        renderSharedScripts(searchTextBox.Text)
-        pcall(function()
-            local ev = playerGui:FindFirstChild(scriptRemoteName)
-            if ev then ev:Fire(musicData) end
-        end)
-        musicSharePopupBg.Visible = false
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {Title = "Thành công", Text = "Đã chia sẻ bài nhạc lên cộng đồng!", Duration = 2})
-        end)
-    end
-end)
-
-confirmSaveMusicBtn.MouseButton1Click:Connect(function()
-    local name = musicNameInput.Text
-    local idText = musicIdInput.Text:gsub("%D", "")
-    if name ~= "" and idText ~= "" then
-        table.insert(savedScripts, { name = name, content = idText, type = "music" })
-        saveToDisk()
-        refreshSavedList()
-        musicSavePopupBg.Visible = false
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {Title = "Thành công", Text = "Đã lưu bài nhạc vào Tab 2!", Duration = 2})
-        end)
-    end
-end)
-
-pcall(function()
-    local ev = playerGui:WaitForChild(scriptRemoteName, 2)
-    if ev then
-        ev.Event:Connect(function(scriptData)
-            local lastItem = sharedScriptsHistory[#sharedScriptsHistory]
-            if not lastItem or lastItem.content ~= scriptData.content or lastItem.sender ~= scriptData.sender then
-                table.insert(sharedScriptsHistory, scriptData)
-                saveSharedScriptsToDisk()
-                renderSharedScripts(searchTextBox.Text)
-            end
-        end)
-    end
-end)
---[[
-    GAU MODS UI - PHẦN 8/8 (RENDER TAB 2, POPUP XÓA & DRAG HANDLERS)
-]]
-
-refreshSavedList = function()
-    for _, child in ipairs(savedListContainer:GetChildren()) do
-        if child:IsA("Frame") then child:Destroy() end
-    end
-    for index, item in ipairs(savedScripts) do
-        local isMusic = (item.type == "music")
-        local passFilter = true
-        if filterMode == 2 and isMusic then passFilter = false end
-        if filterMode == 3 and not isMusic then passFilter = false end
-        
-        if passFilter then
-            local card = Instance.new("Frame", savedListContainer)
-            card.Size = UDim2.new(1, 0, 0, 52)
-            card.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-            Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
-            
-            local prefix = isMusic and "🎵 " or "📜 "
-            local nameLab = Instance.new("TextLabel", card)
-            nameLab.Size = UDim2.new(0.42, 0, 1, 0)
-            nameLab.Position = UDim2.new(0, 12, 0, 0)
-            nameLab.BackgroundTransparency = 1
-            nameLab.Font = Enum.Font.GothamBold
-            nameLab.Text = prefix .. item.name
-            nameLab.TextColor3 = Color3.fromRGB(255, 255, 255)
-            nameLab.TextSize = 12
-            nameLab.TextXAlignment = Enum.TextXAlignment.Left
-            nameLab.TextTruncate = Enum.TextTruncate.AtEnd
-            
-            if isMusic then
-                local playItemBtn = Instance.new("TextButton", card)
-                playItemBtn.Size = UDim2.new(0, 62, 0, 32)
-                playItemBtn.Position = UDim2.new(0.45, 0, 0.5, -16)
-                playItemBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-                playItemBtn.Font = Enum.Font.GothamBold
-                playItemBtn.Text = "Mở nhạc"
-                playItemBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                playItemBtn.TextSize = 10
-                Instance.new("UICorner", playItemBtn).CornerRadius = UDim.new(0, 8)
-                playButtonEffect(playItemBtn, Color3.fromRGB(0, 170, 255))
-                
-                playItemBtn.MouseButton1Click:Connect(function()
-                    playMusicById(item.content)
-                    musicPageFrame.Visible = true
-                end)
-            else
-                local exItemBtn = Instance.new("TextButton", card)
-                exItemBtn.Size = UDim2.new(0, 62, 0, 32)
-                exItemBtn.Position = UDim2.new(0.45, 0, 0.5, -16)
-                exItemBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-                exItemBtn.Font = Enum.Font.GothamBold
-                exItemBtn.Text = "Execute"
-                exItemBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                exItemBtn.TextSize = 11
-                Instance.new("UICorner", exItemBtn).CornerRadius = UDim.new(0, 8)
-                playButtonEffect(exItemBtn, Color3.fromRGB(0, 122, 255))
-                
-                exItemBtn.MouseButton1Click:Connect(function()
-                    local text = item.content
-                    if text:match("https?://") then
-                        pcall(function() loadstring(game:HttpGet(text))() end)
-                    else
-                        pcall(function() loadstring(text)() end)
-                    end
-                end)
-            end
-            
-            local viewItemBtn = Instance.new("TextButton", card)
-            viewItemBtn.Size = UDim2.new(0, 52, 0, 32)
-            viewItemBtn.Position = UDim2.new(0.68, 0, 0.5, -16)
-            viewItemBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-            viewItemBtn.Font = Enum.Font.GothamBold
-            viewItemBtn.Text = "Xem"
-            viewItemBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            viewItemBtn.TextSize = 11
-            Instance.new("UICorner", viewItemBtn).CornerRadius = UDim.new(0, 8)
-            playButtonEffect(viewItemBtn, Color3.fromRGB(25, 32, 45))
-            
-            viewItemBtn.MouseButton1Click:Connect(function()
-                linkContentText.Text = isMusic and ("ID Nhạc: " .. item.content) or item.content
-                linkViewerUI.Visible = true
-                if rawget(_G, "saveFromViewerBtn") then _G.saveFromViewerBtn.Visible = false end
-                if rawget(_G, "copyFromViewerTab4") then _G.copyFromViewerTab4.Visible = false end
-                if rawget(_G, "copyFromViewerBtn") then _G.copyFromViewerBtn.Visible = true end
-            end)
-            
-            local delItemBtn = Instance.new("TextButton", card)
-            delItemBtn.Size = UDim2.new(0, 32, 0, 32)
-            delItemBtn.Position = UDim2.new(0.88, 0, 0.5, -16)
-            delItemBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-            delItemBtn.Font = Enum.Font.GothamBold
-            delItemBtn.Text = "✕"
-            delItemBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
-            delItemBtn.TextSize = 13
-            Instance.new("UICorner", delItemBtn).CornerRadius = UDim.new(0, 8)
-            playButtonEffect(delItemBtn, Color3.fromRGB(25, 32, 45))
-            
-            delItemBtn.MouseButton1Click:Connect(function()
-                pendingDeleteIndex = index
-                mainFrame.Visible = false
-                confirmDeletePopup.Visible = true
-            end)
-        end
-    end
-end
-
-filterModeBtn.MouseButton1Click:Connect(function()
-    filterMode = filterMode + 1
-    if filterMode > 3 then filterMode = 1 end
-    if filterMode == 1 then
-        filterModeBtn.Text = "📂 Lọc: Tất cả (Script & Nhạc)"
-    elseif filterMode == 2 then
-        filterModeBtn.Text = "📜 Lọc: Chỉ Script"
-    elseif filterMode == 3 then
-        filterModeBtn.Text = "🎵 Lọc: Chỉ Nhạc"
-    end
-    refreshSavedList()
-end)
-
-noDelBtn.MouseButton1Click:Connect(function()
-    confirmDeletePopup.Visible = false
-    mainFrame.Visible = true
-    pendingDeleteIndex = nil
-end)
-
-yesDelBtn.MouseButton1Click:Connect(function()
-    confirmDeletePopup.Visible = false
-    if pendingDeleteIndex then
-        table.remove(savedScripts, pendingDeleteIndex)
-        saveToDisk()
-        refreshSavedList()
-    end
-    mainFrame.Visible = true
-    pendingDeleteIndex = nil
-end)
-
-confirmSaveBtn.MouseButton1Click:Connect(function()
-    local name = nameTextBox.Text
-    if name ~= "" then
-        local content = scriptTextBox.Text
-        table.insert(savedScripts, { name = name, content = content, type = "script" })
-        saveToDisk()
-        refreshSavedList()
-        savePopupBg.Visible = false
-        if writefile then
-            pcall(function() writefile(name .. ".txt", content) end)
-        end
-    end
-end)
-
-refreshSavedList()
-
-local saveFromViewerBtn = Instance.new("TextButton", linkViewerUI)
-saveFromViewerBtn.Size = UDim2.new(0, 65, 0, 32)
-saveFromViewerBtn.Position = UDim2.new(1, -75, 0, 10)
-saveFromViewerBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-saveFromViewerBtn.Font = Enum.Font.GothamBold
-saveFromViewerBtn.Text = "Lưu"
-saveFromViewerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-saveFromViewerBtn.TextSize = 12
-Instance.new("UICorner", saveFromViewerBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(saveFromViewerBtn, Color3.fromRGB(0, 122, 255))
-_G.saveFromViewerBtn = saveFromViewerBtn
-
-local copyFromViewerBtn = Instance.new("TextButton", linkViewerUI)
-copyFromViewerBtn.Size = UDim2.new(0, 85, 0, 32)
-copyFromViewerBtn.Position = UDim2.new(1, -95, 0, 10)
-copyFromViewerBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-copyFromViewerBtn.Font = Enum.Font.GothamBold
-copyFromViewerBtn.Text = "Sao chép"
-copyFromViewerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-copyFromViewerBtn.TextSize = 12
-copyFromViewerBtn.Visible = false
-Instance.new("UICorner", copyFromViewerBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(copyFromViewerBtn, Color3.fromRGB(0, 122, 255))
-_G.copyFromViewerBtn = copyFromViewerBtn
-
-copyFromViewerBtn.MouseButton1Click:Connect(function()
-    copyToClipboard(linkContentText.Text)
-end)
-
-local copyFromViewerTab4 = Instance.new("TextButton", linkViewerUI)
-copyFromViewerTab4.Size = UDim2.new(0, 80, 0, 32)
-copyFromViewerTab4.Position = UDim2.new(1, -162, 0, 10)
-copyFromViewerTab4.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-copyFromViewerTab4.Font = Enum.Font.GothamBold
-copyFromViewerTab4.Text = "Sao chép"
-copyFromViewerTab4.TextColor3 = Color3.fromRGB(255, 255, 255)
-copyFromViewerTab4.TextSize = 12
-Instance.new("UICorner", copyFromViewerTab4).CornerRadius = UDim.new(0, 8)
-playButtonEffect(copyFromViewerTab4, Color3.fromRGB(25, 32, 45))
-_G.copyFromViewerTab4 = copyFromViewerTab4
-
-copyFromViewerTab4.MouseButton1Click:Connect(function()
-    copyToClipboard(linkContentText.Text)
-end)
-
-local viewerSavePopupBg = Instance.new("Frame", linkViewerUI)
-viewerSavePopupBg.Size = UDim2.new(1, 0, 1, 0)
-viewerSavePopupBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-viewerSavePopupBg.BackgroundTransparency = 0.65
-viewerSavePopupBg.ZIndex = 50
-viewerSavePopupBg.Visible = false
-
-local viewerSavePopupBox = Instance.new("Frame", viewerSavePopupBg)
-viewerSavePopupBox.Size = UDim2.new(0, 340, 0, 175)
-viewerSavePopupBox.Position = UDim2.new(0.5, -170, 0.5, -87)
-viewerSavePopupBox.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-viewerSavePopupBox.ZIndex = 51
-Instance.new("UICorner", viewerSavePopupBox).CornerRadius = UDim.new(0, 14)
-local vspStroke = Instance.new("UIStroke", viewerSavePopupBox)
-vspStroke.Color = Color3.fromRGB(0, 122, 255)
-
-local vspTitle = Instance.new("TextLabel", viewerSavePopupBox)
-vspTitle.Size = UDim2.new(1, 0, 0, 40)
-vspTitle.Position = UDim2.new(0, 0, 0, 10)
-vspTitle.BackgroundTransparency = 1
-vspTitle.Font = Enum.Font.GothamBold
-vspTitle.Text = "Nhập tên script để lưu (Tối đa 12 ký tự)"
-vspTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-vspTitle.TextSize = 13
-vspTitle.ZIndex = 51
-
-local viewerNameInput = Instance.new("TextBox", viewerSavePopupBox)
-viewerNameInput.Size = UDim2.new(0.86, 0, 0, 40)
-viewerNameInput.Position = UDim2.new(0.07, 0, 0, 55)
-viewerNameInput.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
-viewerNameInput.Font = Enum.Font.Gotham
-viewerNameInput.PlaceholderText = "Tên script..."
-viewerNameInput.Text = ""
-viewerNameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-viewerNameInput.TextSize = 13
-viewerNameInput.ZIndex = 51
-Instance.new("UICorner", viewerNameInput).CornerRadius = UDim.new(0, 10)
-
-viewerNameInput:GetPropertyChangedSignal("Text"):Connect(function()
-    local currentText = viewerNameInput.Text
-    local success, length = pcall(function() return utf8.len(currentText) end)
-    if success and length and length > 12 then
-        local utf8Pos = 1
-        for i = 1, 12 do
-            local _, bytes = utf8.offset(currentText, i)
-            if bytes then utf8Pos = bytes end
-        end
-        viewerNameInput.Text = string.sub(currentText, 1, utf8Pos)
-    end
-end)
-
-local viewerConfirmBtn = Instance.new("TextButton", viewerSavePopupBox)
-viewerConfirmBtn.Size = UDim2.new(0.42, 0, 0, 38)
-viewerConfirmBtn.Position = UDim2.new(0.07, 0, 0, 115)
-viewerConfirmBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
-viewerConfirmBtn.Font = Enum.Font.GothamBold
-viewerConfirmBtn.Text = "Lưu"
-viewerConfirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-viewerConfirmBtn.TextSize = 13
-viewerConfirmBtn.ZIndex = 51
-Instance.new("UICorner", viewerConfirmBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(viewerConfirmBtn, Color3.fromRGB(0, 122, 255))
-
-local viewerCancelBtn = Instance.new("TextButton", viewerSavePopupBox)
-viewerCancelBtn.Size = UDim2.new(0.42, 0, 0, 38)
-viewerCancelBtn.Position = UDim2.new(0.51, 0, 0, 115)
-viewerCancelBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-viewerCancelBtn.Font = Enum.Font.GothamBold
-viewerCancelBtn.Text = "Hủy"
-viewerCancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-viewerCancelBtn.TextSize = 13
-viewerCancelBtn.ZIndex = 51
-Instance.new("UICorner", viewerCancelBtn).CornerRadius = UDim.new(0, 10)
-playButtonEffect(viewerCancelBtn, Color3.fromRGB(25, 32, 45))
-
-saveFromViewerBtn.MouseButton1Click:Connect(function()
-    viewerNameInput.Text = ""
-    viewerSavePopupBg.Visible = true
-end)
-
-viewerCancelBtn.MouseButton1Click:Connect(function() viewerSavePopupBg.Visible = false end)
-
-viewerConfirmBtn.MouseButton1Click:Connect(function()
-    local name = viewerNameInput.Text
-    if name ~= "" then
-        local content = linkContentText.Text
-        table.insert(savedScripts, { name = name, content = content, type = "script" })
-        saveToDisk()
-        refreshSavedList()
-        viewerSavePopupBg.Visible = false
-        if writefile then
-            pcall(function() writefile(name .. ".txt", content) end)
-        end
-    end
-end)
-
-for i, btn in ipairs(tabs) do
-    btn.MouseButton1Click:Connect(function()
-        for j, otherBtn in ipairs(tabs) do
-            local activeColor = mainStroke.Color or Color3.fromRGB(0, 122, 255)
-            otherBtn.BackgroundColor3 = (j == i) and activeColor or Color3.fromRGB(16, 20, 30)
-            tabContentFrames[j].Visible = (j == i)
-        end
-        linkViewerUI.Visible = false
-        if i == 2 then
-            if rawget(_G, "saveFromViewerBtn") then _G.saveFromViewerBtn.Visible = false end
-            if rawget(_G, "copyFromViewerTab4") then _G.copyFromViewerTab4.Visible = false end
-            if rawget(_G, "copyFromViewerBtn") then _G.copyFromViewerBtn.Visible = true end
-        end
-        if i == 3 then
-            task.defer(function()
-                chatDisplayFrame.CanvasPosition = Vector2.new(0, chatDisplayFrame.AbsoluteCanvasSize.Y)
-            end)
-        end
-    end)
-end
-
-local closeConfirmPopup = Instance.new("Frame", screenGui)
-closeConfirmPopup.Size = UDim2.new(0, 280, 0, 130)
-closeConfirmPopup.Position = UDim2.new(0.5, -140, 0.5, -65)
-closeConfirmPopup.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
-closeConfirmPopup.Visible = false
-closeConfirmPopup.ZIndex = 300
-Instance.new("UICorner", closeConfirmPopup).CornerRadius = UDim.new(0, 12)
-local ccpStroke = Instance.new("UIStroke", closeConfirmPopup)
-ccpStroke.Color = Color3.fromRGB(255, 90, 90)
-
-local ccpText = Instance.new("TextLabel", closeConfirmPopup)
-ccpText.Size = UDim2.new(1, 0, 0, 45)
-ccpText.Position = UDim2.new(0, 0, 0, 15)
-ccpText.BackgroundTransparency = 1
-ccpText.Font = Enum.Font.GothamBold
-ccpText.Text = "Bạn có muốn xóa (tắt) Menu không?"
-ccpText.TextColor3 = Color3.fromRGB(255, 255, 255)
-ccpText.TextSize = 13
-ccpText.ZIndex = 301
-
-local yesCloseBtn = Instance.new("TextButton", closeConfirmPopup)
-yesCloseBtn.Size = UDim2.new(0.4, 0, 0, 35)
-yesCloseBtn.Position = UDim2.new(0.075, 0, 0, 75)
-yesCloseBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-yesCloseBtn.Font = Enum.Font.GothamBold
-yesCloseBtn.Text = "Có"
-yesCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-yesCloseBtn.TextSize = 13
-yesCloseBtn.ZIndex = 301
-Instance.new("UICorner", yesCloseBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(yesCloseBtn, Color3.fromRGB(255, 80, 80))
-
-local noCloseBtn = Instance.new("TextButton", closeConfirmPopup)
-noCloseBtn.Size = UDim2.new(0.4, 0, 0, 35)
-noCloseBtn.Position = UDim2.new(0.525, 0, 0, 75)
-noCloseBtn.BackgroundColor3 = Color3.fromRGB(25, 32, 45)
-noCloseBtn.Font = Enum.Font.GothamBold
-noCloseBtn.Text = "Không"
-noCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-noCloseBtn.TextSize = 13
-noCloseBtn.ZIndex = 301
-Instance.new("UICorner", noCloseBtn).CornerRadius = UDim.new(0, 8)
-playButtonEffect(noCloseBtn, Color3.fromRGB(25, 32, 45))
-
-local isCountingDown = false
-
-closeBtn.MouseButton1Click:Connect(function()
-    if isCountingDown then return end
-    mainFrame.Visible = false
-    closeConfirmPopup.Visible = true
-end)
-
-noCloseBtn.MouseButton1Click:Connect(function()
-    if isCountingDown then return end
-    closeConfirmPopup.Visible = false
-    mainFrame.Visible = true
-end)
-
-yesCloseBtn.MouseButton1Click:Connect(function()
-    if isCountingDown then return end
-    isCountingDown = true
-    noCloseBtn.Visible = false
+local function playNextAutoTrack()
+    if not autoPlayEnabled or #savedMusicList == 0 then return end
+    currentPlayingIndex = currentPlayingIndex + 1
+    if currentPlayingIndex > #savedMusicList then currentPlayingIndex = 1 end
     
-    task.spawn(function()
-        for i = 3, 1, -1 do
-            yesCloseBtn.Text = "Xóa trong " .. i .. "s"
-            task.wait(1)
-        end
-        screenGui:Destroy()
-    end)
+    local item = savedMusicList[currentPlayingIndex]
+    if item then
+        playSoundByID(item.id)
+    end
+end
+
+currentSound.Ended:Connect(function()
+    if autoPlayEnabled then
+        playNextAutoTrack()
+    else
+        isDiscSpinning = false
+    end
 end)
 
-minimizeBtn.MouseButton1Click:Connect(function()
-    mainFrame.Visible = false
-end)
+forwardRefreshSavedMusicList = function()
+    for _, item in pairs(savedMusicScroll:GetChildren()) do
+        if item:IsA("Frame") then item:Destroy() end
+    end
 
-openButton.MouseButton1Click:Connect(function() mainFrame.Visible = not mainFrame.Visible end)
+    for i, data in ipairs(savedMusicList) do
+        local itemFrame = Instance.new("Frame", savedMusicScroll)
+        itemFrame.Size = UDim2.new(1, -6, 0, 42)
+        itemFrame.BackgroundColor3 = Color3.fromRGB(18, 23, 33)
+        itemFrame.LayoutOrder = i
+        itemFrame.ZIndex = 24
+        Instance.new("UICorner", itemFrame).CornerRadius = UDim.new(0, 8)
+
+        local nameLabel = Instance.new("TextLabel", itemFrame)
+        nameLabel.Size = UDim2.new(0.35, 0, 1, 0)
+        nameLabel.Position = UDim2.new(0, 10, 0, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.Font = Enum.Font.GothamBold
+        nameLabel.Text = data.name
+        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nameLabel.TextSize = 11
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.ZIndex = 25
+
+        local swapBtn = Instance.new("TextButton", itemFrame)
+        swapBtn.Size = UDim2.new(0, 26, 0, 26)
+        swapBtn.Position = UDim2.new(0.36, 0, 0.5, -13)
+        swapBtn.BackgroundColor3 = Color3.fromRGB(30, 40, 60)
+        swapBtn.Font = Enum.Font.GothamBold
+        swapBtn.Text = "↕"
+        swapBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        swapBtn.TextSize = 12
+        swapBtn.ZIndex = 25
+        Instance.new("UICorner", swapBtn).CornerRadius = UDim.new(0, 6)
+
+        swapBtn.MouseButton1Click:Connect(function()
+            if i == 1 then
+                local first = table.remove(savedMusicList, 1)
+                table.insert(savedMusicList, first)
+            else
+                savedMusicList[i], savedMusicList[i - 1] = savedMusicList[i - 1], savedMusicList[i]
+            end
+            saveMusicToDisk()
+            forwardRefreshSavedMusicList()
+        end)
+
+        local viewBtn = Instance.new("TextButton", itemFrame)
+        viewBtn.Size = UDim2.new(0, 45, 0, 26)
+        viewBtn.Position = UDim2.new(0.48, 0, 0.5, -13)
+        viewBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+        viewBtn.Font = Enum.Font.GothamBold
+        viewBtn.Text = "👁️ Xem"
+        viewBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        viewBtn.TextSize = 10
+        viewBtn.ZIndex = 25
+        Instance.new("UICorner", viewBtn).CornerRadius = UDim.new(0, 6)
+
+        viewBtn.MouseButton1Click:Connect(function()
+            clearModal()
+            musicModalBg.Visible = true
+
+            local title = Instance.new("TextLabel", musicModalBox)
+            title.Size = UDim2.new(1, 0, 0, 30)
+            title.Position = UDim2.new(0, 0, 0, 15)
+            title.BackgroundTransparency = 1
+            title.Font = Enum.Font.GothamBold
+            title.Text = "Chi Tiết Bài Nhạc"
+            title.TextColor3 = Color3.fromRGB(255, 255, 255)
+            title.TextSize = 13
+            title.ZIndex = 102
+
+            local infoLabel = Instance.new("TextLabel", musicModalBox)
+            infoLabel.Size = UDim2.new(0.9, 0, 0, 45)
+            infoLabel.Position = UDim2.new(0.05, 0, 0, 50)
+            infoLabel.BackgroundTransparency = 1
+            infoLabel.Font = Enum.Font.Gotham
+            infoLabel.Text = "Tên: " .. data.name .. "\nID: " .. data.id
+            infoLabel.TextColor3 = Color3.fromRGB(200, 210, 235)
+            infoLabel.TextSize = 12
+            infoLabel.ZIndex = 102
+
+            local copyBtn = Instance.new("TextButton", musicModalBox)
+            copyBtn.Size = UDim2.new(0.4, 0, 0, 34)
+            copyBtn.Position = UDim2.new(0.075, 0, 0, 135)
+            copyBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+            copyBtn.Font = Enum.Font.GothamBold
+            copyBtn.Text = "📋 Sao Chép"
+            copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            copyBtn.TextSize = 11
+            copyBtn.ZIndex = 102
+            Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 8)
+
+            local closeMBtn = Instance.new("TextButton", musicModalBox)
+            closeMBtn.Size = UDim2.new(0.4, 0, 0, 34)
+            closeMBtn.Position = UDim2.new(0.525, 0, 0, 135)
+            closeMBtn.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
+            closeMBtn.Font = Enum.Font.GothamBold
+            closeMBtn.Text = "Đóng"
+            closeMBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            closeMBtn.TextSize = 11
+            closeMBtn.ZIndex = 102
+            Instance.new("UICorner", closeMBtn).CornerRadius = UDim.new(0, 8)
+
+            copyBtn.MouseButton1Click:Connect(function()
+                copyToClipboard(data.id)
+                clearModal()
+            end)
+            closeMBtn.MouseButton1Click:Connect(clearModal)
+        end)
+
+        local playBtn = Instance.new("TextButton", itemFrame)
+        playBtn.Size = UDim2.new(0, 45, 0, 26)
+        playBtn.Position = UDim2.new(0.66, 0, 0.5, -13)
+        playBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+        playBtn.Font = Enum.Font.GothamBold
+        playBtn.Text = "▶️ Phát"
+        playBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        playBtn.TextSize = 10
+        playBtn.ZIndex = 25
+        Instance.new("UICorner", playBtn).CornerRadius = UDim.new(0, 6)
+
+        playBtn.MouseButton1Click:Connect(function()
+            currentPlayingIndex = i
+            playSoundByID(data.id)
+            switchMusicTab(1)
+        end)
+
+        local deleteBtn = Instance.new("TextButton", itemFrame)
+        deleteBtn.Size = UDim2.new(0, 40, 0, 26)
+        deleteBtn.Position = UDim2.new(0.83, 0, 0.5, -13)
+        deleteBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+        deleteBtn.Font = Enum.Font.GothamBold
+        deleteBtn.Text = "🗑️ Xóa"
+        deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        deleteBtn.TextSize = 10
+        deleteBtn.ZIndex = 25
+        Instance.new("UICorner", deleteBtn).CornerRadius = UDim.new(0, 6)
+
+        deleteBtn.MouseButton1Click:Connect(function()
+            clearModal()
+            musicModalBg.Visible = true
+
+            local title = Instance.new("TextLabel", musicModalBox)
+            title.Size = UDim2.new(1, 0, 0, 40)
+            title.Position = UDim2.new(0, 0, 0, 15)
+            title.BackgroundTransparency = 1
+            title.Font = Enum.Font.GothamBold
+            title.Text = "Bạn có chắc chắn muốn xóa bài nhạc này?"
+            title.TextColor3 = Color3.fromRGB(255, 255, 255)
+            title.TextSize = 12
+            title.TextWrapped = true
+            title.ZIndex = 102
+
+            local yesBtn = Instance.new("TextButton", musicModalBox)
+            yesBtn.Size = UDim2.new(0.4, 0, 0, 34)
+            yesBtn.Position = UDim2.new(0.075, 0, 0, 135)
+            yesBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+            yesBtn.Font = Enum.Font.GothamBold
+            yesBtn.Text = "Có"
+            yesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            yesBtn.TextSize = 12
+            yesBtn.ZIndex = 102
+            Instance.new("UICorner", yesBtn).CornerRadius = UDim.new(0, 8)
+
+            local noBtn = Instance.new("TextButton", musicModalBox)
+            noBtn.Size = UDim2.new(0.4, 0, 0, 34)
+            noBtn.Position = UDim2.new(0.525, 0, 0, 135)
+            noBtn.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
+            noBtn.Font = Enum.Font.GothamBold
+            noBtn.Text = "Không"
+            noBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            noBtn.TextSize = 12
+            noBtn.ZIndex = 102
+            Instance.new("UICorner", noBtn).CornerRadius = UDim.new(0, 8)
+
+            yesBtn.MouseButton1Click:Connect(function()
+                table.remove(savedMusicList, i)
+                saveMusicToDisk()
+                forwardRefreshSavedMusicList()
+                clearModal()
+            end)
+
+            noBtn.MouseButton1Click:Connect(clearModal)
+        end)
+    end
+end
+forwardRefreshSavedMusicList()
+
+-- Tab 3: Nhạc Cộng Đồng
+local mTab3 = musicContentFrames[3]
+
+local communityMusicScroll = Instance.new("ScrollingFrame", mTab3)
+communityMusicScroll.Size = UDim2.new(1, 0, 1, 0)
+communityMusicScroll.BackgroundTransparency = 1
+communityMusicScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+communityMusicScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+communityMusicScroll.ScrollBarThickness = 4
+communityMusicScroll.ZIndex = 23
+
+local communityLayout = Instance.new("UIListLayout", communityMusicScroll)
+communityLayout.SortOrder = Enum.SortOrder.LayoutOrder
+communityLayout.Padding = UDim.new(0, 6)
+
+forwardRefreshCommunityMusicList = function()
+    for _, item in pairs(communityMusicScroll:GetChildren()) do
+        if item:IsA("Frame") then item:Destroy() end
+    end
+
+    for i, data in ipairs(communityMusicList) do
+        local itemFrame = Instance.new("Frame", communityMusicScroll)
+        itemFrame.Size = UDim2.new(1, -6, 0, 42)
+        itemFrame.BackgroundColor3 = Color3.fromRGB(18, 23, 33)
+        itemFrame.LayoutOrder = i
+        itemFrame.ZIndex = 24
+        Instance.new("UICorner", itemFrame).CornerRadius = UDim.new(0, 8)
+
+        local nameLabel = Instance.new("TextLabel", itemFrame)
+        nameLabel.Size = UDim2.new(0.55, 0, 1, 0)
+        nameLabel.Position = UDim2.new(0, 10, 0, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.Font = Enum.Font.GothamBold
+        nameLabel.Text = "[" .. tostring(data.author) .. "]: " .. tostring(data.name)
+        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nameLabel.TextSize = 11
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.ZIndex = 25
+
+        local listenBtn = Instance.new("TextButton", itemFrame)
+        listenBtn.Size = UDim2.new(0, 50, 0, 26)
+        listenBtn.Position = UDim2.new(0.62, 0, 0.5, -13)
+        listenBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+        listenBtn.Font = Enum.Font.GothamBold
+        listenBtn.Text = "▶️ Nghe"
+        listenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        listenBtn.TextSize = 10
+        listenBtn.ZIndex = 25
+        Instance.new("UICorner", listenBtn).CornerRadius = UDim.new(0, 6)
+
+        listenBtn.MouseButton1Click:Connect(function()
+            playSoundByID(data.id)
+            switchMusicTab(1)
+        end)
+
+        local viewBtn = Instance.new("TextButton", itemFrame)
+        viewBtn.Size = UDim2.new(0, 50, 0, 26)
+        viewBtn.Position = UDim2.new(0.82, 0, 0.5, -13)
+        viewBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+        viewBtn.Font = Enum.Font.GothamBold
+        viewBtn.Text = "👁️ Xem"
+        viewBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        viewBtn.TextSize = 10
+        viewBtn.ZIndex = 25
+        Instance.new("UICorner", viewBtn).CornerRadius = UDim.new(0, 6)
+
+        viewBtn.MouseButton1Click:Connect(function()
+            clearModal()
+            musicModalBg.Visible = true
+
+            local title = Instance.new("TextLabel", musicModalBox)
+            title.Size = UDim2.new(1, 0, 0, 25)
+            title.Position = UDim2.new(0, 0, 0, 10)
+            title.BackgroundTransparency = 1
+            title.Font = Enum.Font.GothamBold
+            title.Text = "Chi Tiết Nhạc Cộng Đồng"
+            title.TextColor3 = Color3.fromRGB(255, 255, 255)
+            title.TextSize = 13
+            title.ZIndex = 102
+
+            local infoLabel = Instance.new("TextLabel", musicModalBox)
+            infoLabel.Size = UDim2.new(0.9, 0, 0, 40)
+            infoLabel.Position = UDim2.new(0.05, 0, 0, 40)
+            infoLabel.BackgroundTransparency = 1
+            infoLabel.Font = Enum.Font.Gotham
+            infoLabel.Text = "Người đăng: " .. data.author .. "\nTên: " .. data.name .. "\nID: " .. data.id
+            infoLabel.TextColor3 = Color3.fromRGB(200, 210, 235)
+            infoLabel.TextSize = 11
+            infoLabel.ZIndex = 102
+
+            local copyBtn = Instance.new("TextButton", musicModalBox)
+            copyBtn.Size = UDim2.new(0.4, 0, 0, 32)
+            copyBtn.Position = UDim2.new(0.075, 0, 0, 95)
+            copyBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+            copyBtn.Font = Enum.Font.GothamBold
+            copyBtn.Text = "📋 Sao Chép"
+            copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            copyBtn.TextSize = 11
+            copyBtn.ZIndex = 102
+            Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 8)
+
+            local saveCommunityBtn = Instance.new("TextButton", musicModalBox)
+            saveCommunityBtn.Size = UDim2.new(0.4, 0, 0, 32)
+            saveCommunityBtn.Position = UDim2.new(0.525, 0, 0, 95)
+            saveCommunityBtn.BackgroundColor3 = Color3.fromRGB(140, 80, 220)
+            saveCommunityBtn.Font = Enum.Font.GothamBold
+            saveCommunityBtn.Text = "💾 Lưu Bài Này"
+            saveCommunityBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            saveCommunityBtn.TextSize = 11
+            saveCommunityBtn.ZIndex = 102
+            Instance.new("UICorner", saveCommunityBtn).CornerRadius = UDim.new(0, 8)
+
+            local closeMBtn = Instance.new("TextButton", musicModalBox)
+            closeMBtn.Size = UDim2.new(0.85, 0, 0, 30)
+            closeMBtn.Position = UDim2.new(0.075, 0, 0, 140)
+            closeMBtn.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
+            closeMBtn.Font = Enum.Font.GothamBold
+            closeMBtn.Text = "Đóng"
+            closeMBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            closeMBtn.TextSize = 11
+            closeMBtn.ZIndex = 102
+            Instance.new("UICorner", closeMBtn).CornerRadius = UDim.new(0, 8)
+
+            copyBtn.MouseButton1Click:Connect(function()
+                copyToClipboard(data.id)
+                clearModal()
+            end)
+
+            saveCommunityBtn.MouseButton1Click:Connect(function()
+                clearModal()
+                musicModalBg.Visible = true
+
+                local titleSave = Instance.new("TextLabel", musicModalBox)
+                titleSave.Size = UDim2.new(1, 0, 0, 30)
+                titleSave.Position = UDim2.new(0, 0, 0, 10)
+                titleSave.BackgroundTransparency = 1
+                titleSave.Font = Enum.Font.GothamBold
+                titleSave.Text = "Lưu Về Cá Nhân (Tối đa 12 ký tự)"
+                titleSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+                titleSave.TextSize = 12
+                titleSave.ZIndex = 102
+
+                local inputSave = Instance.new("TextBox", musicModalBox)
+                inputSave.Size = UDim2.new(0.85, 0, 0, 36)
+                inputSave.Position = UDim2.new(0.075, 0, 0, 50)
+                inputSave.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
+                inputSave.Font = Enum.Font.Gotham
+                inputSave.PlaceholderText = "Đặt tên lưu..."
+                inputSave.Text = data.name
+                inputSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+                inputSave.TextSize = 12
+                inputSave.ZIndex = 102
+                Instance.new("UICorner", inputSave).CornerRadius = UDim.new(0, 8)
+
+                inputSave:GetPropertyChangedSignal("Text"):Connect(function()
+                    local success, len = pcall(function() return utf8.len(inputSave.Text) end)
+                    if success and len and len > 12 then
+                        local offset = utf8.offset(inputSave.Text, 13)
+                        if offset then inputSave.Text = string.sub(inputSave.Text, 1, offset - 1) end
+                    end
+                end)
+
+                local btnConfirmSave = Instance.new("TextButton", musicModalBox)
+                btnConfirmSave.Size = UDim2.new(0.4, 0, 0, 34)
+                btnConfirmSave.Position = UDim2.new(0.075, 0, 0, 140)
+                btnConfirmSave.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+                btnConfirmSave.Font = Enum.Font.GothamBold
+                btnConfirmSave.Text = "Lưu"
+                btnConfirmSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+                btnConfirmSave.TextSize = 12
+                btnConfirmSave.ZIndex = 102
+                Instance.new("UICorner", btnConfirmSave).CornerRadius = UDim.new(0, 8)
+
+                local btnCancelSave = Instance.new("TextButton", musicModalBox)
+                btnCancelSave.Size = UDim2.new(0.4, 0, 0, 34)
+                btnCancelSave.Position = UDim2.new(0.525, 0, 0, 140)
+                btnCancelSave.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
+                btnCancelSave.Font = Enum.Font.GothamBold
+                btnCancelSave.Text = "Hủy"
+                btnCancelSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+                btnCancelSave.TextSize = 12
+                btnCancelSave.ZIndex = 102
+                Instance.new("UICorner", btnCancelSave).CornerRadius = UDim.new(0, 8)
+
+                btnConfirmSave.MouseButton1Click:Connect(function()
+                    local musicName = inputSave.Text:gsub("^%s*(.-)%s*$", "%1")
+                    if musicName ~= "" then
+                        table.insert(savedMusicList, {name = musicName, id = data.id})
+                        saveMusicToDisk()
+                        forwardRefreshSavedMusicList()
+                        clearModal()
+                    end
+                end)
+
+                btnCancelSave.MouseButton1Click:Connect(clearModal)
+            end)
+
+            closeMBtn.MouseButton1Click:Connect(clearModal)
+        end)
+    end
+end
+forwardRefreshCommunityMusicList()
+--[[
+    GAU MODS UI - PHẦN 6/6 (HÀM KÉO THẢ & HOÀN TẤT HỆ THỐNG)
+]]
 
 local function makeDraggableButton(btn)
     local dragging, dragInput, dragStart, startPos
@@ -2400,4 +1591,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI - Đã fix toàn bộ lỗi và chạy cực kỳ mượt mà ổn định!")
+print("GAU MODS UI - Hoàn tất toàn bộ 6 phần cực kỳ mượt mà và đỉnh chóp! 🔥🚀")
