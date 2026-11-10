@@ -1,5 +1,5 @@
 --[[
-    GAU MODS UI - PHẦN 1/8 (KHỞI TẠO HỆ THỐNG, TIỆN ÍCH & GIAO DIỆN CHÍNH)
+    GAU MODS UI - PHẦN 1/8 (KHỞI TẠO HỆ THỐNG, TIỆN ÍCH & THÔNG BÁO ADMIN THUẦN CHỮ)
     Độ dài: ~300-320 dòng
 ]]
 
@@ -133,41 +133,28 @@ local function saveToDisk()
     if writefile then pcall(function() writefile(SAVE_FILE_NAME, HttpService:JSONEncode(savedScripts)) end) end
 end
 
--- Hiển thị thông báo màn hình Admin (Có nền mờ + viền đỏ nổi bật)
+-- Thông báo Admin hiển thị thuần chữ (Không có khung nền hay UI)
 local function showAdminScreenText(senderName, messageText)
     local existing = screenGui:FindFirstChild("AdminBroadcastText")
     if existing then existing:Destroy() end
 
-    local bgContainer = Instance.new("Frame", screenGui)
-    bgContainer.Name = "AdminBroadcastText"
-    bgContainer.Size = UDim2.new(0, 480, 0, 70)
-    bgContainer.Position = UDim2.new(0.5, -240, 0, 15)
-    bgContainer.BackgroundColor3 = Color3.fromRGB(12, 15, 22)
-    bgContainer.BackgroundTransparency = 0.25
-    bgContainer.ZIndex = 9999
-    Instance.new("UICorner", bgContainer).CornerRadius = UDim.new(0, 14)
-    
-    local stroke = Instance.new("UIStroke", bgContainer)
-    stroke.Color = Color3.fromRGB(255, 70, 70)
-    stroke.Thickness = 2
-
-    local textLabel = Instance.new("TextLabel", bgContainer)
-    textLabel.Size = UDim2.new(1, -24, 1, -12)
-    textLabel.Position = UDim2.new(0, 12, 0, 6)
+    local textLabel = Instance.new("TextLabel", screenGui)
+    textLabel.Name = "AdminBroadcastText"
+    textLabel.Size = UDim2.new(1, -40, 0, 50)
+    textLabel.Position = UDim2.new(0, 20, 0, 20)
     textLabel.BackgroundTransparency = 1
     textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextSize = 13
+    textLabel.TextSize = 15
     textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     textLabel.TextWrapped = true
     textLabel.TextXAlignment = Enum.TextXAlignment.Center
-    textLabel.TextYAlignment = Enum.TextYAlignment.Center
     textLabel.RichText = true
     textLabel.Text = "<font color=\"#FF5555\">📢 <b>[" .. senderName .. "]:</b></font> " .. messageText
-    textLabel.ZIndex = 10000
+    textLabel.ZIndex = 9999
 
     task.delay(5, function()
-        if bgContainer and bgContainer.Parent then
-            bgContainer:Destroy()
+        if textLabel and textLabel.Parent then
+            textLabel:Destroy()
         end
     end)
 end
@@ -191,7 +178,7 @@ openIcon.Size = UDim2.new(0, 30, 0, 30)
 openIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 openIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 openIcon.BackgroundTransparency = 1
-openIcon.Image = "rbxassetid://6031094678"
+openIcon.Image = "rbxassetid://1000041489"
 playButtonEffect(openButton, Color3.fromRGB(12, 15, 22))
 
 -- Khung cửa sổ chính
@@ -230,7 +217,7 @@ local topIcon = Instance.new("ImageLabel", topBar)
 topIcon.Size = UDim2.new(0, 26, 0, 26)
 topIcon.Position = UDim2.new(0, 18, 0.5, -13)
 topIcon.BackgroundTransparency = 1
-topIcon.Image = "rbxassetid://6031094678"
+topIcon.Image = "rbxassetid://1000041489"
 
 local titleLabel = Instance.new("TextLabel", topBar)
 titleLabel.Size = UDim2.new(0, 250, 1, 0)
@@ -1435,7 +1422,7 @@ end)
 
 print("GauModsUI Part 5 Loaded Successfully!")
 --[[
-    GAU MODS UI - PHẦN 6/8 (TAB CÀI ĐẶT - TỰ ĐỘNG LƯU & CHẾ ĐỘ TÀNG HÌNH GHOST MODE)
+    GAU MODS UI - PHẦN 6/8 (TAB CÀI ĐẶT - TỰ ĐỘNG LƯU & CHỈNH DÁNG NÚT MỞ)
     Độ dài: ~300-320 dòng
 ]]
 
@@ -1467,6 +1454,11 @@ task.spawn(function()
         mainFrame.BackgroundTransparency = savedSettings.opacity
         mainFrame.Size = UDim2.new(0, savedSettings.sizeW, 0, savedSettings.sizeH)
         mainFrame.Position = UDim2.new(0.5, -savedSettings.sizeW/2, 0.5, -savedSettings.sizeH/2)
+        if savedSettings.openButtonShape == "circle" then
+            for _, c in ipairs(openButton:GetChildren()) do
+                if c:IsA("UICorner") then c.CornerRadius = UDim.new(1, 0) end
+            end
+        end
     end)
 end)
 
@@ -1600,108 +1592,65 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
-createSettingLabel("👻 Chế Độ Tàng Hình (Ghost Mode):")
+createSettingLabel("🔘 Kiểu dáng nút mở Menu:")
 
-local ghostModeFrame = Instance.new("Frame", tab5)
-ghostModeFrame.Size = UDim2.new(1, 0, 0, 50)
-ghostModeFrame.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
-Instance.new("UICorner", ghostModeFrame).CornerRadius = UDim.new(0, 12)
-local gmStroke = Instance.new("UIStroke", ghostModeFrame)
-gmStroke.Color = Color3.fromRGB(35, 45, 65)
-gmStroke.Transparency = 0.5
+local shapeDropdownContainer = Instance.new("Frame", tab5)
+shapeDropdownContainer.Size = UDim2.new(1, 0, 0, 42)
+shapeDropdownContainer.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
+shapeDropdownContainer.ClipsDescendants = true
+Instance.new("UICorner", shapeDropdownContainer).CornerRadius = UDim.new(0, 12)
+local sdStroke = Instance.new("UIStroke", shapeDropdownContainer)
+sdStroke.Color = Color3.fromRGB(35, 45, 65)
+sdStroke.Transparency = 0.5
 
-local ghostModeLabel = Instance.new("TextLabel", ghostModeFrame)
-ghostModeLabel.Size = UDim2.new(0.65, 0, 1, 0)
-ghostModeLabel.Position = UDim2.new(0, 14, 0, 0)
-ghostModeLabel.BackgroundTransparency = 1
-ghostModeLabel.Font = Enum.Font.Gotham
-ghostModeLabel.Text = "Ẩn hoàn toàn menu. Chạm 3 ngón tay 3 lần để mở lại."
-ghostModeLabel.TextColor3 = Color3.fromRGB(200, 210, 230)
-ghostModeLabel.TextSize = 11
-ghostModeLabel.TextWrapped = true
-ghostModeLabel.TextXAlignment = Enum.TextXAlignment.Left
+local shapeDropdownBtn = Instance.new("TextButton", shapeDropdownContainer)
+shapeDropdownBtn.Size = UDim2.new(1, 0, 0, 42)
+shapeDropdownBtn.BackgroundTransparency = 1
+shapeDropdownBtn.Font = Enum.Font.GothamBold
+shapeDropdownBtn.Text = "  🔲 Hình vuông bo góc tròn (Mặc định)       ▼"
+shapeDropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+shapeDropdownBtn.TextSize = 13
+shapeDropdownBtn.TextXAlignment = Enum.TextXAlignment.Left
 
-local ghostToggleBtn = Instance.new("TextButton", ghostModeFrame)
-ghostToggleBtn.Size = UDim2.new(0, 52, 0, 26)
-ghostToggleBtn.Position = UDim2.new(1, -64, 0.5, -13)
-ghostToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 40, 55)
-ghostToggleBtn.Text = ""
-Instance.new("UICorner", ghostToggleBtn).CornerRadius = UDim.new(1, 0)
+local shapeListFrame = Instance.new("Frame", shapeDropdownContainer)
+shapeListFrame.Size = UDim2.new(1, 0, 0, 70)
+shapeListFrame.Position = UDim2.new(0, 0, 0, 42)
+shapeListFrame.BackgroundTransparency = 1
 
-local ghostToggleCircle = Instance.new("Frame", ghostToggleBtn)
-ghostToggleCircle.Size = UDim2.new(0, 20, 0, 20)
-ghostToggleCircle.Position = UDim2.new(0, 3, 0.5, -10)
-ghostToggleCircle.BackgroundColor3 = Color3.fromRGB(180, 190, 210)
-Instance.new("UICorner", ghostToggleCircle).CornerRadius = UDim.new(1, 0)
+local shapeOptions = {
+    {name = "🔲 Hình vuông bo góc tròn", corner = UDim.new(0, 18), type = "square"},
+    {name = "⭕ Hình tròn hoàn toàn", corner = UDim.new(1, 0), type = "circle"}
+}
 
-local isGhostModeActive = false
-local hasShownGhostNote = false
-
-ghostToggleBtn.MouseButton1Click:Connect(function()
-    isGhostModeActive = not isGhostModeActive
-    if isGhostModeActive then
-        TweenService:Create(ghostToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 122, 255)}):Play()
-        TweenService:Create(ghostToggleCircle, TweenInfo.new(0.2), {Position = UDim2.new(1, -23, 0.5, -10), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-        
-        mainFrame.Visible = false
-        openButton.Visible = false
-        
-        if not hasShownGhostNote then
-            hasShownGhostNote = true
-            pcall(function()
-                StarterGui:SetCore("SendNotification", {
-                    Title = "👻 Đã bật Chế độ Tàng Hình",
-                    Text = "Menu đã ẩn! Chạm đồng thời 3 ngón tay 3 lần để mở lại.",
-                    Duration = 6
-                })
-            end)
-        end
-    else
-        TweenService:Create(ghostToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 40, 55)}):Play()
-        TweenService:Create(ghostToggleCircle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -10), BackgroundColor3 = Color3.fromRGB(180, 190, 210)}):Play()
-        openButton.Visible = true
-    end
+local isShapeDropdownOpen = false
+shapeDropdownBtn.MouseButton1Click:Connect(function()
+    isShapeDropdownOpen = not isShapeDropdownOpen
+    TweenService:Create(shapeDropdownContainer, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, isShapeDropdownOpen and 112 or 42)}):Play()
 end)
 
-local touchCount = 0
-local lastTouchTick = 0
-
-UserInputService.TouchStarted:Connect(function()
-    local activeTouches = 0
-    pcall(function()
-        for _, t in ipairs(UserInputService:GetTouches()) do
-            activeTouches = activeTouches + 1
-        end
-    end)
+for i, opt in ipairs(shapeOptions) do
+    local sOptBtn = Instance.new("TextButton", shapeListFrame)
+    sOptBtn.Size = UDim2.new(1, 0, 0, 35)
+    sOptBtn.Position = UDim2.new(0, 0, 0, (i-1)*35)
+    sOptBtn.BackgroundColor3 = Color3.fromRGB(18, 23, 34)
+    sOptBtn.Font = Enum.Font.Gotham
+    sOptBtn.Text = "   " .. opt.name
+    sOptBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sOptBtn.TextSize = 13
+    sOptBtn.TextXAlignment = Enum.TextXAlignment.Left
     
-    if activeTouches >= 3 then
-        local currentTick = tick()
-        if currentTick - lastTouchTick > 0.8 then
-            touchCount = 1
-        else
-            touchCount = touchCount + 1
-        end
-        lastTouchTick = currentTick
+    sOptBtn.MouseButton1Click:Connect(function()
+        shapeDropdownBtn.Text = "  " .. opt.name .. "       ▼"
+        isShapeDropdownOpen = false
+        TweenService:Create(shapeDropdownContainer, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 42)}):Play()
         
-        if touchCount >= 3 then
-            touchCount = 0
-            if isGhostModeActive then
-                isGhostModeActive = false
-                TweenService:Create(ghostToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 40, 55)}):Play()
-                TweenService:Create(ghostToggleCircle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -10), BackgroundColor3 = Color3.fromRGB(180, 190, 210)}):Play()
-                openButton.Visible = true
-                mainFrame.Visible = true
-                pcall(function()
-                    StarterGui:SetCore("SendNotification", {
-                        Title = "✨ Đã hiện Menu",
-                        Text = "Chế độ tàng hình đã tắt!",
-                        Duration = 2
-                    })
-                end)
-            end
+        for _, c in ipairs(openButton:GetChildren()) do
+            if c:IsA("UICorner") then c.CornerRadius = opt.corner end
         end
-    end
-end)
+        savedSettings.openButtonShape = opt.type
+        saveSettingsToDisk()
+    end)
+end
 
 print("GauModsUI Part 6 Loaded Successfully!")
 --[[
@@ -2361,4 +2310,4 @@ local function makeDraggableMain(frame, handle)
 end
 makeDraggableMain(mainFrame, topBar)
 
-print("GAU MODS UI VIP - Hoàn tất toàn bộ 8 phần rành mạch, chuẩn chỉnh không lỗi cho anh Dương!")
+print("GAU MODS UI VIP - Hoàn tất toàn bộ 8 phần rành mạch, chuẩn chỉnh theo ý anh Dương!")
