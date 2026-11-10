@@ -149,7 +149,7 @@ local function showAdminScreenText(senderName, messageText)
     textLabel.TextWrapped = true
     textLabel.TextXAlignment = Enum.TextXAlignment.Center
     textLabel.RichText = true
-    textLabel.Text = "<font color=\"#FF5555\">📢 <b>[" .. senderName .. "]:</b></font> " .. messageText
+    textLabel.Text = "<font color=\"#FF5555\"> <b>[" .. senderName .. "]:</b></font> " .. messageText
     textLabel.ZIndex = 9999
 
     task.delay(5, function()
