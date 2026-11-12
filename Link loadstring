@@ -1,0 +1,18 @@
+--[[
+    GAU MODS - AUTO LOAD 2 LINKS SCRIPT (DELTA EXECUTOR)
+    - Tự động chạy song song 2 link script ngay khi bấm Execute.
+]]
+
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet("ĐIỀN_LINK_SCRIPT_THỨ_NHẤT_VÀO_ĐÂY"))()
+    end)
+end)
+
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet("ĐIỀN_LINK_SCRIPT_THỨ_HAI_VÀO_ĐÂY"))()
+    end)
+end)
+
+print("Gau Mods: Đã load thành công cả 2 script!")
