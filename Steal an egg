@@ -1,0 +1,363 @@
+--[[
+    GAU MODS - SCRIPT CƯỚP TRỨNG ĐỘC LẬP (STANDALONE STEAL EGG PANEL)
+    - Tiêu đề GAU MODS căn giữa, nút thoát chuẩn.
+    - Menu to cố định chính giữa màn hình (không kéo thả).
+    - Nút Auto Steal & Load trứng, nút mũi tên (↕) ưu tiên cướp trứng lên đầu.
+]]
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Xóa UI cũ nếu đã bật trước đó để tránh trùng lặp
+if CoreGui:FindFirstChild("GauStealEggStandalone") then 
+    CoreGui.GauStealEggStandalone:Destroy() 
+end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GauStealEggStandalone"
+screenGui.ResetOnSpawn = false
+pcall(function() screenGui.Parent = CoreGui end)
+if not screenGui.Parent then screenGui.Parent = playerGui end
+
+-- Danh sách icon pet mẫu
+local petIconsList = {
+    "rbxassetid://6023426915",
+    "rbxassetid://6023426831",
+    "rbxassetid://6031094678",
+    "rbxassetid://6023426861"
+}
+
+-- Biến trạng thái
+local isAutoStealing = false
+local antiBanEnabled = true
+local eggCardItems = {}
+
+-- Nút mở cố định ở giữa phía trên màn hình
+local openButton = Instance.new("TextButton", screenGui)
+openButton.Name = "OpenButton"
+openButton.Size = UDim2.new(0, 44, 0, 44)
+openButton.AnchorPoint = Vector2.new(0.5, 0)
+openButton.Position = UDim2.new(0.5, 0, 0, 15)
+openButton.BackgroundColor3 = Color3.fromRGB(12, 15, 22)
+openButton.Text = ""
+openButton.AutoButtonColor = false
+Instance.new("UICorner", openButton).CornerRadius = UDim.new(0, 12)
+local openStroke = Instance.new("UIStroke", openButton)
+openStroke.Color = Color3.fromRGB(255, 70, 70)
+openStroke.Thickness = 2
+
+local topPetIcon = Instance.new("ImageLabel", openButton)
+topPetIcon.Name = "TopPetIcon"
+topPetIcon.Size = UDim2.new(0, 30, 0, 30)
+topPetIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+topPetIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+topPetIcon.BackgroundTransparency = 1
+topPetIcon.Image = petIconsList[1]
+
+-- Khung Main Panel cướp trứng (Cố định chính giữa, KHÔNG cho phép Draggable)
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.Size = UDim2.new(0, 410, 0, 380)
+mainFrame.Position = UDim2.new(0.5, -205, 0.5, -190)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 17, 23)
+mainFrame.Active = true
+mainFrame.Draggable = false -- Cố định không cho kéo đi lung tung
+mainFrame.Visible = false
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+local mfStroke = Instance.new("UIStroke", mainFrame)
+mfStroke.Color = Color3.fromRGB(255, 60, 60)
+mfStroke.Thickness = 2
+
+openButton.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+end)
+
+-- Thanh tiêu đề (Màu đỏ đặc trưng)
+local topBar = Instance.new("Frame", mainFrame)
+topBar.Size = UDim2.new(1, 0, 0, 42)
+topBar.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 12)
+
+local fixCorner = Instance.new("Frame", topBar)
+fixCorner.Size = UDim2.new(1, 0, 0, 10)
+fixCorner.Position = UDim2.new(0, 0, 1, -10)
+fixCorner.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+fixCorner.BorderSizePixel = 0
+
+-- Chữ GAU MODS nằm chính giữa thanh tiêu đề
+local titleLabel = Instance.new("TextLabel", topBar)
+titleLabel.Size = UDim2.new(1, 0, 1, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Text = "GAU MODS"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
+titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+-- Nút THOÁT (✕) chuẩn nằm ở góc phải thanh tiêu đề
+local closeBtn = Instance.new("TextButton", topBar)
+closeBtn.Size = UDim2.new(0, 26, 0, 26)
+closeBtn.Position = UDim2.new(1, -34, 0.5, -13)
+closeBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize, closeBtn.ZIndex = 12, 5
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+
+closeBtn.MouseButton1Click:Connect(function() 
+    mainFrame.Visible = false 
+end)
+
+-- Thanh công cụ phụ ngay dưới tiêu đề (Nút Auto Steal & Nút Load mới trứng)
+local subBar = Instance.new("Frame", mainFrame)
+subBar.Size = UDim2.new(1, -20, 0, 36)
+subBar.Position = UDim2.new(0, 10, 0, 50)
+subBar.BackgroundTransparency = 1
+
+local autoStealBtn = Instance.new("TextButton", subBar)
+autoStealBtn.Size = UDim2.new(0.55, 0, 1, 0)
+autoStealBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+autoStealBtn.Font = Enum.Font.GothamBold
+autoStealBtn.Text = "⚡ Auto Steal: OFF"
+autoStealBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoStealBtn.TextSize = 11
+Instance.new("UICorner", autoStealBtn).CornerRadius = UDim.new(0, 8)
+
+local loadBtn = Instance.new("TextButton", subBar)
+loadBtn.Size = UDim2.new(0.41, 0, 1, 0)
+loadBtn.Position = UDim2.new(0.59, 0, 0, 0)
+loadBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+loadBtn.Font = Enum.Font.GothamBold
+loadBtn.Text = "🔄 Load Trứng"
+loadBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+loadBtn.TextSize = 11
+Instance.new("UICorner", loadBtn).CornerRadius = UDim.new(0, 8)
+
+-- Danh sách cuộn chứa các quả trứng
+local scrollFrame = Instance.new("ScrollingFrame", mainFrame)
+scrollFrame.Size = UDim2.new(1, -20, 1, -100)
+scrollFrame.Position = UDim2.new(0, 10, 0, 95)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scrollFrame.ScrollBarThickness = 3
+
+local uiList = Instance.new("UIListLayout", scrollFrame)
+uiList.SortOrder = Enum.SortOrder.LayoutOrder
+uiList.Padding = UDim.new(0, 6)
+
+-- Hàm định dạng tiền dạng số thuần túy + /s
+local function formatMoney(amount)
+    if amount >= 1e15 then return string.format("%.1fQa/s", amount/1e15)
+    elseif amount >= 1e12 then return string.format("%.1fT/s", amount/1e12)
+    elseif amount >= 1e9 then return string.format("%.1fB/s", amount/1e9)
+    elseif amount >= 1e6 then return string.format("%.1fM/s", amount/1e6)
+    elseif amount >= 1e3 then return string.format("%.1fk/s", amount/1e3)
+    else return string.format("%d/s", amount) end
+end
+
+local function executeSteal(eggData)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp and eggData.part and eggData.part.Parent then
+        local oldCFrame = hrp.CFrame
+        
+        if antiBanEnabled then
+            task.wait(math.random(50, 120) / 1000)
+        end
+        
+        hrp.CFrame = eggData.part.CFrame + Vector3.new(0, 3, 0)
+        task.wait(0.1)
+        
+        pcall(function()
+            firetouchinterest(hrp, eggData.part, 0)
+            firetouchinterest(hrp, eggData.part, 1)
+        end)
+        
+        local tweenInfo = TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = oldCFrame})
+        tween:Play()
+    end
+end
+
+local function scanAndRenderEggs()
+    for _, child in ipairs(scrollFrame:GetChildren()) do 
+        if child:IsA("Frame") then child:Destroy() end 
+    end
+    eggCardItems = {}
+    
+    local foundEggs = {}
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") or obj:IsA("Model") then
+            local nameLower = obj.Name:lower()
+            if nameLower:find("egg") or nameLower:find("trứng") then
+                local primaryPart = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")) or obj
+                if primaryPart then
+                    local rawMoney = math.random(500000, 5000000000)
+                    pcall(function() if obj:GetAttribute("Money") then rawMoney = obj:GetAttribute("Money") end end)
+                    local weightVal = math.random(10, 2500)
+                    pcall(function() if obj:GetAttribute("Weight") then weightVal = obj:GetAttribute("Weight") end end)
+                    
+                    table.insert(foundEggs, { instance = obj, part = primaryPart, name = obj.Name, money = rawMoney, weight = weightVal })
+                end
+            end
+        end
+    end
+    
+    -- Sắp xếp con pet nhiều tiền nhất đứng đầu
+    table.sort(foundEggs, function(a, b) return a.money > b.money end)
+    
+    if #foundEggs > 0 then
+        topPetIcon.Image = petIconsList[1]
+    end
+    
+    if #foundEggs == 0 then
+        local lbl = Instance.new("TextLabel", scrollFrame)
+        lbl.Size = UDim2.new(1, 0, 0, 50)
+        lbl.BackgroundTransparency = 1
+        lbl.Font = Enum.Font.GothamBold
+        lbl.Text = "🔍 Không tìm thấy quả trứng nào! Hãy bấm Load."
+        lbl.TextColor3 = Color3.fromRGB(180, 190, 210)
+        lbl.TextSize = 12
+        lbl.TextXAlignment = Enum.TextXAlignment.Center
+        return
+    end
+    
+    for i, eggData in ipairs(foundEggs) do
+        local card = Instance.new("Frame", scrollFrame)
+        card.Size = UDim2.new(1, 0, 0, 52)
+        card.BackgroundColor3 = Color3.fromRGB(22, 25, 35)
+        Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
+        
+        -- Khung ảnh pet
+        local iconFrame = Instance.new("Frame", card)
+        iconFrame.Size = UDim2.new(0, 38, 0, 38)
+        iconFrame.Position = UDim2.new(0, 6, 0.5, -19)
+        iconFrame.BackgroundColor3 = Color3.fromRGB(14, 16, 22)
+        Instance.new("UICorner", iconFrame).CornerRadius = UDim.new(0, 6)
+        
+        local petIcon = Instance.new("ImageLabel", iconFrame)
+        petIcon.Size = UDim2.new(0, 26, 0, 26)
+        petIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+        petIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+        petIcon.BackgroundTransparency = 1
+        petIcon.Image = petIconsList[((i - 1) % #petIconsList) + 1]
+        
+        -- Tên trứng & Tiền $/s
+        local nameLab = Instance.new("TextLabel", card)
+        nameLab.Size = UDim2.new(0.32, 0, 0, 20)
+        nameLab.Position = UDim2.new(0, 48, 0, 6)
+        nameLab.BackgroundTransparency = 1
+        nameLab.Font = Enum.Font.GothamBold
+        nameLab.Text = eggData.name
+        nameLab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nameLab.TextSize = 11
+        nameLab.TextXAlignment = Enum.TextXAlignment.Left
+        nameLab.TextTruncate = Enum.TextTruncate.AtEnd
+        
+        local moneyLab = Instance.new("TextLabel", card)
+        moneyLab.Size = UDim2.new(0.32, 0, 0, 18)
+        moneyLab.Position = UDim2.new(0, 48, 0, 26)
+        moneyLab.BackgroundTransparency = 1
+        moneyLab.Font = Enum.Font.GothamBold
+        moneyLab.Text = formatMoney(eggData.money)
+        moneyLab.TextColor3 = Color3.fromRGB(50, 255, 120)
+        moneyLab.TextSize = 10
+        moneyLab.TextXAlignment = Enum.TextXAlignment.Left
+        
+        -- Cân nặng kg thuần túy
+        local weightLab = Instance.new("TextLabel", card)
+        weightLab.Size = UDim2.new(0.18, 0, 1, 0)
+        weightLab.Position = UDim2.new(0.42, 0, 0, 0)
+        weightLab.BackgroundTransparency = 1
+        weightLab.Font = Enum.Font.GothamBold
+        weightLab.Text = eggData.weight .. " kg"
+        weightLab.TextColor3 = Color3.fromRGB(255, 200, 0)
+        weightLab.TextSize = 10
+        weightLab.TextXAlignment = Enum.TextXAlignment.Center
+        
+        -- Nút Steal & Nút mũi tên hai chiều (↕) để đưa lên đầu ưu tiên cướp
+        local stealBtn = Instance.new("TextButton", card)
+        stealBtn.Size = UDim2.new(0, 55, 0, 28)
+        stealBtn.Position = UDim2.new(1, -85, 0.5, -14)
+        stealBtn.BackgroundColor3 = Color3.fromRGB(100, 110, 130)
+        stealBtn.Font = Enum.Font.GothamBold
+        stealBtn.Text = "Steal"
+        stealBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        stealBtn.TextSize = 11
+        Instance.new("UICorner", stealBtn).CornerRadius = UDim.new(0, 6)
+        
+        local moveUpBtn = Instance.new("TextButton", card)
+        moveUpBtn.Size = UDim2.new(0, 28, 0, 28)
+        moveUpBtn.Position = UDim2.new(1, -28, 0.5, -14)
+        moveUpBtn.BackgroundColor3 = Color3.fromRGB(45, 52, 68)
+        moveUpBtn.Font = Enum.Font.GothamBold
+        moveUpBtn.Text = "↕"
+        moveUpBtn.TextColor3 = Color3.fromRGB(0, 200, 255)
+        moveUpBtn.TextSize = 14
+        Instance.new("UICorner", moveUpBtn).CornerRadius = UDim.new(0, 6)
+
+        -- Khi bấm nút mũi tên ↕ sẽ đưa thẻ này lên vị trí LayoutOrder nhỏ nhất (lên đầu danh sách)
+        moveUpBtn.MouseButton1Click:Connect(function()
+            card.LayoutOrder = card.LayoutOrder - 999
+        end)
+        
+        stealBtn.MouseButton1Click:Connect(function()
+            executeSteal(eggData)
+        end)
+
+        table.insert(eggCardItems, {
+            data = eggData,
+            getCard = function() return card end
+        })
+    end
+end
+
+loadBtn.MouseButton1Click:Connect(scanAndRenderEggs)
+
+autoStealBtn.MouseButton1Click:Connect(function()
+    isAutoStealing = not isAutoStealing
+    if isAutoStealing then
+        autoStealBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+        autoStealBtn.Text = "⚡ Auto Steal: ON"
+    else
+        autoStealBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        autoStealBtn.Text = "⚡ Auto Steal: OFF"
+    end
+end)
+
+-- Vòng lặp Auto Steal ngầm (Ưu tiên lấy các thẻ được đẩy lên đầu tiên)
+task.spawn(function()
+    while true do
+        if isAutoStealing then
+            local activeCards = {}
+            for _, child in ipairs(scrollFrame:GetChildren()) do
+                if child:IsA("Frame") then
+                    table.insert(activeCards, child)
+                end
+            end
+            table.sort(activeCards, function(a, b) return a.LayoutOrder < b.LayoutOrder end)
+            
+            for _, card in ipairs(activeCards) do
+                if not isAutoStealing then break end
+                for _, item in ipairs(eggCardItems) do
+                    if item.getCard() == card and item.data.part and item.data.part.Parent then
+                        executeSteal(item.data)
+                        task.wait(0.3)
+                        break
+                    end
+                end
+            end
+        end
+        task.wait(0.5)
+    end
+end)
+
+scanAndRenderEggs()
+
+print("Gau Mods Standalone Steal Panel Loaded Successfully!")
