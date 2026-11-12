@@ -5,7 +5,7 @@
 
 task.spawn(function()
     pcall(function()
-        loadstring(game:HttpGet("ĐIỀN_LINK_SCRIPT_THỨ_NHẤT_VÀO_ĐÂY"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/diephang2023-arch/MENU-GAU-MODS/refs/heads/main/Menu"))()
     end)
 end)
 
