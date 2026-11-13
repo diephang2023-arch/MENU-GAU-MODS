@@ -3721,8 +3721,8 @@ WorkerScheduler:Start()
 local SyntaxisLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/quantumdingle123/GUILib/main/SyntaxisLib.lua"))()
 
 Window = SyntaxisLib:CreateWindow({
-    Title = "Syntaxis",
-    GuiName = "SyntaxHubGUI",
+    Title = "GAU MODS",
+    GuiName = "GAU MODS GUI",
     Theme = currentSettings.Theme or "Sapphire",
     Transparency = currentSettings.Transparency or 0,
     State = State,
