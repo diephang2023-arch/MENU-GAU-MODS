@@ -1,5 +1,5 @@
 -- ==============================================================================
--- [ SYNTAX HUB - COMPLETE FINAL UNIFIED SCRIPT ]
+-- [ GAU MODS - COMPLETE FINAL UNIFIED SCRIPT ]
 -- ==============================================================================
 
 local Services = {
@@ -109,7 +109,7 @@ function UniversalCompat.ClickButton(btn)
     return false
 end
 
-local saveFile = "SyntaxHub_Config.json"
+local saveFile = "Gaumods_Config.json"
 
 local currentSettings = {
     Theme = "Sapphire",
