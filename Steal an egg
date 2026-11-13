@@ -4078,9 +4078,3 @@ end)
 
 -- Initialize Window
 Window:Initialize()
-
--- Show Community Discord Popup upon initial launch
-task.defer(function()
-    task.wait(0.5)
-    Window:ShowDiscordModal()
-end)
