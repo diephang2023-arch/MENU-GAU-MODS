@@ -1,0 +1,1040 @@
+-- ==============================================================================
+--  GAUMODS - CLEAN UI PATCHER (FIXED TOGGLE SIZE & NO DUPLICATE OVERLAYS)
+-- ==============================================================================
+
+local NEW_TITLE       = "GauMods"
+local DISCORD_LABEL   = "GauMods Discord"
+local TELEGRAM_LINK   = "https://t.me/addlist/dlX9dRlQmyNlMWFl" -- Thay bằng link Discord/Telegram của bạn tại đây
+local CHILLI_LOGO_ID  = "rbxassetid://100224396235670"
+local LOGO_BG_COLOR   = Color3.fromRGB(5, 7, 15)
+local TOGGLE_SIZE_PX  = 52
+
+-- ==================== 0. HTTP HOOK SỚM ====================
+local function spoofJsonEarly(s)
+    if type(s) ~= "string" then return s end
+    s = s:gsub('"plan"%s*:%s*null',              '"plan":"pro_max"')
+    s = s:gsub('"plan"%s*:%s*"[a-z_%-]*"',       '"plan":"pro_max"')
+    s = s:gsub('"tier"%s*:%s*"[a-z_%-]*"',       '"tier":"pro_max"')
+    s = s:gsub('"has_booking"%s*:%s*false',       '"has_booking":true')
+    s = s:gsub('"booking_active"%s*:%s*false',    '"booking_active":true')
+    s = s:gsub('"active"%s*:%s*false',            '"active":true')
+    s = s:gsub('"is_active"%s*:%s*false',         '"is_active":true')
+    s = s:gsub('"authorized"%s*:%s*false',        '"authorized":true')
+    s = s:gsub('"has_access"%s*:%s*false',        '"has_access":true')
+    s = s:gsub('"is_premium"%s*:%s*false',        '"is_premium":true')
+    s = s:gsub('"premium"%s*:%s*false',           '"premium":true')
+    s = s:gsub('"is_pro"%s*:%s*false',            '"is_pro":true')
+    s = s:gsub('"pro"%s*:%s*false',               '"pro":true')
+    s = s:gsub('"is_subscribed"%s*:%s*false',     '"is_subscribed":true')
+    s = s:gsub('"subscribed"%s*:%s*false',        '"subscribed":true')
+    s = s:gsub('"subscription"%s*:%s*null',       '"subscription":"pro_max"')
+    s = s:gsub('"subscription"%s*:%s*"[a-z_%-]*"', '"subscription":"pro_max"')
+    s = s:gsub('"logged_in"%s*:%s*false',         '"logged_in":true')
+    s = s:gsub('"authenticated"%s*:%s*false',     '"authenticated":true')
+    s = s:gsub('"is_authenticated"%s*:%s*false',  '"is_authenticated":true')
+    s = s:gsub('"session_valid"%s*:%s*false',     '"session_valid":true')
+    s = s:gsub('"token_valid"%s*:%s*false',       '"token_valid":true')
+    s = s:gsub('"is_member"%s*:%s*false',         '"is_member":true')
+    s = s:gsub('"verified"%s*:%s*false',          '"verified":true')
+    s = s:gsub('"enabled"%s*:%s*false',              '"enabled":true')
+    s = s:gsub('"is_enabled"%s*:%s*false',           '"is_enabled":true')
+    s = s:gsub('"allow"%s*:%s*false',                '"allow":true')
+    s = s:gsub('"allowed"%s*:%s*false',              '"allowed":true')
+    s = s:gsub('"access"%s*:%s*false',               '"access":true')
+    s = s:gsub('"can_steal"%s*:%s*false',            '"can_steal":true')
+    s = s:gsub('"can_farm"%s*:%s*false',             '"can_farm":true')
+    s = s:gsub('"can_use_pets"%s*:%s*false',         '"can_use_pets":true')
+    s = s:gsub('"pet_activity_enabled"%s*:%s*false', '"pet_activity_enabled":true')
+    s = s:gsub('"has_access_to"%s*:%s*false',        '"has_access_to":true')
+    s = s:gsub('"plan_id"%s*:%s*%d+',               '"plan_id":99')
+    s = s:gsub('"tier_id"%s*:%s*%d+',               '"tier_id":99')
+    s = s:gsub('"access_level"%s*:%s*%d+',          '"access_level":99')
+    local FEAT = '["all","auto_steal","auto_farm","pets","race","lab","butterfly","wisp","star","admin"]'
+    s = s:gsub('"features"%s*:%s*%[%]',    '"features":' .. FEAT)
+    s = s:gsub('"features"%s*:%s*null',    '"features":' .. FEAT)
+    s = s:gsub('"permissions"%s*:%s*%[%]', '"permissions":["all"]')
+    s = s:gsub('"permissions"%s*:%s*null', '"permissions":["all"]')
+    s = s:gsub('"scopes"%s*:%s*%[%]',     '"scopes":["all"]')
+    s = s:gsub('"scopes"%s*:%s*null',     '"scopes":["all"]')
+    s = s:gsub('"user"%s*:%s*null',               '"user":{"id":1,"name":"Player","plan":"pro_max","tier":"pro_max","subscription":"pro_max"}')
+    local ISO_FAR = "2100-01-01T00:00:00.000Z"
+    s = s:gsub('"expires_at"%s*:%s*"[^"]*"',   '"expires_at":"' .. ISO_FAR .. '"')
+    s = s:gsub('"expire_at"%s*:%s*"[^"]*"',    '"expire_at":"'  .. ISO_FAR .. '"')
+    s = s:gsub('"valid_until"%s*:%s*"[^"]*"',  '"valid_until":"' .. ISO_FAR .. '"')
+    s = s:gsub('"end_date"%s*:%s*"[^"]*"',     '"end_date":"'   .. ISO_FAR .. '"')
+    s = s:gsub('"end_time"%s*:%s*"[^"]*"',     '"end_time":"'   .. ISO_FAR .. '"')
+    local FAR = "4102444800"
+    s = s:gsub('"expires_at"%s*:%s*%d+',         '"expires_at":' .. FAR)
+    s = s:gsub('"expire_at"%s*:%s*%d+',          '"expire_at":' .. FAR)
+    s = s:gsub('"expired_at"%s*:%s*%d+',         '"expired_at":' .. FAR)
+    s = s:gsub('"valid_until"%s*:%s*%d+',        '"valid_until":' .. FAR)
+    s = s:gsub('"end_date"%s*:%s*%d+',           '"end_date":' .. FAR)
+    s = s:gsub('"end_time"%s*:%s*%d+',           '"end_time":' .. FAR)
+    s = s:gsub('"exp"%s*:%s*%d+',                '"exp":' .. FAR)
+    s = s:gsub('"expires_in"%s*:%s*%-?%d+',      '"expires_in":99999999')
+    s = s:gsub('"time_left"%s*:%s*%-?%d+',       '"time_left":99999999')
+    s = s:gsub('"time_remaining"%s*:%s*%-?%d+',  '"time_remaining":99999999')
+    s = s:gsub('"hours_left"%s*:%s*%-?%d+',      '"hours_left":99999')
+    s = s:gsub('"days_left"%s*:%s*%-?%d+',       '"days_left":99999')
+    s = s:gsub('"minutes_left"%s*:%s*%-?%d+',    '"minutes_left":99999999')
+    s = s:gsub('"seconds_left"%s*:%s*%-?%d+',    '"seconds_left":99999999')
+    s = s:gsub('"expired"%s*:%s*true',            '"expired":false')
+    s = s:gsub('"is_expired"%s*:%s*true',         '"is_expired":false')
+    s = s:gsub('"key_expired"%s*:%s*true',        '"key_expired":false')
+    return s
+end
+
+_G.__CF_JobIds      = {}
+_G.__CF_JobIds_tick = 0
+local UUID_RE = "(%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x)"
+local function extractCFJobIds(body)
+    if type(body) ~= "string" then return end
+    local ids = {}
+    for uuid in body:gmatch(UUID_RE) do
+        if uuid ~= game.JobId then
+            local dup = false
+            for _, existing in ipairs(ids) do if existing == uuid then dup=true; break end end
+            if not dup then table.insert(ids, uuid) end
+        end
+    end
+    if #ids >= 1 then
+        _G.__CF_JobIds      = ids
+        _G.__CF_JobIds_tick = tick()
+    end
+end
+
+pcall(function()
+    local _origHG = game.HttpGet
+    game.HttpGet = function(self, url, ...)
+        local ok, res = pcall(_origHG, self, url, ...)
+        if not ok then return "" end
+        if type(url) == "string" and url:find("chillihub") then
+            extractCFJobIds(res)
+            return spoofJsonEarly(res)
+        end
+        return res
+    end
+end)
+
+pcall(function()
+    if type(request) == "function" then
+        local _origReqFn = request
+        request = function(opts, ...)
+            local ok, res = pcall(_origReqFn, opts, ...)
+            if ok and type(res) == "table" then
+                local url = (type(opts) == "table" and (opts.Url or opts.url or opts.URL)) or ""
+                if type(url) == "string" and url:find("chillihub") then
+                    if type(res.Body) == "string" then extractCFJobIds(res.Body); res.Body = spoofJsonEarly(res.Body) end
+                    if type(res.body) == "string" then extractCFJobIds(res.body); res.body = spoofJsonEarly(res.body) end
+                end
+                return res
+            end
+            return ok and res or {Success=false,StatusCode=0,Body="",Headers={}}
+        end
+    end
+end)
+
+pcall(function()
+    if syn and type(syn.request) == "function" then
+        local _s = syn.request
+        syn.request = function(opts, ...)
+            local ok, res = pcall(_s, opts, ...)
+            if ok and type(res) == "table" then
+                local url = (type(opts) == "table" and (opts.Url or opts.url)) or ""
+                if type(url) == "string" and url:find("chillihub") then
+                    if type(res.Body) == "string" then extractCFJobIds(res.Body); res.Body = spoofJsonEarly(res.Body) end
+                end
+                return res
+            end
+            return ok and res or {Success=false,StatusCode=0,Body="",Headers={}}
+        end
+    end
+end)
+
+pcall(function()
+    local _HS      = game:GetService("HttpService")
+    local _origReq = _HS.RequestAsync
+    _HS.RequestAsync = function(self, opts, ...)
+        local ok, res = pcall(_origReq, self, opts, ...)
+        if ok and type(res) == "table" then
+            local url = (type(opts) == "table" and opts.Url) or ""
+            if url:find("chillihub") then
+                extractCFJobIds(res.Body or "")
+                res.Body = spoofJsonEarly(res.Body or "")
+            end
+            return res
+        end
+        return ok and res or {Success=false,StatusCode=0,Body="",Headers={}}
+    end
+end)
+
+pcall(function()
+    if type(http_request) == "function" then
+        local _origHR = http_request
+        http_request = function(opts, ...)
+            local ok, res = pcall(_origHR, opts, ...)
+            if ok and type(res) == "table" then
+                local url = (type(opts) == "table" and (opts.Url or opts.url or opts.URL)) or ""
+                if type(url) == "string" and url:find("chillihub") then
+                    if type(res.Body) == "string" then extractCFJobIds(res.Body); res.Body = spoofJsonEarly(res.Body) end
+                    if type(res.body) == "string" then extractCFJobIds(res.body); res.body = spoofJsonEarly(res.body) end
+                end
+                return res
+            end
+            return ok and res or {Success=false,StatusCode=0,Body="",Headers={}}
+        end
+    end
+end)
+
+pcall(function()
+    local _HS2    = game:GetService("HttpService")
+    local _origGA = _HS2.GetAsync
+    _HS2.GetAsync = function(self, url, ...)
+        local ok, res = pcall(_origGA, self, url, ...)
+        if not ok then return "" end
+        if type(url) == "string" and url:find("chillihub") then
+            extractCFJobIds(res)
+            return spoofJsonEarly(res)
+        end
+        return res
+    end
+end)
+
+pcall(function()
+    local GuiService = game:GetService("GuiService")
+    local _origOpen  = GuiService.OpenBrowserWindow
+    GuiService.OpenBrowserWindow = function(self, url, ...)
+        if type(url) == "string" and (url:find("chillihub") or url:find("purchase") or url:find("subscribe") or url:find("upgrade")) then
+            return
+        end
+        return _origOpen(self, url, ...)
+    end
+end)
+
+pcall(function()
+    local StarterGui = game:GetService("StarterGui")
+    local _origSC    = StarterGui.SetCore
+    StarterGui.SetCore = function(self, coreType, ...)
+        if coreType == "PromptSendFriendRequest" then return end
+        if coreType == "OpenBrowserWindow" then
+            local args = {...}
+            local url  = (type(args[1]) == "string" and args[1]) or (type(args[1]) == "table" and args[1].Url) or ""
+            if url:find("chillihub") or url:find("purchase") then return end
+        end
+        return _origSC(self, coreType, ...)
+    end
+end)
+
+-- ==================== 1. LOAD VENYXHUB ====================
+getgenv().__TLNV5NewLoaded = nil
+if not getgenv().__TLNV5NewLoaded then
+    getgenv().__TLNV5NewLoaded = true
+    getgenv().__TLNHubReady    = false
+    getgenv().__TLNHub         = nil
+    task.spawn(function()
+        local ok, result = pcall(function()
+            return loadstring(game:HttpGet(
+                "https://raw.githubusercontent.com/tienkhanh1/Venyx/main/VenyxHub"
+            ))()
+        end)
+        if ok then
+            getgenv().__TLNHub      = result
+            getgenv().__TLNHubReady = true
+        else
+            warn("[GauMods] VenyxHub load failed:", result)
+            getgenv().__TLNHubReady = true
+            pcall(function()
+                local sg = Instance.new("ScreenGui")
+                sg.Name = "GauMods_LoadError"; sg.ResetOnSpawn = false
+                sg.Parent = (gethui and gethui()) or game:GetService("CoreGui")
+                local fr = Instance.new("Frame", sg)
+                fr.Size = UDim2.new(0, 360, 0, 56)
+                fr.Position = UDim2.new(0.5, -180, 0, 60)
+                fr.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
+                fr.BorderSizePixel = 0
+                Instance.new("UICorner", fr).CornerRadius = UDim.new(0, 8)
+                local lbl = Instance.new("TextLabel", fr)
+                lbl.Size = UDim2.new(1, -12, 1, 0); lbl.Position = UDim2.new(0, 6, 0, 0)
+                lbl.BackgroundTransparency = 1; lbl.TextColor3 = Color3.fromRGB(255, 90, 90)
+                lbl.Font = Enum.Font.GothamBold; lbl.TextSize = 13; lbl.TextWrapped = true
+                lbl.TextXAlignment = Enum.TextXAlignment.Left
+                lbl.Text = "⚠ GauMods: VenyxHub load thất bại!\nKiểm tra kết nối mạng hoặc thử lại."
+                task.delay(8, function() pcall(function() sg:Destroy() end) end)
+            end)
+        end
+    end)
+end
+
+local Players     = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+local CoreGui     = game:GetService("CoreGui")
+
+local roots = {
+    gethui and gethui(),
+    CoreGui,
+    LocalPlayer:WaitForChild("PlayerGui")
+}
+
+local ActiveGradients = {}
+
+local COLOR_SEQ_RAINBOW = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255,  55,  55)),
+    ColorSequenceKeypoint.new(0.20, Color3.fromRGB(255, 175,  40)),
+    ColorSequenceKeypoint.new(0.40, Color3.fromRGB(255, 235,  50)),
+    ColorSequenceKeypoint.new(0.60, Color3.fromRGB( 50, 255, 130)),
+    ColorSequenceKeypoint.new(0.80, Color3.fromRGB( 60, 185, 255)),
+    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255,  55,  55)),
+})
+
+getgenv().__ChilliV5RainbowLoop = nil
+if not getgenv().__ChilliV5RainbowLoop then
+    getgenv().__ChilliV5RainbowLoop = true
+    task.spawn(function()
+        local rot = 0
+        while true do
+            rot = (rot + 8) % 360
+            for i = #ActiveGradients, 1, -1 do
+                local g = ActiveGradients[i]
+                if g and g.Parent then g.Rotation = rot
+                else
+                    ActiveGradients[i] = ActiveGradients[#ActiveGradients]
+                    ActiveGradients[#ActiveGradients] = nil
+                end
+            end
+            task.wait(0.25)
+        end
+    end)
+end
+
+-- ==================== 2. NÚT MỞ MENU TRÒN GỌN GÀNG (CHỐNG PHÓNG TO & ĐÈ) ====================
+local function isProtectedPanel(obj)
+    if not obj then return true end
+    if obj.Name == "GauMods_LoadError" then return true end
+    local curr = obj
+    while curr do
+        if curr:IsA("GuiObject") then
+            local n = (curr.Name or ""):lower()
+            if n:find("steal") or n:find("panel") or n:find("finder") or n:find("chilli") then
+                return true
+            end
+        end
+        if curr:IsA("ScreenGui") then
+            local sn = (curr.Name or ""):lower()
+            if sn:find("steal") or sn:find("panel") or sn:find("finder") or sn:find("chilli") then
+                return true
+            end
+            break
+        end
+        curr = curr.Parent
+    end
+    return false
+end
+
+local function clampOverlayBounds(overlay, parentObj)
+    if not overlay or not overlay.Parent then return end
+    overlay.AnchorPoint = Vector2.new(0.5, 0.5)
+    overlay.Position = UDim2.new(0.5, 0, 0.5, 0)
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    local maxLimit = Instance.new("UISizeConstraint")
+    maxLimit.Name = "GauMaxSize"
+    maxLimit.MaxSize = Vector2.new(TOGGLE_SIZE_PX, TOGGLE_SIZE_PX)
+    maxLimit.MinSize = Vector2.new(24, 24)
+    if not overlay:FindFirstChild("GauMaxSize") then
+        maxLimit.Parent = overlay
+    end
+    if parentObj and parentObj:IsA("GuiObject") then
+        local sz = parentObj.AbsoluteSize
+        if sz.X > TOGGLE_SIZE_PX + 10 or sz.Y > TOGGLE_SIZE_PX + 10 then
+            parentObj.Size = UDim2.fromOffset(TOGGLE_SIZE_PX, TOGGLE_SIZE_PX)
+        end
+    end
+end
+
+local function setupCleanToggleLogo(targetObj)
+    if not (targetObj and targetObj:IsA("GuiObject")) then return end
+    if isProtectedPanel(targetObj) then return end
+    if targetObj:FindFirstAncestorOfClass("ScrollingFrame") then return end
+
+    -- Chỉ nhận diện nút mở menu nhỏ gọn, tránh bắt nhầm khung lớn hoặc hàng nút Steal/Finder
+    local topPanel = targetObj
+    while topPanel.Parent and topPanel.Parent:IsA("GuiObject") and not topPanel.Parent:IsA("ScreenGui") do
+        local pSz = topPanel.Parent.AbsoluteSize
+        if pSz.X > 130 or pSz.Y > 130 then break end
+        topPanel = topPanel.Parent
+    end
+
+    if isProtectedPanel(topPanel) then return end
+
+    local sz = topPanel.AbsoluteSize
+    local pos = topPanel.AbsolutePosition
+    if sz.X <= 0 or sz.Y <= 0 then return end
+    -- Loại trừ các thanh ngang / nút chữ dài hoặc khung lớn
+    if sz.X > 110 or sz.Y > 110 or sz.X < 28 or sz.Y < 28 then return end
+    if math.abs(sz.X - sz.Y) > 25 or pos.X > 450 then return end
+
+    -- Xóa mọi lớp ảnh/icon dư thừa cũ trước khi gắn 1 lớp duy nhất
+    for _, oldChild in ipairs(topPanel:GetDescendants()) do
+        if oldChild.Name == "GauCoverLogo" or oldChild.Name == "ChilliV5CoverLogo" or oldChild.Name == "InnerChilliLogo" then
+            if oldChild ~= topPanel:FindFirstChild("GauCoverLogo") then
+                pcall(function() oldChild:Destroy() end)
+            end
+        end
+    end
+
+    if not topPanel:GetAttribute("__GauToggleFixed") then
+        topPanel:SetAttribute("__GauToggleFixed", true)
+
+        for _, child in ipairs(topPanel:GetDescendants()) do
+            if child:IsA("UIPadding") or child:IsA("UIAspectRatioConstraint") or child:IsA("UISizeConstraint") then
+                if child.Name ~= "PerfectCircleAspect" and child.Name ~= "GauMaxSize" then
+                    pcall(function() child:Destroy() end)
+                end
+            end
+            if child.Name ~= "GauCoverLogo" then
+                if child:IsA("ImageLabel") or child:IsA("ImageButton") then
+                    child.ImageTransparency = 1
+                    child.BackgroundTransparency = 1
+                elseif child:IsA("TextLabel") or child:IsA("TextButton") then
+                    child:SetAttribute("__HiddenVxLogo", true)
+                    child.TextTransparency = 1
+                    child.BackgroundTransparency = 1
+                end
+            end
+        end
+
+        if topPanel:IsA("ImageLabel") or topPanel:IsA("ImageButton") then
+            topPanel.ImageTransparency = 1
+        elseif topPanel:IsA("TextLabel") or topPanel:IsA("TextButton") then
+            topPanel:SetAttribute("__HiddenVxLogo", true)
+            topPanel.TextTransparency = 1
+        end
+
+        topPanel.Size = UDim2.fromOffset(TOGGLE_SIZE_PX, TOGGLE_SIZE_PX)
+        topPanel.BackgroundColor3 = LOGO_BG_COLOR
+        topPanel.BackgroundTransparency = 0
+        topPanel.BorderSizePixel = 0
+        topPanel.ClipsDescendants = true
+
+        local aspect = topPanel:FindFirstChild("PerfectCircleAspect") or Instance.new("UIAspectRatioConstraint")
+        aspect.Name = "PerfectCircleAspect"
+        aspect.AspectRatio = 1
+        aspect.Parent = topPanel
+
+        local panelMax = topPanel:FindFirstChild("GauPanelMax") or Instance.new("UISizeConstraint")
+        panelMax.Name = "GauPanelMax"
+        panelMax.MaxSize = Vector2.new(TOGGLE_SIZE_PX, TOGGLE_SIZE_PX)
+        panelMax.MinSize = Vector2.new(28, 28)
+        panelMax.Parent = topPanel
+
+        local cCorner = topPanel:FindFirstChildOfClass("UICorner") or Instance.new("UICorner")
+        cCorner.CornerRadius = UDim.new(1, 0)
+        cCorner.Parent = topPanel
+
+        topPanel:GetPropertyChangedSignal("Size"):Connect(function()
+            if topPanel.Size ~= UDim2.fromOffset(TOGGLE_SIZE_PX, TOGGLE_SIZE_PX) then
+                topPanel.Size = UDim2.fromOffset(TOGGLE_SIZE_PX, TOGGLE_SIZE_PX)
+            end
+        end)
+
+        local stroke = topPanel:FindFirstChild("RainbowBorder") or Instance.new("UIStroke")
+        stroke.Name = "RainbowBorder"
+        stroke.Thickness = 2
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        stroke.Color = Color3.fromRGB(255, 255, 255)
+        stroke.Parent = topPanel
+
+        local strokeGrad = stroke:FindFirstChildOfClass("UIGradient") or Instance.new("UIGradient")
+        strokeGrad.Color = COLOR_SEQ_RAINBOW
+        strokeGrad.Parent = stroke
+        table.insert(ActiveGradients, strokeGrad)
+    end
+
+    local coverLogo = topPanel:FindFirstChild("GauCoverLogo")
+    if not coverLogo then
+        coverLogo = Instance.new("ImageLabel")
+        coverLogo.Name = "GauCoverLogo"
+        coverLogo.Parent = topPanel
+    end
+
+    coverLogo.BackgroundTransparency = 1
+    coverLogo.Image = CHILLI_LOGO_ID
+    coverLogo.ImageTransparency = 0
+    coverLogo.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    coverLogo.ScaleType = Enum.ScaleType.Fit
+    coverLogo.Active = false
+    coverLogo.ZIndex = math.min((topPanel.ZIndex or 1) + 2, 15)
+    clampOverlayBounds(coverLogo, topPanel)
+
+    local logoCorner = coverLogo:FindFirstChildOfClass("UICorner") or Instance.new("UICorner")
+    logoCorner.CornerRadius = UDim.new(1, 0)
+    logoCorner.Parent = coverLogo
+
+    if not coverLogo:GetAttribute("__CoverLocked") then
+        coverLogo:SetAttribute("__CoverLocked", true)
+        coverLogo:GetPropertyChangedSignal("Image"):Connect(function()
+            if coverLogo.Image ~= CHILLI_LOGO_ID then
+                coverLogo.Image = CHILLI_LOGO_ID
+            end
+        end)
+        coverLogo:GetPropertyChangedSignal("Size"):Connect(function()
+            clampOverlayBounds(coverLogo, topPanel)
+        end)
+    end
+end
+
+local function patchHeaderLogoLeftOfTitle(headerContainer, titleLbl)
+    if not headerContainer or not titleLbl then return end
+    if isProtectedPanel(headerContainer) then return end
+    local headerY = titleLbl.AbsolutePosition.Y
+    local titleX = titleLbl.AbsolutePosition.X
+    for _, item in ipairs(headerContainer:GetDescendants()) do
+        if item ~= titleLbl and item:IsA("GuiObject") and item.Name ~= "GauHeaderLogo" then
+            local pos = item.AbsolutePosition
+            local sz = item.AbsoluteSize
+            if math.abs(pos.Y - headerY) < 35 and pos.X < titleX and sz.X >= 10 and sz.X <= 42 and sz.Y <= 42 then
+                if item:IsA("ImageLabel") or item:IsA("ImageButton") then
+                    item.Image = CHILLI_LOGO_ID
+                    item.ImageTransparency = 0
+                    item.ImageColor3 = Color3.fromRGB(255, 255, 255)
+                    item.BackgroundTransparency = 1
+                    item.ScaleType = Enum.ScaleType.Fit
+                elseif item:IsA("TextLabel") or item:IsA("TextButton") then
+                    item:SetAttribute("__HiddenVxLogo", true)
+                    item.TextTransparency = 1
+                    local holder = item.Parent
+                    if holder and not holder:FindFirstChild("GauHeaderLogo") then
+                        local hLogo = Instance.new("ImageLabel")
+                        hLogo.Name = "GauHeaderLogo"
+                        hLogo.Size = UDim2.fromOffset(22, 22)
+                        hLogo.Position = UDim2.new(0.5, 0, 0.5, 0)
+                        hLogo.AnchorPoint = Vector2.new(0.5, 0.5)
+                        hLogo.BackgroundTransparency = 1
+                        hLogo.Image = CHILLI_LOGO_ID
+                        hLogo.ScaleType = Enum.ScaleType.Fit
+                        hLogo.ZIndex = math.min((item.ZIndex or 1) + 2, 15)
+                        hLogo.Parent = holder
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- ==================== 3. MAIN SCAN (ĐỔI TIÊU ĐỀ & NÚT MỞ MENU) ====================
+local function replaceVenyxTextIfNeeded(obj)
+    if not (obj:IsA("TextLabel") or obj:IsA("TextButton")) then return end
+    local t = obj.Text or ""
+    if t == "VENYX" or t == "Venyx" or t == "VENYX HUB" or t == "Venyx Hub" then
+        obj.Text = NEW_TITLE
+    elseif t:find("Venyx") then
+        obj.Text = t:gsub("Venyx", NEW_TITLE)
+    end
+end
+
+local function tryPatchLogoAndTitle()
+    for _, root in ipairs(roots) do
+        if root then
+            for _, gui in ipairs(root:GetChildren()) do
+                if gui:IsA("ScreenGui") and gui.Name ~= "RobloxGui" and gui.Name ~= "TopBarApp" and gui.Name ~= "GauMods_LoadError" then
+                    if not isProtectedPanel(gui) then
+                        local titleLbl = nil
+                        local allDesc = gui:GetDescendants()
+                        for _, d in ipairs(allDesc) do
+                            if (d:IsA("TextLabel") or d:IsA("TextButton")) and not d:FindFirstAncestorOfClass("ScrollingFrame") then
+                                local t = d.Text
+                                if t == "VENYX" or t == "Venyx" or t == NEW_TITLE then
+                                    titleLbl = d
+                                    break
+                                end
+                            end
+                        end
+
+                        local mainWindow = nil
+                        if titleLbl then
+                            if titleLbl.Text ~= NEW_TITLE then
+                                titleLbl.Text = NEW_TITLE
+                                titleLbl.AutomaticSize = Enum.AutomaticSize.X
+                            end
+                            if not titleLbl:GetAttribute("__GauTitleHooked") then
+                                titleLbl:SetAttribute("__GauTitleHooked", true)
+                                titleLbl:GetPropertyChangedSignal("Text"):Connect(function()
+                                    replaceVenyxTextIfNeeded(titleLbl)
+                                end)
+                            end
+
+                            local curr = titleLbl
+                            while curr.Parent and curr.Parent ~= gui do
+                                curr = curr.Parent
+                                if curr:IsA("GuiObject") and curr.AbsoluteSize.X >= 350 and curr.AbsoluteSize.Y >= 220 then
+                                    mainWindow = curr
+                                end
+                            end
+
+                            if mainWindow then
+                                patchHeaderLogoLeftOfTitle(mainWindow, titleLbl)
+                            end
+                        end
+
+                        for _, desc in ipairs(allDesc) do
+                            if (desc:IsA("TextLabel") or desc:IsA("TextButton")) and (desc.Text or ""):find("Venyx") then
+                                pcall(replaceVenyxTextIfNeeded, desc)
+                            end
+                            if (desc:IsA("ImageLabel") or desc:IsA("ImageButton"))
+                            and desc.Name ~= "GauCoverLogo" and desc.Name ~= "GauHeaderLogo" then
+                                if not desc:FindFirstAncestorOfClass("ScrollingFrame") then
+                                    if not mainWindow or not desc:IsDescendantOf(mainWindow) then
+                                        setupCleanToggleLogo(desc)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+pcall(tryPatchLogoAndTitle)
+
+task.spawn(function()
+    for _, root in ipairs(roots) do
+        if root then
+            local _scanPending = false
+            root.ChildAdded:Connect(function()
+                if _scanPending then return end
+                _scanPending = true
+                task.wait(0.5)
+                pcall(tryPatchLogoAndTitle)
+                _scanPending = false
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    for _ = 1, 15 do
+        task.wait(1.5)
+        pcall(tryPatchLogoAndTitle)
+    end
+    while true do
+        task.wait(5.0)
+        pcall(tryPatchLogoAndTitle)
+    end
+end)
+
+-- ==================== 4. GAUMODS DISCORD + COPY LINK + WHAT'S NEW PATCH ====================
+task.spawn(function()
+    local origSetClipboard = (type(setclipboard) == "function") and setclipboard or nil
+    local origToClipboard  = (type(toclipboard) == "function") and toclipboard or nil
+
+    local function copyMyLink()
+        pcall(function()
+            if origSetClipboard then origSetClipboard(TELEGRAM_LINK) end
+            if origToClipboard then origToClipboard(TELEGRAM_LINK) end
+        end)
+    end
+
+    if origSetClipboard then
+        setclipboard = function(text)
+            if type(text) == "string" and (text:find("discord%.gg") or text:find("discord%.com") or text:lower():find("venyx")) then
+                origSetClipboard(TELEGRAM_LINK)
+            else
+                origSetClipboard(text)
+            end
+        end
+    end
+
+    if origToClipboard then
+        toclipboard = function(text)
+            if type(text) == "string" and (text:find("discord%.gg") or text:find("discord%.com") or text:lower():find("venyx")) then
+                origToClipboard(TELEGRAM_LINK)
+            else
+                origToClipboard(text)
+            end
+        end
+    end
+
+    local patched = {}
+
+    local function patchGui(gui)
+        if not gui:IsA("ScreenGui") then return end
+        if gui:GetAttribute("__S8Hooked") then return end
+        gui:SetAttribute("__S8Hooked", true)
+        local function scanDesc(desc)
+            if desc:IsA("Frame") or desc:IsA("ScrollingFrame") then
+                local name = desc.Name:lower()
+                if name:find("whatsnew") or name:find("whats_new") or name:find("changelog") or name:find("news") then
+                    desc.Visible = false; return
+                end
+                for _, child in ipairs(desc:GetChildren()) do
+                    if (child:IsA("TextLabel") or child:IsA("TextButton")) then
+                        local t = child.Text or ""
+                        if t == "WHAT'S NEW" or t == "CÓ GÌ MỚI" or t == "APA YANG BARU" then
+                            desc.Visible = false; break
+                        end
+                    end
+                end
+            end
+
+            if (desc:IsA("TextButton") or desc:IsA("TextLabel")) and not patched[desc] then
+                local t = desc.Text or ""
+                if t == "Venyx Discord" or t == "VENYX DISCORD" or t == "TLN CHEAT Discord" or t == DISCORD_LABEL then
+                    patched[desc] = true
+                    desc.Text = DISCORD_LABEL
+                    desc:GetPropertyChangedSignal("Text"):Connect(function()
+                        if desc.Text ~= DISCORD_LABEL then desc.Text = DISCORD_LABEL end
+                    end)
+                elseif t == "Chilli Hub" or t == "Chilli hub" or t == "CHILLI HUB" then
+                    patched[desc] = true
+                    desc.Text = NEW_TITLE
+                    desc:GetPropertyChangedSignal("Text"):Connect(function()
+                        if desc.Text ~= NEW_TITLE then desc.Text = NEW_TITLE end
+                    end)
+                elseif t:find("Venyx") then
+                    patched[desc] = true
+                    desc.Text = t:gsub("Venyx", NEW_TITLE)
+                end
+            end
+
+            if desc:IsA("TextButton") and not patched[desc] then
+                local t = (desc.Text or ""):lower()
+                if t:find("copy invite") or t:find("chép link") or t:find("salin tautan") then
+                    patched[desc] = true
+                    desc.MouseButton1Click:Connect(function()
+                        copyMyLink()
+                        task.defer(copyMyLink)
+                    end)
+                    desc.Activated:Connect(function()
+                        copyMyLink()
+                        task.defer(copyMyLink)
+                    end)
+                end
+            end
+        end
+        for _, desc in ipairs(gui:GetDescendants()) do pcall(scanDesc, desc) end
+        gui.DescendantAdded:Connect(function(newDesc)
+            task.defer(function() pcall(scanDesc, newDesc) end)
+        end)
+    end
+
+    for i = 1, 60 do
+        task.wait(0.5)
+        for _, root in ipairs(roots) do
+            if root then
+                for _, gui in ipairs(root:GetChildren()) do
+                    pcall(patchGui, gui)
+                end
+            end
+        end
+    end
+
+    for _, root in ipairs(roots) do
+        if root then
+            root.ChildAdded:Connect(function(newGui)
+                task.wait(0.3)
+                pcall(patchGui, newGui)
+            end)
+        end
+    end
+end)
+
+-- ==================== 5. CHILLI FINDER: BYPASS + LAG FIX ====================
+task.spawn(function()
+    local UUID_PAT = "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$"
+    local ATTR_KEYS = {
+        "JobId","jobId","job_id","ServerId","serverId","server_id",
+        "PlaceJobId","instanceId","InstanceId","ServerJobId","serverJobId",
+    }
+
+    local _guiDescCache = {}
+
+    local function findJobId(btn)
+        local obj = btn
+        for _ = 1, 8 do
+            if not obj or obj:IsA("ScreenGui") then break end
+            for _, k in ipairs(ATTR_KEYS) do
+                local v = obj:GetAttribute(k)
+                if type(v) == "string" and v:match(UUID_PAT) then return v end
+            end
+            local ok2, allAttrs = pcall(function() return obj:GetAttributes() end)
+            if ok2 and type(allAttrs) == "table" then
+                for _, v in pairs(allAttrs) do
+                    if type(v) == "string" and v:match(UUID_PAT) then return v end
+                end
+            end
+            if type(obj.Name) == "string" and obj.Name:match(UUID_PAT) then return obj.Name end
+            for _, child in ipairs(obj:GetChildren()) do
+                if child:IsA("StringValue") then
+                    if (child.Value or ""):match(UUID_PAT) then return child.Value end
+                elseif child:IsA("TextLabel") or child:IsA("TextButton") then
+                    local v = child.Text or ""
+                    if v:match(UUID_PAT) then return v end
+                end
+                for _, gc in ipairs(child:GetChildren()) do
+                    if gc:IsA("StringValue") and (gc.Value or ""):match(UUID_PAT) then return gc.Value end
+                end
+            end
+            obj = obj.Parent
+        end
+
+        local screenRoot = btn
+        while screenRoot and not screenRoot:IsA("ScreenGui") do
+            screenRoot = screenRoot.Parent
+        end
+        if screenRoot and screenRoot:IsA("ScreenGui") then
+            if not _guiDescCache[screenRoot] or tick() - (_guiDescCache[screenRoot]._t or 0) > 3 then
+                _guiDescCache[screenRoot] = {list=screenRoot:GetDescendants(), _t=tick()}
+            end
+            for _, d in ipairs(_guiDescCache[screenRoot].list) do
+                if d and d.Parent then
+                    local ok3, attrs = pcall(function() return d:GetAttributes() end)
+                    if ok3 then
+                        for _, v in pairs(attrs) do
+                            if type(v) == "string" and v:match(UUID_PAT) then return v end
+                        end
+                    end
+                    if type(d.Name) == "string" and d.Name:match(UUID_PAT) then return d.Name end
+                    if d:IsA("StringValue") and (d.Value or ""):match(UUID_PAT) then return d.Value end
+                    if (d:IsA("TextLabel") or d:IsA("TextButton")) and not d.Visible then
+                        if (d.Text or ""):match(UUID_PAT) then return d.Text end
+                    end
+                end
+            end
+        end
+        return nil
+    end
+
+    local TeleportService = game:GetService("TeleportService")
+    local patchedGuis     = {}
+
+    local function isChilliFinderGui(gui)
+        local name = gui.Name:lower()
+        if name:find("chilli") or name:find("finder") then return true end
+        local n = 0
+        for _, d in ipairs(gui:GetDescendants()) do
+            if d:IsA("TextLabel") or d:IsA("TextButton") then
+                local t = d.Text or ""
+                if t == "Chilli Finder" or t == "Cari Server"
+                or t == "Tìm Server" or t == "Tìm Máy Chủ" then
+                    return true
+                end
+            end
+            n = n + 1; if n > 300 then break end
+        end
+        return false
+    end
+
+    local function patchChilliElement(d)
+        if not (d:IsA("TextLabel") or d:IsA("TextButton")) then return end
+        local t = d.Text or ""
+
+        local function isNoPlan(s)
+            return s == "No plan" or s == "No Plan"
+            or s == "NONE" or s == "none"
+            or s:find("Belum berlangganan")
+            or s == "Chưa đăng ký"
+            or (s:find("Chưa") and (s:find("đăng") or s:find("gói")))
+        end
+        if isNoPlan(t) then
+            d.Text = "Pro Max"
+            if not d:GetAttribute("__CfAccSpoofed") then
+                d:SetAttribute("__CfAccSpoofed", true)
+                d:GetPropertyChangedSignal("Text"):Connect(function()
+                    local c = d.Text or ""
+                    if isNoPlan(c) then d.Text = "Pro Max" end
+                end)
+            end
+            return
+        end
+
+        local function isBookingNag(s)
+            return s:find("No active booking") or s:find("Book hours at") or s:find("chillihub")
+            or s:find("lịch đặt")
+            or s:find("pemesanan")
+            or s:find("Book Chilli") or s:find("purchase") or s:find("subscribe")
+            or s:find("upgrade") or s:find("Đăng ký") or s:find("Mua gói")
+        end
+        if isBookingNag(t) then
+            d.Text = "✓ Active. Enjoy!"
+            if not d:GetAttribute("__CfBookSpoofed") then
+                d:SetAttribute("__CfBookSpoofed", true)
+                d:GetPropertyChangedSignal("Text"):Connect(function()
+                    local c = d.Text or ""
+                    if isBookingNag(c) then d.Text = "✓ Active. Enjoy!" end
+                end)
+            end
+            return
+        end
+
+        if d:IsA("TextButton")
+        and (t == "Join" or t == "Masuk" or t == "Vào" or t == "Tham gia") then
+            if not d:GetAttribute("__CfJoinUnlocked") then
+                d:SetAttribute("__CfJoinUnlocked", true)
+                d.Active          = true
+                d.AutoButtonColor = true
+                local GOLD = Color3.fromRGB(255, 185, 0)
+                pcall(function()
+                    if d.BackgroundColor3 ~= GOLD then d.BackgroundColor3 = GOLD end
+                end)
+                d:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
+                    if d.BackgroundColor3 ~= GOLD then
+                        pcall(function() d.BackgroundColor3 = GOLD end)
+                    end
+                end)
+                d:GetPropertyChangedSignal("Active"):Connect(function()
+                    if not d.Active then d.Active = true end
+                end)
+                d.MouseButton1Click:Connect(function()
+                    local jobId = nil
+                    local cfIds = _G.__CF_JobIds or {}
+                    if #cfIds > 0 then
+                        local rowIdx = nil
+                        local rowFrame = d.Parent
+                        if rowFrame then
+                            local listFrame = rowFrame.Parent
+                            if listFrame then
+                                local idx = 0
+                                for _, sib in ipairs(listFrame:GetChildren()) do
+                                    if sib:IsA("GuiObject") then
+                                        idx = idx + 1
+                                        if sib == rowFrame then rowIdx = idx; break end
+                                    end
+                                end
+                            end
+                        end
+                        if rowIdx and cfIds[rowIdx] then
+                            jobId = cfIds[rowIdx]
+                        else
+                            jobId = cfIds[1]
+                        end
+                    end
+
+                    if not jobId then jobId = findJobId(d) end
+
+                    if jobId then
+                        local ok = pcall(function()
+                            TeleportService:TeleportToPlaceInstance(
+                                game.PlaceId, jobId, Players.LocalPlayer
+                            )
+                        end)
+                        if not ok then
+                            for _, jid in ipairs(_G.__CF_JobIds or {}) do
+                                if jid ~= jobId then
+                                    local ok2 = pcall(function()
+                                        TeleportService:TeleportToPlaceInstance(
+                                            game.PlaceId, jid, Players.LocalPlayer
+                                        )
+                                    end)
+                                    if ok2 then break end
+                                end
+                            end
+                        end
+                    else
+                        for _, jid in ipairs(_G.__CF_JobIds or {}) do
+                            local ok2 = pcall(function()
+                                TeleportService:TeleportToPlaceInstance(
+                                    game.PlaceId, jid, Players.LocalPlayer
+                                )
+                            end)
+                            if ok2 then break end
+                        end
+                    end
+                end)
+            end
+        end
+    end
+
+    local function fullPatchChilliGui(gui)
+        if patchedGuis[gui] then return end
+        patchedGuis[gui] = true
+        gui:SetAttribute("__ChilliFinderPatched", true)
+
+        local allDesc = gui:GetDescendants()
+        for i = 1, #allDesc do
+            local d = allDesc[i]
+            if d and d.Parent then
+                task.defer(function()
+                    if d and d.Parent then pcall(patchChilliElement, d) end
+                end)
+            end
+        end
+
+        task.spawn(function()
+            while gui and gui.Parent do
+                for _, d in ipairs(gui:GetDescendants()) do
+                    if d and d.Parent and (d:IsA("TextLabel") or d:IsA("TextButton")) then
+                        local t = d.Text or ""
+                        if t:find("No active booking") or t:find("Book hours at") or t:find("chillihub")
+                        or t:find("lịch đặt") or t:find("pemesanan")
+                        or t:find("Book Chilli") or t:find("purchase") then
+                            pcall(function() d.Text = "✓ Active. Enjoy!" end)
+                        end
+                        if t == "No plan" or t == "No Plan" or t == "Chưa đăng ký" or t:find("Belum")
+                        or t == "NONE" or t == "none" then
+                            pcall(function() d.Text = "Pro Max" end)
+                        end
+                        if t == "-" and not d:GetAttribute("__CFTimeLocked") then
+                            local p = d.Parent
+                            if p then
+                                for _, sib in ipairs(p:GetChildren()) do
+                                    if sib ~= d and (sib:IsA("TextLabel") or sib:IsA("TextButton")) then
+                                        local sh = sib.Text or ""
+                                        if sh == "TIME LEFT" or sh == "ENDS AT"
+                                        or sh == "time_left" or sh == "ends_at"
+                                        or sh == "Time Left" or sh == "Ends At" then
+                                            d:SetAttribute("__CFTimeLocked", true)
+                                            pcall(function() d.Text = "Infinite" end)
+                                            d:GetPropertyChangedSignal("Text"):Connect(function()
+                                                if d.Text ~= "Infinite" then
+                                                    pcall(function() d.Text = "Infinite" end)
+                                                end
+                                            end)
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                task.wait(1.0)
+            end
+        end)
+
+        local pendingBatch, batchRunning = {}, false
+        gui.DescendantAdded:Connect(function(newD)
+            pendingBatch[#pendingBatch + 1] = newD
+            if not batchRunning then
+                batchRunning = true
+                task.delay(0.1, function()
+                    local batch  = pendingBatch
+                    pendingBatch = {}
+                    batchRunning = false
+                    for _, d in ipairs(batch) do
+                        if d and d.Parent then pcall(patchChilliElement, d) end
+                    end
+                end)
+            end
+        end)
+    end
+
+    while true do
+        task.wait(1.5)
+        for _, root in ipairs(roots) do
+            if root then
+                for _, gui in ipairs(root:GetChildren()) do
+                    if gui:IsA("ScreenGui")
+                    and not patchedGuis[gui]
+                    and not isProtectedPanel(gui) then
+                        task.spawn(function()
+                            if isChilliFinderGui(gui) then
+                                fullPatchChilliGui(gui)
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+    end
+end)
