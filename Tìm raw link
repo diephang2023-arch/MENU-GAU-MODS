@@ -1,0 +1,97 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+local guiParent = (gethui and gethui()) or game:GetService("CoreGui")
+
+local foundLinks = {}
+local seen = {}
+
+local function addLink(s)
+	s = tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+	if s ~= "" and not seen[s] then
+		seen[s] = true
+		table.insert(foundLinks, s)
+	end
+end
+
+local function scanBodyForUrls(body)
+	body = tostring(body or "")
+	for url in body:gmatch("https?://[%w-_%.%?%.:/%+=&%%#]+") do
+		addLink(url)
+	end
+end
+
+if hookmetamethod and getnamecallmethod then
+	local oldNamecall
+	oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+		local method = getnamecallmethod()
+		local res = oldNamecall(self, ...)
+		if self == game and (method == "HttpGet" or method == "HttpGetAsync") then
+			local argUrl = ...
+			pcall(addLink, argUrl)
+			pcall(scanBodyForUrls, res)
+		end
+		return res
+	end)
+end
+
+pcall(function()
+	local old = guiParent:FindFirstChild("GauLinkSpyGui")
+	if old then old:Destroy() end
+end)
+
+local sg = Instance.new("ScreenGui")
+sg.Name = "GauLinkSpyGui"
+sg.ResetOnSpawn = false
+pcall(function() sg.Parent = guiParent end)
+if not sg.Parent then sg.Parent = PlayerGui end
+
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.fromOffset(125, 38)
+btn.Position = UDim2.new(0.5, -62, 0.22, 0)
+btn.BackgroundColor3 = Color3.fromRGB(25, 28, 36)
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+btn.Font = Enum.Font.GothamBold
+btn.TextSize = 13
+btn.Text = "Chép URL"
+btn.Parent = sg
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+
+local dragging, dragStart, startPos, moved = false, nil, nil, false
+
+btn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		moved = false
+		dragStart = input.Position
+		startPos = btn.Position
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+		local delta = input.Position - dragStart
+		if delta.Magnitude > 8 then moved = true end
+		btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if dragging then
+			dragging = false
+			if not moved then
+				local out = #foundLinks > 0 and table.concat(foundLinks, "\n") or "Chưa bắt được URL nào qua HttpGet."
+				local clipFn = setclipboard or toclipboard
+				if clipFn then pcall(clipFn, out) end
+				btn.Text = "Đã chép (" .. tostring(#foundLinks) .. ")"
+				btn.BackgroundColor3 = Color3.fromRGB(22, 130, 75)
+				task.wait(1.5)
+				if btn and btn.Parent then
+					btn.Text = "Chép URL"
+					btn.BackgroundColor3 = Color3.fromRGB(25, 28, 36)
+				end
+			end
+		end
+	end
+end)
