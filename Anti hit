@@ -1,0 +1,269 @@
+-- ============================================================
+-- GAU MODS - ANTI GUARD TOGGLE WIDGET (KÉO THẢ)
+-- ============================================================
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Thay ID ảnh Roblox của bạn vào đây
+local ICON_ID = "rbxassetid://84033903679356"
+
+local State = {
+    AntiGuard = false,
+    RouteSpeed = 0.005
+}
+
+local TeleportPoints = {
+    Vector3.new(500.62, 241.28, -366.64),
+    Vector3.new(504.45, 155.80, -366.35),
+    Vector3.new(508.30, 70.28, -366.03),
+    Vector3.new(513.86, 70.28, -366.25),
+    Vector3.new(519.43, 70.28, -366.47),
+    Vector3.new(524.32, 70.28, -366.59),
+    Vector3.new(529.22, 70.28, -366.71),
+    Vector3.new(538.01, 70.28, -365.55),
+    Vector3.new(546.80, 70.28, -364.40)
+}
+
+-- Xóa giao diện cũ nếu đã tồn tại
+local oldGui = CoreGui:FindFirstChild("GauModsAntiGuard") or PlayerGui:FindFirstChild("GauModsAntiGuard")
+if oldGui then oldGui:Destroy() end
+
+local GuiParent = (gethui and gethui()) or PlayerGui
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "GauModsAntiGuard"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = GuiParent
+
+-- Khung chính nằm ngang giống trong ảnh
+local MainCard = Instance.new("Frame")
+MainCard.Name = "MainCard"
+MainCard.AnchorPoint = Vector2.new(0.5, 0.5)
+MainCard.Position = UDim2.new(0.5, 0, 0.68, 0) -- Vị trí ngay phía trên thanh công cụ
+MainCard.Size = UDim2.fromOffset(220, 48)
+MainCard.BackgroundColor3 = Color3.fromRGB(36, 33, 28)
+MainCard.BackgroundTransparency = 0.12
+MainCard.BorderSizePixel = 0
+MainCard.Parent = ScreenGui
+
+local CardCorner = Instance.new("UICorner")
+CardCorner.CornerRadius = UDim.new(0, 12)
+CardCorner.Parent = MainCard
+
+local CardStroke = Instance.new("UIStroke")
+CardStroke.Color = Color3.fromRGB(85, 78, 65)
+CardStroke.Thickness = 1.2
+CardStroke.Transparency = 0.35
+CardStroke.Parent = MainCard
+
+-- Khung chứa Icon bên trái
+local IconBox = Instance.new("Frame")
+IconBox.Name = "IconBox"
+IconBox.Position = UDim2.fromOffset(7, 7)
+IconBox.Size = UDim2.fromOffset(34, 34)
+IconBox.BackgroundColor3 = Color3.fromRGB(22, 18, 16)
+IconBox.BorderSizePixel = 0
+IconBox.Parent = MainCard
+
+local IconBoxCorner = Instance.new("UICorner")
+IconBoxCorner.CornerRadius = UDim.new(0, 8)
+IconBoxCorner.Parent = IconBox
+
+local IconImage = Instance.new("ImageLabel")
+IconImage.Name = "IconImage"
+IconImage.AnchorPoint = Vector2.new(0.5, 0.5)
+IconImage.Position = UDim2.fromScale(0.5, 0.5)
+IconImage.Size = UDim2.fromOffset(28, 28)
+IconImage.BackgroundTransparency = 1
+IconImage.Image = ICON_ID
+IconImage.ScaleType = Enum.ScaleType.Fit
+IconImage.Parent = IconBox
+
+local IconImageCorner = Instance.new("UICorner")
+IconImageCorner.CornerRadius = UDim.new(0, 6)
+IconImageCorner.Parent = IconImage
+
+-- Dòng chữ trên: Gau Mods
+local TopText = Instance.new("TextLabel")
+TopText.Name = "TopText"
+TopText.BackgroundTransparency = 1
+TopText.Position = UDim2.fromOffset(48, 7)
+TopText.Size = UDim2.new(1, -104, 0, 14)
+TopText.Font = Enum.Font.GothamBold
+TopText.Text = "Gau Mods"
+TopText.TextColor3 = Color3.fromRGB(255, 165, 65)
+TopText.TextSize = 11
+TopText.TextXAlignment = Enum.TextXAlignment.Left
+TopText.Parent = MainCard
+
+-- Dòng chữ dưới: Anti Guard
+local BottomText = Instance.new("TextLabel")
+BottomText.Name = "BottomText"
+BottomText.BackgroundTransparency = 1
+BottomText.Position = UDim2.fromOffset(48, 21)
+BottomText.Size = UDim2.new(1, -104, 0, 19)
+BottomText.Font = Enum.Font.GothamBlack
+BottomText.Text = "Anti Guard"
+BottomText.TextColor3 = Color3.fromRGB(255, 255, 255)
+BottomText.TextSize = 14
+BottomText.TextXAlignment = Enum.TextXAlignment.Left
+BottomText.Parent = MainCard
+
+-- Công tắc gạt (Toggle Switch) bên phải
+local SwitchTrack = Instance.new("TextButton")
+SwitchTrack.Name = "SwitchTrack"
+SwitchTrack.AnchorPoint = Vector2.new(1, 0.5)
+SwitchTrack.Position = UDim2.new(1, -10, 0.5, 0)
+SwitchTrack.Size = UDim2.fromOffset(44, 22)
+SwitchTrack.BackgroundColor3 = Color3.fromRGB(68, 65, 60) -- Màu khi TẮT
+SwitchTrack.BorderSizePixel = 0
+SwitchTrack.Text = ""
+SwitchTrack.AutoButtonColor = false
+SwitchTrack.Parent = MainCard
+
+local TrackCorner = Instance.new("UICorner")
+TrackCorner.CornerRadius = UDim.new(1, 0)
+TrackCorner.Parent = SwitchTrack
+
+local SwitchKnob = Instance.new("Frame")
+SwitchKnob.Name = "SwitchKnob"
+SwitchKnob.AnchorPoint = Vector2.new(0, 0.5)
+SwitchKnob.Position = UDim2.new(0, 3, 0.5, 0) -- Vị trí TẮT (bên trái)
+SwitchKnob.Size = UDim2.fromOffset(16, 16)
+SwitchKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SwitchKnob.BorderSizePixel = 0
+SwitchKnob.Parent = SwitchTrack
+
+local KnobCorner = Instance.new("UICorner")
+KnobCorner.CornerRadius = UDim.new(1, 0)
+KnobCorner.Parent = SwitchKnob
+
+-- Hiệu ứng chuyển đổi Bật / Tắt
+local function setToggleState(enabled)
+    State.AntiGuard = enabled
+    local info = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    if enabled then
+        -- Màu cam đỏ nổi bật giống trong ảnh khi BẬT
+        TweenService:Create(SwitchTrack, info, {BackgroundColor3 = Color3.fromRGB(235, 95, 55)}):Play()
+        TweenService:Create(SwitchKnob, info, {Position = UDim2.new(1, -19, 0.5, 0)}):Play()
+        TweenService:Create(CardStroke, info, {Color = Color3.fromRGB(235, 95, 55), Transparency = 0.1}):Play()
+    else
+        TweenService:Create(SwitchTrack, info, {BackgroundColor3 = Color3.fromRGB(68, 65, 60)}):Play()
+        TweenService:Create(SwitchKnob, info, {Position = UDim2.new(0, 3, 0.5, 0)}):Play()
+        TweenService:Create(CardStroke, info, {Color = Color3.fromRGB(85, 78, 65), Transparency = 0.35}):Play()
+    end
+end
+
+SwitchTrack.Activated:Connect(function()
+    setToggleState(not State.AntiGuard)
+end)
+
+-- Kéo thả toàn bộ thanh widget (hỗ trợ cả cảm ứng và chuột)
+local dragging = false
+local dragInput = nil
+local dragStart = nil
+local startPos = nil
+
+MainCard.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainCard.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+MainCard.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainCard.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Logic kích hoạt Anti Guard khi chạm ProximityPrompt
+local isExecuting = false
+ProximityPromptService.PromptTriggered:Connect(function(prompt, player)
+    if player ~= LocalPlayer then return end
+    if not State.AntiGuard or isExecuting then return end
+
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    isExecuting = true
+    for _, pos in ipairs(TeleportPoints) do
+        if not State.AntiGuard or not root.Parent then
+            break
+        end
+        root.CFrame = CFrame.new(pos)
+        task.wait(State.RouteSpeed)
+    end
+    isExecuting = false
+end)
+
+-- ============================================================
+-- PHẦN THÊM: LẤY VẬT PHẨM NHANH KHI CHẠM NÚT / TƯƠNG TÁC (NO UI)
+-- ============================================================
+local function applyInstantHold(prompt)
+    if prompt and prompt:IsA("ProximityPrompt") then
+        pcall(function()
+            prompt.HoldDuration = 0
+        end)
+    end
+end
+
+for _, desc in ipairs(workspace:GetDescendants()) do
+    if desc:IsA("ProximityPrompt") then
+        applyInstantHold(desc)
+    end
+end
+
+workspace.DescendantAdded:Connect(function(desc)
+    if desc:IsA("ProximityPrompt") then
+        task.defer(applyInstantHold, desc)
+    end
+end)
+
+local fastGrabBusy = false
+ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt, player)
+    if player and player ~= LocalPlayer then return end
+    if fastGrabBusy or not prompt or not prompt.Enabled then return end
+    fastGrabBusy = true
+
+    pcall(function()
+        prompt.HoldDuration = 0
+        if fireproximityprompt then
+            fireproximityprompt(prompt)
+        else
+            prompt:InputHoldBegin()
+            task.wait(0.02)
+            prompt:InputHoldEnd()
+        end
+    end)
+
+    task.delay(0.05, function()
+        fastGrabBusy = false
+    end)
+end)
