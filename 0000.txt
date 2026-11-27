@@ -11,7 +11,7 @@ local ENABLE_CUSTOM_OVERLAY = true
 
 local OVERLAY_CONFIG = {
 	TEXT = {
-		["Chilli Hub"] = "Chilli Hub",
+		["Chilli Hub"] = "Gau Mods",
 		["10%"] = "10%",
 		["Loading part 2 / 10"] = "Loading part 2 / 10",
 		["2"] = "2",
