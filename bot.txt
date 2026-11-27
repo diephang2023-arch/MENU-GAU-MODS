@@ -33,7 +33,7 @@ local OVERLAY_CONFIG = {
 		["51.5m"] = "51.5m",
 	},
 	IMAGES = {
-		["rbxassetid://29506832"] = "rbxassetid://29506832",
+		["rbxassetid://84033903679356"] = "rbxassetid://29506832",
 		["rbxassetid://121807029290075"] = "rbxassetid://121807029290075",
 		["rbxassetid://86527506328485"] = "rbxassetid://86527506328485",
 		["rbxassetid://130997380038945"] = "rbxassetid://130997380038945",
