@@ -1,0 +1,139 @@
+--[[ LIGHT RUNNABLE OVERLAY SCRIPT | GAU MODS ]]
+-- Sửa giá trị bên phải dấu = ở mục cần đổi, rồi execute là chạy ngay (bản tối ưu nhẹ, không lag).
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer and LocalPlayer:FindFirstChildOfClass("PlayerGui")
+
+local ENABLE_CUSTOM_OVERLAY = true
+
+local OVERLAY_CONFIG = {
+	TEXT = {
+		["MIRANDA"] = "MIRANDA",
+		["HUB"] = "HUB",
+		["Nenhum pet disponivel"] = "Nenhum pet disponivel",
+		["Astral Jackalope"] = "Astral Jackalope",
+		["Cosmic"] = "Cosmic",
+		["733.3m"] = "733.3m",
+		["6x"] = "6x",
+		["Flarefish"] = "Flarefish",
+		["320.54m"] = "320.54m",
+		["1.04x"] = "1.04x",
+		["301.01m"] = "301.01m",
+		["1x"] = "1x",
+		["Jellynova"] = "Jellynova",
+		["220.88m"] = "220.88m",
+		["1.53x"] = "1.53x",
+		["83.35m"] = "83.35m",
+		["0.91x"] = "0.91x",
+		["Auto Steal"] = "Auto Steal",
+		["Holy Peacock"] = "Holy Peacock",
+		["0.9x"] = "0.9x",
+		["51.5m"] = "51.5m",
+	},
+	IMAGES = {
+		["rbxassetid://29506832"] = "rbxassetid://29506832",
+		["rbxassetid://121807029290075"] = "rbxassetid://121807029290075",
+		["rbxassetid://86527506328485"] = "rbxassetid://86527506328485",
+		["rbxassetid://130997380038945"] = "rbxassetid://130997380038945",
+		["rbxassetid://76741574791611"] = "rbxassetid://76741574791611",
+		["rbxassetid://99103454554476"] = "rbxassetid://99103454554476",
+		["rbxassetid://117035806469168"] = "rbxassetid://117035806469168",
+	},
+	IDS = {
+		["rbxassetid://29506832"] = "rbxassetid://29506832",
+		["29506832"] = "29506832",
+		["rbxassetid://121807029290075"] = "rbxassetid://121807029290075",
+		["121807029290075"] = "121807029290075",
+		["rbxassetid://86527506328485"] = "rbxassetid://86527506328485",
+		["86527506328485"] = "86527506328485",
+		["rbxassetid://130997380038945"] = "rbxassetid://130997380038945",
+		["130997380038945"] = "130997380038945",
+		["rbxassetid://76741574791611"] = "rbxassetid://76741574791611",
+		["76741574791611"] = "76741574791611",
+		["rbxassetid://99103454554476"] = "rbxassetid://99103454554476",
+		["99103454554476"] = "99103454554476",
+		["rbxassetid://117035806469168"] = "rbxassetid://117035806469168",
+		["117035806469168"] = "117035806469168",
+	},
+	LINKS = {
+		["https://discord.gg/AKaEHZhuuU"] = "https://discord.gg/AKaEHZhuuU",
+		["https://as1-roblox-auth.luarmor.net/v8/auth/start/3e2554c9-8e1c-4022-945e-e99341073066?t=aEk9kOkakOk1kbk9k0klkkQOJIJk9Qb7kJIaTOklJlJa9lblOaIIGJk0JOJQ99bJk9I1GGk13TJO93bJkJO7TkkOJ09k9IbGOQIkTkk19OJO9OblOaIbJQkIJ1Jk99b3ObQbTak3JlJQ"] = "https://as1-roblox-auth.luarmor.net/v8/auth/start/3e2554c9-8e1c-4022-945e-e99341073066?t=aEk9kOkakOk1kbk9k0klkkQOJIJk9Qb7kJIaTOklJlJa9lblOaIIGJk0JOJQ99bJk9I1GGk13TJO93bJkJO7TkkOJ09k9IbGOQIkTkk19OJO9OblOaIbJQkIJ1Jk99b3ObQbTak3JlJQ",
+	},
+	CLIPBOARD = {
+		["https://discord.gg/AKaEHZhuuU"] = "https://discord.gg/AKaEHZhuuU",
+	},
+}
+
+local function mapText(s)
+	if not ENABLE_CUSTOM_OVERLAY or type(s) ~= "string" or s == "" then return s end
+	return OVERLAY_CONFIG.TEXT[s] or OVERLAY_CONFIG.IDS[s] or OVERLAY_CONFIG.LINKS[s] or s
+end
+
+local function mapImage(img)
+	if not ENABLE_CUSTOM_OVERLAY or type(img) ~= "string" or img == "" then return img end
+	local direct = OVERLAY_CONFIG.IMAGES[img] or OVERLAY_CONFIG.IDS[img]
+	if direct ~= nil then return tostring(direct) end
+	local digits = img:match("(%d+)")
+	if digits then
+		local rep = OVERLAY_CONFIG.IMAGES[digits] or OVERLAY_CONFIG.IDS[digits]
+		if rep ~= nil then
+			rep = tostring(rep)
+			return rep:match("^rbx") and rep or ("rbxassetid://" .. rep)
+		end
+	end
+	return img
+end
+
+local function mapClipboard(txt)
+	if not ENABLE_CUSTOM_OVERLAY or type(txt) ~= "string" or txt == "" then return txt end
+	return OVERLAY_CONFIG.CLIPBOARD[txt] or OVERLAY_CONFIG.IDS[txt] or OVERLAY_CONFIG.LINKS[txt] or txt
+end
+
+local function patchGuiOnce(root)
+	if not root then return end
+	pcall(function()
+		for _, obj in ipairs(root:GetDescendants()) do
+			if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+				local m = mapText(obj.Text)
+				if m ~= obj.Text then obj.Text = m end
+			elseif obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+				local m = mapImage(obj.Image)
+				if m ~= obj.Image then obj.Image = m end
+			end
+		end
+	end)
+end
+
+local function attachLightWatcher(root)
+	if not root then return end
+	patchGuiOnce(root)
+	pcall(function()
+		root.DescendantAdded:Connect(function(obj)
+			if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+				local m = mapText(obj.Text)
+				if m ~= obj.Text then obj.Text = m end
+			elseif obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+				local m = mapImage(obj.Image)
+				if m ~= obj.Image then obj.Image = m end
+			end
+		end)
+	end)
+end
+
+if gethui then pcall(function() attachLightWatcher(gethui()) end) end
+attachLightWatcher(CoreGui)
+if not PlayerGui and LocalPlayer then PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui") end
+if PlayerGui then attachLightWatcher(PlayerGui) end
+
+local clipFn = setclipboard or toclipboard
+if hookfunction and type(clipFn) == "function" then
+	pcall(function()
+		local oldClip
+		oldClip = hookfunction(clipFn, function(txt, ...)
+			if type(txt) == "string" then txt = mapClipboard(txt) end
+			return oldClip(txt, ...)
+		end)
+	end)
+end
