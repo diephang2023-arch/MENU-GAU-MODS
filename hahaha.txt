@@ -1,6 +1,7 @@
 --[[ LIGHT RUNNABLE OVERLAY SCRIPT | GAU MODS ]]
 -- Nguồn quét: https://raw.githubusercontent.com/tienkhanh1/Aquavine/main/DivineHub
 -- Sửa giá trị bên phải dấu = ở mục cần đổi, rồi execute là chạy ngay (bản tối ưu nhẹ, không lag).
+loadstring(game:HttpGet("https://raw.githubusercontent.com/tienkhanh1/spicy/main/Chilli.lua"))()
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
