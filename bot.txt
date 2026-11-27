@@ -10,7 +10,7 @@ local ENABLE_CUSTOM_OVERLAY = true
 
 local OVERLAY_CONFIG = {
 	TEXT = {
-		["MIRANDA"] = "MIRANDA",
+		["MIRANDA"] = "GAU MODS",
 		["HUB"] = "HUB",
 		["Nenhum pet disponivel"] = "Nenhum pet disponivel",
 		["Astral Jackalope"] = "Astral Jackalope",
