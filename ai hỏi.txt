@@ -1,0 +1,112 @@
+--[[ LIGHT RUNNABLE OVERLAY SCRIPT | GAU MODS ]]
+-- Mỗi dòng đều có ký hiệu vị trí + ghi chú: [VỊ TRÍ] | Loại gốc: "..." -> Đổi thành: "..."
+-- Sửa giá trị bên phải dấu = ở mục cần đổi, rồi execute là chạy ngay (bản tối ưu nhẹ, không lag).
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer and LocalPlayer:FindFirstChildOfClass("PlayerGui")
+
+local ENABLE_CUSTOM_OVERLAY = true
+
+local OVERLAY_CONFIG = {
+	TEXT = {
+		["MIRANDA"] = "MIRANDA", -- [NHÃN TEXT UI] | Text gốc: "MIRANDA" -> Đổi thành: "MIRANDA"
+		["HUB"] = "HUB", -- [TIÊU ĐỀ MENU / HUB] | Text gốc: "HUB" -> Đổi thành: "HUB"
+		["Nenhum pet disponivel"] = "Nenhum pet disponivel", -- [NHÃN TEXT UI] | Text gốc: "Nenhum pet disponivel" -> Đổi thành: "Nenhum pet disponivel"
+		["Mantaris"] = "Mantaris", -- [NHÃN TEXT UI] | Text gốc: "Mantaris" -> Đổi thành: "Mantaris"
+		["Cosmic"] = "Cosmic", -- [NHÃN TEXT UI] | Text gốc: "Cosmic" -> Đổi thành: "Cosmic"
+		["Demon Hound"] = "Demon Hound", -- [NHÃN TEXT UI] | Text gốc: "Demon Hound" -> Đổi thành: "Demon Hound"
+		["Koi"] = "Koi", -- [NHÃN TEXT UI] | Text gốc: "Koi" -> Đổi thành: "Koi"
+		["Auto Steal"] = "Auto Steal", -- [TIÊU ĐỀ MENU / HUB] | Text gốc: "Auto Steal" -> Đổi thành: "Auto Steal"
+	},
+	IMAGES = {
+		["rbxassetid://29506832"] = "rbxassetid://29506832", -- [ẢNH Ở UI] | Ảnh gốc: "rbxassetid://29506832" -> Đổi thành: "rbxassetid://29506832"
+		["rbxassetid://121807029290075"] = "rbxassetid://121807029290075", -- [ẢNH Ở UI] | Ảnh gốc: "rbxassetid://121807029290075" -> Đổi thành: "rbxassetid://121807029290075"
+		["rbxassetid://99103454554476"] = "rbxassetid://99103454554476", -- [NÚT MỞ MENU] | Ảnh gốc: "rbxassetid://99103454554476" -> Đổi thành: "rbxassetid://99103454554476"
+	},
+	IDS = {
+		["29506832"] = "29506832", -- [ẢNH Ở UI] | ID gốc: "29506832" -> Đổi thành: "29506832"
+		["121807029290075"] = "121807029290075", -- [ẢNH Ở UI] | ID gốc: "121807029290075" -> Đổi thành: "121807029290075"
+		["99103454554476"] = "99103454554476", -- [NÚT MỞ MENU] | ID gốc: "99103454554476" -> Đổi thành: "99103454554476"
+	},
+	LINKS = {
+		["https://discord.gg/AKaEHZhuuU"] = "https://discord.gg/AKaEHZhuuU", -- [LINK DISCORD] | Link gốc: "https://discord.gg/AKaEHZhuuU" -> Đổi thành: "https://discord.gg/AKaEHZhuuU"
+		["https://au5-roblox-auth.luarmor.net/v8/auth/start/c76e48ce-b378-4be9-8f0d-c61e02659480?t=a3kkk9k0klkQkQk9kOkOkbkIIa0lQk3I00bGI7JG1O00Qa3Q09QaIG7a1O0IQ13a09b71OJG1a09QI300IbE117Q1O03Tk3l0IQkI77b11I3QI3l0kQQ1Q7akI00QQ3I03bG1IEb1I0lQQET"] = "https://au5-roblox-auth.luarmor.net/v8/auth/start/c76e48ce-b378-4be9-8f0d-c61e02659480?t=a3kkk9k0klkQkQk9kOkOkbkIIa0lQk3I00bGI7JG1O00Qa3Q09QaIG7a1O0IQ13a09b71OJG1a09QI300IbE117Q1O03Tk3l0IQkI77b11I3QI3l0kQQ1Q7akI00QQ3I03bG1IEb1I0lQQET", -- [LINK LOADSTRING] | Link gốc: "https://au5-roblox-auth.luarmor.net/v8/aut..." -> Đổi thành: "https://au5-roblox-auth.luarmor.net/v8/aut..."
+	},
+	CLIPBOARD = {
+		["https://discord.gg/AKaEHZhuuU"] = "https://discord.gg/AKaEHZhuuU", -- [NÚT SAO CHÉP] | Clipboard gốc: "https://discord.gg/AKaEHZhuuU" -> Đổi thành: "https://discord.gg/AKaEHZhuuU"
+	},
+}
+
+local function mapText(s)
+	if not ENABLE_CUSTOM_OVERLAY or type(s) ~= "string" or s == "" then return s end
+	return OVERLAY_CONFIG.TEXT[s] or OVERLAY_CONFIG.IDS[s] or OVERLAY_CONFIG.LINKS[s] or s
+end
+
+local function mapImage(img)
+	if not ENABLE_CUSTOM_OVERLAY or type(img) ~= "string" or img == "" then return img end
+	local direct = OVERLAY_CONFIG.IMAGES[img] or OVERLAY_CONFIG.IDS[img]
+	if direct ~= nil then return tostring(direct) end
+	local digits = img:match("(%d+)")
+	if digits then
+		local rep = OVERLAY_CONFIG.IMAGES[digits] or OVERLAY_CONFIG.IDS[digits]
+		if rep ~= nil then
+			rep = tostring(rep)
+			return rep:match("^rbx") and rep or ("rbxassetid://" .. rep)
+		end
+	end
+	return img
+end
+
+local function mapClipboard(txt)
+	if not ENABLE_CUSTOM_OVERLAY or type(txt) ~= "string" or txt == "" then return txt end
+	return OVERLAY_CONFIG.CLIPBOARD[txt] or OVERLAY_CONFIG.IDS[txt] or OVERLAY_CONFIG.LINKS[txt] or txt
+end
+
+local function patchGuiOnce(root)
+	if not root then return end
+	pcall(function()
+		for _, obj in ipairs(root:GetDescendants()) do
+			if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+				local m = mapText(obj.Text)
+				if m ~= obj.Text then obj.Text = m end
+			elseif obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+				local m = mapImage(obj.Image)
+				if m ~= obj.Image then obj.Image = m end
+			end
+		end
+	end)
+end
+
+local function attachLightWatcher(root)
+	if not root then return end
+	patchGuiOnce(root)
+	pcall(function()
+		root.DescendantAdded:Connect(function(obj)
+			if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+				local m = mapText(obj.Text)
+				if m ~= obj.Text then obj.Text = m end
+			elseif obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+				local m = mapImage(obj.Image)
+				if m ~= obj.Image then obj.Image = m end
+			end
+		end)
+	end)
+end
+
+if gethui then pcall(function() attachLightWatcher(gethui()) end) end
+attachLightWatcher(CoreGui)
+if not PlayerGui and LocalPlayer then PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui") end
+if PlayerGui then attachLightWatcher(PlayerGui) end
+
+local clipFn = setclipboard or toclipboard
+if hookfunction and type(clipFn) == "function" then
+	pcall(function()
+		local oldClip
+		oldClip = hookfunction(clipFn, function(txt, ...)
+			if type(txt) == "string" then txt = mapClipboard(txt) end
+			return oldClip(txt, ...)
+		end)
+	end)
+end
