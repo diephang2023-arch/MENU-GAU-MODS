@@ -1,0 +1,1476 @@
+--[[ =====================================================================
+     GAU MODS - STUDIO SCANNER & 4-WAY CODE EDITOR EXPORTER
+     - Khi bấm Lưu: mở giao diện đẹp có Xem trước & Sửa trực tiếp mã Lua
+     - Hỗ trợ kéo 4 chiều (Lên / Xuống / Trái / Phải) bằng cảm ứng & chuột
+     - Tích hợp Tìm kiếm chữ/ID/link + nhảy kết quả + lọc tab + chép/áp dụng/lưu
+     - Giữ nguyên quét đa script / chuỗi loadstring nhiều link & chống nhảy số
+===================================================================== ]]
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer and LocalPlayer:FindFirstChildOfClass("PlayerGui")
+
+-- =====================================================================
+-- 1. CẤU HÌNH THỜI GIAN QUÉT & LỚP PHỦ
+-- =====================================================================
+local AUTO_STOP_SECONDS = 12
+local ENABLE_CUSTOM_OVERLAY = true
+
+local OVERLAY_CONFIG = {
+	TEXT = {
+		-- ["Chữ cũ"] = "Chữ mới",
+	},
+	IMAGES = {
+		-- ["rbxassetid://123456"] = "rbxassetid://654321", -- [NÚT MỞ MENU]
+	},
+	IDS = {
+		-- ["123456"] = "654321", -- [NÚT MỞ MENU]
+	},
+	LINKS = {
+		-- ["https://discord.gg/cu"] = "https://discord.gg/moi",
+	},
+	CLIPBOARD = {
+		-- ["Nội dung cũ"] = "Nội dung mới",
+	},
+}
+
+-- =====================================================================
+-- 2. TRẠNG THÁI QUÉT & BỘ LỌC NHIỄU / PET
+-- =====================================================================
+local SELF_SIGNATURE = "--[[ GAU_STUDIO_4WAY_SCANNER_SELF_IGNORE ]]"
+
+local anyScriptExecuted = false
+local scanActive = false
+local scanSessionId = 0
+local existingGuis = setmetatable({}, { __mode = "k" })
+local trackedTargetGuis = setmetatable({}, { __mode = "k" })
+
+local SYSTEM_GUI_BLACKLIST = {
+	RobloxGui = true,
+	TopBarApp = true,
+	Chat = true,
+	BubbleChat = true,
+	PlayerList = true,
+	PurchasePrompt = true,
+	CoreScriptLocalization = true,
+	RobloxPromptGui = true,
+	ThemeProvider = true,
+	DevConsoleMaster = true,
+	GauStudio4WayScannerGui = true,
+}
+
+local CAPTURED = {
+	TEXTS = {},
+	IMAGES = {},
+	IDS = {},
+	DISCORD = {},
+	URLS = {},
+	CLIPBOARD = {},
+}
+
+local SEEN = {
+	TEXTS = {},
+	IMAGES = {},
+	IDS = {},
+	DISCORD = {},
+	URLS = {},
+	CLIPBOARD = {},
+	SOURCES = {},
+}
+
+local IMAGE_INDEX_BY_VAL = {}
+local TEXT_INDEX_BY_VAL = {}
+local onStateUpdated = nil
+local livePatchAllRoots = nil
+
+local function isSelfContent(str)
+	if type(str) ~= "string" then
+		return false
+	end
+	return string.find(str, SELF_SIGNATURE, 1, true) ~= nil
+		or (string.find(str, "GauStudio4WayScannerGui", 1, true) ~= nil and string.find(str, "AUTO_STOP_SECONDS", 1, true) ~= nil)
+end
+
+local function totalCapturedCount()
+	return #CAPTURED.TEXTS + #CAPTURED.IMAGES + #CAPTURED.IDS + #CAPTURED.DISCORD + #CAPTURED.URLS + #CAPTURED.CLIPBOARD
+end
+
+local function notifyUiChanged()
+	if type(onStateUpdated) == "function" then
+		pcall(onStateUpdated, totalCapturedCount(), scanActive, anyScriptExecuted)
+	end
+end
+
+local function resetCapturedData()
+	CAPTURED.TEXTS = {}
+	CAPTURED.IMAGES = {}
+	CAPTURED.IDS = {}
+	CAPTURED.DISCORD = {}
+	CAPTURED.URLS = {}
+	CAPTURED.CLIPBOARD = {}
+
+	SEEN.TEXTS = {}
+	SEEN.IMAGES = {}
+	SEEN.IDS = {}
+	SEEN.DISCORD = {}
+	SEEN.URLS = {}
+	SEEN.CLIPBOARD = {}
+	SEEN.SOURCES = {}
+	IMAGE_INDEX_BY_VAL = {}
+	TEXT_INDEX_BY_VAL = {}
+
+	anyScriptExecuted = false
+	scanActive = false
+	notifyUiChanged()
+end
+
+local function isDynamicNoiseText(str)
+	if #str <= 1 then
+		return true
+	end
+	if str:match("^[%d%s%.,:%-/%%]+$") then
+		return true
+	end
+	local lower = str:lower()
+	if lower:match("^fps%s*:") or lower:match("^ping%s*:") or lower:match("%d+%s*ms$") then
+		return true
+	end
+	if lower:match("%d+[%.,]?%d*%s*kg") or lower:match("%d+[%.,]?%d*%s*studs") then
+		return true
+	end
+	if lower:match("^%d+[%.,]?%d*[kmb]$") or lower:match("^%d+[%.,]?%d*x$") then
+		return true
+	end
+	if str:match("^%d+:%d+$") or str:match("^%d+:%d+:%d+$") then
+		return true
+	end
+	return false
+end
+
+local function isPetOrItemCardImage(obj)
+	if not obj then
+		return false
+	end
+	local nameLower = tostring(obj.Name or ""):lower()
+	if nameLower:find("pet") or nameLower:find("item") or nameLower:find("fruit") or nameLower:find("egg") then
+		return true
+	end
+	local curr = obj.Parent
+	local depth = 0
+	while curr and depth < 4 do
+		local pName = tostring(curr.Name or ""):lower()
+		if pName:find("pet") or pName:find("inventory") or pName:find("list") or pName:find("card") then
+			return true
+		end
+		if curr:IsA("GuiObject") and not curr:IsA("ScreenGui") then
+			for _, sibling in ipairs(curr:GetChildren()) do
+				if sibling:IsA("TextLabel") and type(sibling.Text) == "string" then
+					local t = sibling.Text:lower()
+					if t:match("^%d+[%.,]?%d*[kmb]$")
+						or t:match("^%d+[%.,]?%d*x$")
+						or t:match("%d+[%.,]?%d*%s*kg")
+						or t:find("pet") then
+						return true
+					end
+				end
+			end
+		end
+		curr = curr.Parent
+		depth = depth + 1
+	end
+	return false
+end
+
+local function classifyUiTextTag(obj, txt)
+	if not obj then
+		return ""
+	end
+	local nameLower = tostring(obj.Name or ""):lower()
+	local parentNameLower = obj.Parent and tostring(obj.Parent.Name or ""):lower() or ""
+	local txtLower = tostring(txt or ""):lower()
+
+	local curr = obj
+	local depth = 0
+	while curr and depth < 5 do
+		local n = tostring(curr.Name or ""):lower()
+		if n:find("splash") or n:find("intro") or n:find("welcome") or n:find("loading") or n:find("boot") then
+			return "[MÀN HÌNH CHÀO]"
+		end
+		curr = curr.Parent
+		depth = depth + 1
+	end
+
+	if nameLower:find("title") or nameLower:find("header") or nameLower:find("hub") or parentNameLower:find("top") or parentNameLower:find("header") or txtLower:find("hub") then
+		return "[TIÊU ĐỀ]"
+	end
+	if obj:IsA("TextButton") then
+		return "[NÚT BẤM]"
+	end
+	return ""
+end
+
+local function classifyUiImageTag(obj)
+	if not obj then
+		return "[ẢNH UI]"
+	end
+	local nameLower = tostring(obj.Name or ""):lower()
+	local parentNameLower = obj.Parent and tostring(obj.Parent.Name or ""):lower() or ""
+	local absSize = Vector2.new(0, 0)
+	pcall(function()
+		absSize = obj.AbsoluteSize
+	end)
+
+	if obj:IsA("ImageButton") then
+		if nameLower:find("open")
+			or nameLower:find("toggle")
+			or nameLower:find("menu")
+			or nameLower:find("hub")
+			or nameLower:find("mini")
+			or nameLower:find("float")
+			or parentNameLower:find("open")
+			or parentNameLower:find("toggle")
+			or parentNameLower:find("mini")
+			or (absSize.X > 0 and absSize.X <= 95 and absSize.Y > 0 and absSize.Y <= 95 and obj.Parent and obj.Parent:IsA("ScreenGui")) then
+			return "[NÚT MỞ MENU]"
+		end
+	end
+
+	local curr = obj
+	local depth = 0
+	while curr and depth < 5 do
+		local n = tostring(curr.Name or ""):lower()
+		if n:find("splash") or n:find("intro") or n:find("welcome") or n:find("loading") or n:find("boot") or n:find("banner") then
+			return "[MÀN HÌNH CHÀO]"
+		end
+		curr = curr.Parent
+		depth = depth + 1
+	end
+
+	if absSize.X >= 280 and absSize.Y >= 150 then
+		return "[MÀN HÌNH CHÀO]"
+	end
+	if nameLower:find("logo") or nameLower:find("avatar") or nameLower:find("title") or parentNameLower:find("top") or parentNameLower:find("header") then
+		return "[LOGO UI]"
+	end
+	return "[ẢNH UI]"
+end
+
+local function addUniqueItem(category, value, roleTag)
+	if not (anyScriptExecuted and scanActive) or type(value) ~= "string" then
+		return
+	end
+	local trimmed = value:gsub("^%s+", ""):gsub("%s+$", "")
+	if trimmed == "" or #trimmed > 400 or isSelfContent(trimmed) then
+		return
+	end
+	if category == "TEXTS" and isDynamicNoiseText(trimmed) then
+		return
+	end
+
+	if category == "TEXTS" then
+		local existingIdx = TEXT_INDEX_BY_VAL[trimmed]
+		if existingIdx then
+			if CAPTURED.TEXTS[existingIdx].tag == "" and roleTag ~= "" then
+				CAPTURED.TEXTS[existingIdx].tag = roleTag
+			end
+			return
+		end
+		SEEN.TEXTS[trimmed] = true
+		table.insert(CAPTURED.TEXTS, { value = trimmed, tag = roleTag or "" })
+		TEXT_INDEX_BY_VAL[trimmed] = #CAPTURED.TEXTS
+		notifyUiChanged()
+		return
+	end
+
+	if SEEN[category][trimmed] then
+		return
+	end
+	SEEN[category][trimmed] = true
+	table.insert(CAPTURED[category], { value = trimmed, tag = roleTag or "" })
+	notifyUiChanged()
+end
+
+local function addUiImageWithTag(rawImg, uiTag)
+	if not (anyScriptExecuted and scanActive) or type(rawImg) ~= "string" then
+		return
+	end
+	local trimmed = rawImg:gsub("^%s+", ""):gsub("%s+$", "")
+	if trimmed == "" or #trimmed > 300 or isSelfContent(trimmed) then
+		return
+	end
+
+	local existingIdx = IMAGE_INDEX_BY_VAL[trimmed]
+	if existingIdx then
+		if CAPTURED.IMAGES[existingIdx].tag == "[ẢNH UI]" and uiTag ~= "[ẢNH UI]" then
+			CAPTURED.IMAGES[existingIdx].tag = uiTag
+		end
+		return
+	end
+
+	SEEN.IMAGES[trimmed] = true
+	table.insert(CAPTURED.IMAGES, { value = trimmed, tag = uiTag or "[ẢNH UI]" })
+	IMAGE_INDEX_BY_VAL[trimmed] = #CAPTURED.IMAGES
+
+	local idNum = trimmed:match("(%d+)")
+	if idNum and #idNum >= 5 and not SEEN.IDS[idNum] then
+		SEEN.IDS[idNum] = true
+		table.insert(CAPTURED.IDS, { value = idNum, tag = uiTag or "[ẢNH UI]" })
+	end
+	notifyUiChanged()
+end
+
+-- =====================================================================
+-- 3. ÁP DỤNG LỚP PHỦ THAY THẾ
+-- =====================================================================
+local function applyStringOverlay(rawStr)
+	if not ENABLE_CUSTOM_OVERLAY or type(rawStr) ~= "string" or rawStr == "" then
+		return rawStr
+	end
+	return OVERLAY_CONFIG.TEXT[rawStr] or OVERLAY_CONFIG.IDS[rawStr] or OVERLAY_CONFIG.LINKS[rawStr] or rawStr
+end
+
+local function applyImageOverlay(rawImg)
+	if not ENABLE_CUSTOM_OVERLAY or type(rawImg) ~= "string" or rawImg == "" then
+		return rawImg
+	end
+	local direct = OVERLAY_CONFIG.IMAGES[rawImg] or OVERLAY_CONFIG.IDS[rawImg]
+	if direct ~= nil then
+		return tostring(direct)
+	end
+	local digits = rawImg:match("(%d+)")
+	if digits then
+		local rep = OVERLAY_CONFIG.IMAGES[digits] or OVERLAY_CONFIG.IDS[digits]
+		if rep ~= nil then
+			rep = tostring(rep)
+			return rep:match("^rbx") and rep or ("rbxassetid://" .. rep)
+		end
+	end
+	return rawImg
+end
+
+local function applyClipboardOverlay(rawClip)
+	if not ENABLE_CUSTOM_OVERLAY or type(rawClip) ~= "string" or rawClip == "" then
+		return rawClip
+	end
+	return OVERLAY_CONFIG.CLIPBOARD[rawClip] or OVERLAY_CONFIG.IDS[rawClip] or OVERLAY_CONFIG.LINKS[rawClip] or rawClip
+end
+
+-- =====================================================================
+-- 4. THEO DÕI SCREENGUI MỚI & QUÉT UI
+-- =====================================================================
+local function snapshotExistingGuis(root)
+	if not root then return end
+	pcall(function()
+		for _, child in ipairs(root:GetChildren()) do
+			existingGuis[child] = true
+		end
+	end)
+end
+
+local function isTrackedTargetDescendant(inst)
+	local curr = inst
+	while curr do
+		if SYSTEM_GUI_BLACKLIST[curr.Name] then return false end
+		if trackedTargetGuis[curr] then return true end
+		curr = curr.Parent
+	end
+	return false
+end
+
+local hookedObjects = setmetatable({}, { __mode = "k" })
+local trackedGuiObjects = setmetatable({}, { __mode = "k" })
+
+local function inspectTargetGuiObject(obj)
+	if not obj or not isTrackedTargetDescendant(obj) then
+		return
+	end
+
+	if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+		trackedGuiObjects[obj] = true
+		local txt = obj.Text
+		if type(txt) == "string" and txt ~= "" then
+			if scanActive then
+				if txt:lower():find("discord%.gg") or txt:lower():find("discord%.com") then
+					addUniqueItem("DISCORD", txt, "[LINK DISCORD]")
+				elseif txt:match("^https?://") then
+					addUniqueItem("URLS", txt, "[LINK]")
+				else
+					addUniqueItem("TEXTS", txt, classifyUiTextTag(obj, txt))
+				end
+			end
+			if ENABLE_CUSTOM_OVERLAY then
+				local rep = applyStringOverlay(txt)
+				if rep ~= txt then obj.Text = rep end
+			end
+		end
+
+		if not hookedObjects[obj] then
+			hookedObjects[obj] = true
+			obj:GetPropertyChangedSignal("Text"):Connect(function()
+				local newTxt = obj.Text
+				if type(newTxt) ~= "string" or newTxt == "" then return end
+				if scanActive then
+					if newTxt:lower():find("discord%.gg") or newTxt:lower():find("discord%.com") then
+						addUniqueItem("DISCORD", newTxt, "[LINK DISCORD]")
+					elseif newTxt:match("^https?://") then
+						addUniqueItem("URLS", newTxt, "[LINK]")
+					else
+						addUniqueItem("TEXTS", newTxt, classifyUiTextTag(obj, newTxt))
+					end
+				end
+				if ENABLE_CUSTOM_OVERLAY then
+					local rep = applyStringOverlay(newTxt)
+					if rep ~= newTxt then obj.Text = rep end
+				end
+			end)
+		end
+	elseif obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
+		if isPetOrItemCardImage(obj) then return end
+		trackedGuiObjects[obj] = true
+
+		local img = obj.Image
+		if type(img) == "string" and img ~= "" then
+			if scanActive then
+				addUiImageWithTag(img, classifyUiImageTag(obj))
+			end
+			if ENABLE_CUSTOM_OVERLAY then
+				local rep = applyImageOverlay(img)
+				if rep ~= img then obj.Image = rep end
+			end
+		end
+
+		if not hookedObjects[obj] then
+			hookedObjects[obj] = true
+			obj:GetPropertyChangedSignal("Image"):Connect(function()
+				if isPetOrItemCardImage(obj) then return end
+				local newImg = obj.Image
+				if type(newImg) == "string" and newImg ~= "" then
+					if scanActive then
+						addUiImageWithTag(newImg, classifyUiImageTag(obj))
+					end
+					if ENABLE_CUSTOM_OVERLAY then
+						local rep = applyImageOverlay(newImg)
+						if rep ~= newImg then obj.Image = rep end
+					end
+				end
+			end)
+		end
+	end
+end
+
+livePatchAllRoots = function()
+	if not ENABLE_CUSTOM_OVERLAY then return end
+	pcall(function()
+		for obj in pairs(trackedGuiObjects) do
+			if obj and obj.Parent then
+				if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+					local rep = applyStringOverlay(obj.Text)
+					if rep ~= obj.Text then obj.Text = rep end
+				elseif (obj:IsA("ImageLabel") or obj:IsA("ImageButton")) and not isPetOrItemCardImage(obj) then
+					local rep = applyImageOverlay(obj.Image)
+					if rep ~= obj.Image then obj.Image = rep end
+				end
+			end
+		end
+	end)
+end
+
+local function registerNewTargetScreenGui(gui)
+	if not gui or SYSTEM_GUI_BLACKLIST[gui.Name] or existingGuis[gui] or not gui:IsA("ScreenGui") then
+		return
+	end
+	trackedTargetGuis[gui] = true
+	pcall(function()
+		for _, desc in ipairs(gui:GetDescendants()) do
+			inspectTargetGuiObject(desc)
+		end
+		gui.DescendantAdded:Connect(function(desc)
+			if scanActive or ENABLE_CUSTOM_OVERLAY then
+				task.defer(inspectTargetGuiObject, desc)
+			end
+		end)
+	end)
+end
+
+local function attachRootContainer(root)
+	if not root then return end
+	snapshotExistingGuis(root)
+	pcall(function()
+		root.ChildAdded:Connect(function(child)
+			if anyScriptExecuted then
+				task.defer(registerNewTargetScreenGui, child)
+			else
+				existingGuis[child] = true
+			end
+		end)
+	end)
+end
+
+local function startScanSessionForScript()
+	if anyScriptExecuted and scanActive then return end
+	anyScriptExecuted = true
+	scanActive = true
+	scanSessionId = scanSessionId + 1
+	local currentSession = scanSessionId
+	notifyUiChanged()
+
+	task.delay(AUTO_STOP_SECONDS, function()
+		if scanSessionId == currentSession and scanActive then
+			scanActive = false
+			notifyUiChanged()
+		end
+	end)
+end
+
+local function scanFetchedText(rawStr)
+	if not (anyScriptExecuted and scanActive) or type(rawStr) ~= "string" or #rawStr == 0 or isSelfContent(rawStr) then
+		return
+	end
+	local sig = tostring(#rawStr) .. ":" .. rawStr:sub(1, 60) .. ":" .. rawStr:sub(-60)
+	if SEEN.SOURCES[sig] then return end
+	SEEN.SOURCES[sig] = true
+
+	for subUrl in rawStr:gmatch("https?://[%w%.%-_~:/%?#@!$&'%(%)%*%+,;=%%]+") do
+		if subUrl:lower():find("discord", 1, true) then
+			addUniqueItem("DISCORD", subUrl, "[LINK DISCORD]")
+		else
+			addUniqueItem("URLS", subUrl, "[LINK]")
+		end
+	end
+	for dShort in rawStr:gmatch("discord%.gg/[%w%-_]+") do
+		addUniqueItem("DISCORD", dShort, "[LINK DISCORD]")
+	end
+	for clipStr in rawStr:gmatch('setclipboard%s*%(%s*["\']([^"\'\r\n]+)["\']%s*%)') do
+		addUniqueItem("CLIPBOARD", clipStr, "[NÚT COPY]")
+	end
+end
+
+if gethui then pcall(function() attachRootContainer(gethui()) end) end
+attachRootContainer(CoreGui)
+if not PlayerGui and LocalPlayer then PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui") end
+if PlayerGui then attachRootContainer(PlayerGui) end
+
+-- =====================================================================
+-- 5. HOOK HTTPGET & SETCLIPBOARD
+-- =====================================================================
+if hookfunction then
+	if game.HttpGet then
+		pcall(function()
+			local oldHttpGet
+			oldHttpGet = hookfunction(game.HttpGet, function(self, url, ...)
+				local urlStr = type(url) == "string" and url or ""
+				if urlStr ~= "" and not isSelfContent(urlStr) then
+					startScanSessionForScript()
+				end
+				local res = oldHttpGet(self, url, ...)
+				if anyScriptExecuted and scanActive and urlStr ~= "" and not isSelfContent(urlStr) then
+					if urlStr:lower():find("discord") then
+						addUniqueItem("DISCORD", urlStr, "[LINK DISCORD]")
+					else
+						addUniqueItem("URLS", urlStr, "[LINK]")
+					end
+				end
+				if anyScriptExecuted and scanActive and type(res) == "string" and #res > 0 and not isSelfContent(res) then
+					scanFetchedText(res)
+				end
+				return res
+			end)
+		end)
+	end
+
+	local clipTarget = setclipboard or toclipboard
+	if type(clipTarget) == "function" then
+		pcall(function()
+			local oldClip
+			oldClip = hookfunction(clipTarget, function(text, ...)
+				if type(text) == "string" and text ~= "" and not isSelfContent(text) then
+					if anyScriptExecuted and scanActive then
+						if text:lower():find("discord%.gg") or text:lower():find("discord%.com") then
+							addUniqueItem("DISCORD", text, "[LINK DISCORD]")
+						end
+						addUniqueItem("CLIPBOARD", text, "[NÚT COPY]")
+					end
+					if ENABLE_CUSTOM_OVERLAY then
+						text = applyClipboardOverlay(text)
+					end
+				end
+				return oldClip(text, ...)
+			end)
+		end)
+	end
+end
+
+-- =====================================================================
+-- 6. TẠO & PHÂN TÍCH MÃ LUA CẤU HÌNH (HỖ TRỢ LỌC TAB & ĐỒNG BỘ SỬA)
+-- =====================================================================
+local function escapeLuaStr(s)
+	return tostring(s or ""):gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\r", ""):gsub("\n", "\\n")
+end
+
+local function formatEasyEntries(list, mapTable)
+	local out = {}
+	for _, item in ipairs(list) do
+		local origVal = tostring(item.value or "")
+		local chosen = (mapTable and mapTable[origVal] and mapTable[origVal] ~= "") and tostring(mapTable[origVal]) or origVal
+		local tag = (item.tag and item.tag ~= "") and (" -- " .. tostring(item.tag)) or ""
+		table.insert(out, string.format('\t\t["%s"] = "%s",%s', escapeLuaStr(origVal), escapeLuaStr(chosen), tag))
+	end
+	return table.concat(out, "\n")
+end
+
+local function buildEasyRunnableScript(sectionFilter)
+	local filter = sectionFilter or "ALL"
+	local textBlock = formatEasyEntries(CAPTURED.TEXTS, OVERLAY_CONFIG.TEXT)
+	local imageBlock = formatEasyEntries(CAPTURED.IMAGES, OVERLAY_CONFIG.IMAGES)
+	local idBlock = formatEasyEntries(CAPTURED.IDS, OVERLAY_CONFIG.IDS)
+	local linkEntries = {}
+	for _, item in ipairs(CAPTURED.DISCORD) do table.insert(linkEntries, item) end
+	for _, item in ipairs(CAPTURED.URLS) do table.insert(linkEntries, item) end
+	local linkBlock = formatEasyEntries(linkEntries, OVERLAY_CONFIG.LINKS)
+	local clipBlock = formatEasyEntries(CAPTURED.CLIPBOARD, OVERLAY_CONFIG.CLIPBOARD)
+
+	local function blockOrPlaceholder(name, block, fallback)
+		if filter ~= "ALL" and filter ~= name then
+			return "\t\t-- (Đang ẩn mục " .. name .. " ở tab lọc hiện tại)"
+		end
+		return block ~= "" and block or fallback
+	end
+
+	return table.concat({
+		"--[[ EASY OVERLAY SCRIPT | GAU MODS ]]",
+		"-- Chỉ cần sửa chữ/số trong ngoặc kép THỨ HAI (sau dấu =), rồi execute!",
+		"",
+		"local Players = game:GetService(\"Players\")",
+		"local CoreGui = game:GetService(\"CoreGui\")",
+		"local LocalPlayer = Players.LocalPlayer",
+		"local PlayerGui = LocalPlayer and LocalPlayer:FindFirstChildOfClass(\"PlayerGui\")",
+		"",
+		"local ENABLE_CUSTOM_OVERLAY = true",
+		"",
+		"local OVERLAY_CONFIG = {",
+		"\tTEXT = {",
+		blockOrPlaceholder("TEXT", textBlock, '\t\t-- ["Chữ cũ"] = "Chữ mới",'),
+		"\t},",
+		"\tIMAGES = {",
+		blockOrPlaceholder("IMAGES", imageBlock, '\t\t-- ["rbxassetid://123456"] = "rbxassetid://654321", -- [NÚT MỞ MENU]'),
+		"\t},",
+		"\tIDS = {",
+		blockOrPlaceholder("IDS", idBlock, '\t\t-- ["123456"] = "654321", -- [NÚT MỞ MENU]'),
+		"\t},",
+		"\tLINKS = {",
+		blockOrPlaceholder("LINKS", linkBlock, '\t\t-- ["https://discord.gg/cu"] = "https://discord.gg/moi",'),
+		"\t},",
+		"\tCLIPBOARD = {",
+		blockOrPlaceholder("CLIPBOARD", clipBlock, '\t\t-- ["Nội dung cũ"] = "Nội dung mới",'),
+		"\t},",
+		"}",
+		"",
+		"local function mapText(s)",
+		"\tif not ENABLE_CUSTOM_OVERLAY or type(s) ~= \"string\" or s == \"\" then return s end",
+		"\treturn OVERLAY_CONFIG.TEXT[s] or OVERLAY_CONFIG.IDS[s] or OVERLAY_CONFIG.LINKS[s] or s",
+		"end",
+		"",
+		"local function mapImage(img)",
+		"\tif not ENABLE_CUSTOM_OVERLAY or type(img) ~= \"string\" or img == \"\" then return img end",
+		"\tlocal direct = OVERLAY_CONFIG.IMAGES[img] or OVERLAY_CONFIG.IDS[img]",
+		"\tif direct ~= nil then return tostring(direct) end",
+		"\tlocal digits = img:match(\"(%d+)\")",
+		"\tif digits then",
+		"\t\tlocal rep = OVERLAY_CONFIG.IMAGES[digits] or OVERLAY_CONFIG.IDS[digits]",
+		"\t\tif rep ~= nil then",
+		"\t\t\trep = tostring(rep)",
+		"\t\t\treturn rep:match(\"^rbx\") and rep or (\"rbxassetid://\" .. rep)",
+		"\t\tend",
+		"\tend",
+		"\treturn img",
+		"end",
+		"",
+		"local function mapClipboard(txt)",
+		"\tif not ENABLE_CUSTOM_OVERLAY or type(txt) ~= \"string\" or txt == \"\" then return txt end",
+		"\treturn OVERLAY_CONFIG.CLIPBOARD[txt] or OVERLAY_CONFIG.IDS[txt] or OVERLAY_CONFIG.LINKS[txt] or txt",
+		"end",
+		"",
+		"local function patchGuiOnce(root)",
+		"\tif not root then return end",
+		"\tpcall(function()",
+		"\t\tfor _, obj in ipairs(root:GetDescendants()) do",
+		"\t\t\tif obj:IsA(\"TextLabel\") or obj:IsA(\"TextButton\") or obj:IsA(\"TextBox\") then",
+		"\t\t\t\tlocal m = mapText(obj.Text)",
+		"\t\t\t\tif m ~= obj.Text then obj.Text = m end",
+		"\t\t\telseif obj:IsA(\"ImageLabel\") or obj:IsA(\"ImageButton\") then",
+		"\t\t\t\tlocal m = mapImage(obj.Image)",
+		"\t\t\t\tif m ~= obj.Image then obj.Image = m end",
+		"\t\t\tend",
+		"\t\tend",
+		"\tend)",
+		"end",
+		"",
+		"local function attachLightWatcher(root)",
+		"\tif not root then return end",
+		"\tpatchGuiOnce(root)",
+		"\tpcall(function()",
+		"\t\troot.DescendantAdded:Connect(function(obj)",
+		"\t\t\tif obj:IsA(\"TextLabel\") or obj:IsA(\"TextButton\") or obj:IsA(\"TextBox\") then",
+		"\t\t\t\tlocal m = mapText(obj.Text)",
+		"\t\t\t\tif m ~= obj.Text then obj.Text = m end",
+		"\t\t\telseif obj:IsA(\"ImageLabel\") or obj:IsA(\"ImageButton\") then",
+		"\t\t\t\tlocal m = mapImage(obj.Image)",
+		"\t\t\t\tif m ~= obj.Image then obj.Image = m end",
+		"\t\t\tend",
+		"\t\tend)",
+		"\tend)",
+		"end",
+		"",
+		"if gethui then pcall(function() attachLightWatcher(gethui()) end) end",
+		"attachLightWatcher(CoreGui)",
+		"if not PlayerGui and LocalPlayer then PlayerGui = LocalPlayer:FindFirstChildOfClass(\"PlayerGui\") end",
+		"if PlayerGui then attachLightWatcher(PlayerGui) end",
+		"",
+		"local clipFn = setclipboard or toclipboard",
+		"if hookfunction and type(clipFn) == \"function\" then",
+		"\tpcall(function()",
+		"\t\tlocal oldClip",
+		"\t\toldClip = hookfunction(clipFn, function(txt, ...)",
+		"\t\t\tif type(txt) == \"string\" then txt = mapClipboard(txt) end",
+		"\t\t\treturn oldClip(txt, ...)",
+		"\t\tend)",
+		"\tend)",
+		"end",
+	}, "\n")
+end
+
+-- Đọc lại các cặp ["cũ"] = "mới" người dùng đã sửa trong khung code để cập nhật OVERLAY_CONFIG trước khi lưu/áp dụng
+local function syncOverlayConfigFromEditedCode(codeText)
+	if type(codeText) ~= "string" or codeText == "" then
+		return
+	end
+	local currentSection = nil
+	for rawLine in (codeText .. "\n"):gmatch("([^\r\n]*)\r?\n") do
+		local line = rawLine:gsub("^%s+", "")
+		if line:match("^TEXT%s*=%s*{") then
+			currentSection = "TEXT"
+		elseif line:match("^IMAGES%s*=%s*{") then
+			currentSection = "IMAGES"
+		elseif line:match("^IDS%s*=%s*{") then
+			currentSection = "IDS"
+		elseif line:match("^LINKS%s*=%s*{") then
+			currentSection = "LINKS"
+		elseif line:match("^CLIPBOARD%s*=%s*{") then
+			currentSection = "CLIPBOARD"
+		elseif line:match("^}%s*,?") then
+			currentSection = nil
+		elseif currentSection and not line:match("^%-%-") then
+			local k, v = line:match('^%[%"(.-)%"%]%s*=%s*%"(.-)%"')
+			if k and v then
+				OVERLAY_CONFIG[currentSection][k] = v
+			end
+		end
+	end
+end
+
+local function sanitizeFileName(name)
+	local clean = tostring(name or ""):gsub("^%s+", ""):gsub("%s+$", "")
+	clean = clean:gsub('[\\/:*?"<>|]', "_")
+	return clean
+end
+
+local function saveCustomCodeToDeltaFolder(rawName, codeContent)
+	local writeFn = writefile or (syn and syn.write_file) or filewrite
+	if not writeFn then
+		return false, "Executor không hỗ trợ writefile!"
+	end
+
+	local cleanName = sanitizeFileName(rawName)
+	if cleanName == "" then
+		return false, "Vui lòng nhập tên file trước khi lưu!"
+	end
+
+	if not cleanName:lower():match("%.txt$") then
+		cleanName = cleanName .. ".txt"
+	end
+
+	if type(makefolder) == "function" then
+		pcall(function()
+			if type(isfolder) == "function" then
+				if not isfolder("delta") then makefolder("delta") end
+			else
+				makefolder("delta")
+			end
+		end)
+	end
+
+	local fullPath = "delta/" .. cleanName
+	local finalContent = (type(codeContent) == "string" and codeContent ~= "") and codeContent or buildEasyRunnableScript("ALL")
+
+	local ok, err = pcall(function()
+		writeFn(fullPath, finalContent)
+	end)
+
+	if ok then
+		return true, "Đã lưu thành công -> " .. fullPath
+	end
+	return false, "Lỗi lưu file: " .. tostring(err)
+end
+
+-- =====================================================================
+-- 7. GIAO DIỆN NỔI + STUDIO XEM/SỬA CODE KÉO 4 CHIỀU & TÌM KIẾM
+-- =====================================================================
+local function createScannerSaveUI()
+	local parentGui = (gethui and gethui()) or CoreGui
+	pcall(function()
+		local old = parentGui:FindFirstChild("GauStudio4WayScannerGui")
+		if old then old:Destroy() end
+	end)
+
+	local sg = Instance.new("ScreenGui")
+	sg.Name = "GauStudio4WayScannerGui"
+	sg.ResetOnSpawn = false
+	sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+	local placed = pcall(function() sg.Parent = parentGui end)
+	if not placed or not sg.Parent then
+		if not PlayerGui and LocalPlayer then
+			PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
+		end
+		if PlayerGui then sg.Parent = PlayerGui end
+	end
+
+	-- Thanh nút nổi gọn góc trái
+	local holder = Instance.new("Frame")
+	holder.Name = "FloatingBar"
+	holder.Size = UDim2.fromOffset(224, 36)
+	holder.Position = UDim2.new(0.02, 0, 0.46, 0)
+	holder.BackgroundTransparency = 1
+	holder.Active = true
+	holder.Parent = sg
+
+	local floatBtn = Instance.new("TextButton")
+	floatBtn.Name = "FloatSaveScannerBtn"
+	floatBtn.Size = UDim2.fromOffset(116, 36)
+	floatBtn.Position = UDim2.fromOffset(0, 0)
+	floatBtn.BackgroundColor3 = Color3.fromRGB(245, 185, 35)
+	floatBtn.TextColor3 = Color3.fromRGB(20, 20, 20)
+	floatBtn.Font = Enum.Font.GothamBold
+	floatBtn.TextSize = 12
+	floatBtn.Text = "💾 Lưu (0)"
+	floatBtn.Active = true
+	floatBtn.BorderSizePixel = 0
+	floatBtn.Parent = holder
+	Instance.new("UICorner", floatBtn).CornerRadius = UDim.new(0, 9)
+	local btnStroke = Instance.new("UIStroke", floatBtn)
+	btnStroke.Color = Color3.fromRGB(80, 45, 10)
+	btnStroke.Thickness = 1.5
+
+	local toggleScanBtn = Instance.new("TextButton")
+	toggleScanBtn.Name = "ToggleScanBtn"
+	toggleScanBtn.Size = UDim2.fromOffset(50, 36)
+	toggleScanBtn.Position = UDim2.fromOffset(120, 0)
+	toggleScanBtn.BackgroundColor3 = Color3.fromRGB(75, 85, 105)
+	toggleScanBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	toggleScanBtn.Font = Enum.Font.GothamBold
+	toggleScanBtn.TextSize = 11
+	toggleScanBtn.Text = "Chờ"
+	toggleScanBtn.BorderSizePixel = 0
+	toggleScanBtn.Parent = holder
+	Instance.new("UICorner", toggleScanBtn).CornerRadius = UDim.new(0, 9)
+
+	local resetBtn = Instance.new("TextButton")
+	resetBtn.Name = "ResetScanBtn"
+	resetBtn.Size = UDim2.fromOffset(48, 36)
+	resetBtn.Position = UDim2.fromOffset(174, 0)
+	resetBtn.BackgroundColor3 = Color3.fromRGB(168, 52, 52)
+	resetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	resetBtn.Font = Enum.Font.GothamBold
+	resetBtn.TextSize = 11
+	resetBtn.Text = "Xóa"
+	resetBtn.BorderSizePixel = 0
+	resetBtn.Parent = holder
+	Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0, 9)
+
+	onStateUpdated = function(total, isScanning, hasTarget)
+		if floatBtn and floatBtn.Parent then
+			floatBtn.Text = "💾 Lưu (" .. tostring(total) .. ")"
+		end
+		if toggleScanBtn and toggleScanBtn.Parent then
+			if not hasTarget then
+				toggleScanBtn.Text = "Chờ"
+				toggleScanBtn.BackgroundColor3 = Color3.fromRGB(75, 85, 105)
+			elseif isScanning then
+				toggleScanBtn.Text = "⏸ Dừng"
+				toggleScanBtn.BackgroundColor3 = Color3.fromRGB(45, 165, 95)
+			else
+				toggleScanBtn.Text = "▶ Quét"
+				toggleScanBtn.BackgroundColor3 = Color3.fromRGB(190, 90, 60)
+			end
+		end
+	end
+
+	toggleScanBtn.MouseButton1Click:Connect(function()
+		if not anyScriptExecuted then return end
+		scanActive = not scanActive
+		scanSessionId = scanSessionId + 1
+		notifyUiChanged()
+	end)
+
+	resetBtn.MouseButton1Click:Connect(function()
+		scanSessionId = scanSessionId + 1
+		resetCapturedData()
+	end)
+
+	-- Cửa sổ Studio Xem & Sửa Code + Tìm Kiếm + Lưu File
+	local studio = Instance.new("Frame")
+	studio.Name = "StudioSaveModal"
+	studio.Size = UDim2.new(0.88, 0, 0.84, 0)
+	studio.Position = UDim2.new(0.06, 0, 0.08, 0)
+	studio.BackgroundColor3 = Color3.fromRGB(18, 21, 29)
+	studio.BorderSizePixel = 0
+	studio.Visible = false
+	studio.Active = true
+	studio.Parent = sg
+	Instance.new("UICorner", studio).CornerRadius = UDim.new(0, 12)
+	local studioStroke = Instance.new("UIStroke", studio)
+	studioStroke.Color = Color3.fromRGB(85, 140, 255)
+	studioStroke.Thickness = 1.6
+
+	-- Header kéo cửa sổ
+	local topBar = Instance.new("Frame")
+	topBar.Name = "TopBar"
+	topBar.Size = UDim2.new(1, 0, 0, 38)
+	topBar.BackgroundColor3 = Color3.fromRGB(27, 32, 44)
+	topBar.BorderSizePixel = 0
+	topBar.Active = true
+	topBar.Parent = studio
+	Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 12)
+
+	local topTitle = Instance.new("TextLabel")
+	topTitle.Size = UDim2.new(1, -130, 1, 0)
+	topTitle.Position = UDim2.fromOffset(14, 0)
+	topTitle.BackgroundTransparency = 1
+	topTitle.Text = "GAU STUDIO • XEM & SỬA CODE KÉO 4 CHIỀU"
+	topTitle.TextColor3 = Color3.fromRGB(245, 200, 75)
+	topTitle.Font = Enum.Font.GothamBold
+	topTitle.TextSize = 12
+	topTitle.TextXAlignment = Enum.TextXAlignment.Left
+	topTitle.Parent = topBar
+
+	local applyLiveBtn = Instance.new("TextButton")
+	applyLiveBtn.Size = UDim2.fromOffset(82, 26)
+	applyLiveBtn.Position = UDim2.new(1, -118, 0.5, -13)
+	applyLiveBtn.BackgroundColor3 = Color3.fromRGB(58, 125, 225)
+	applyLiveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	applyLiveBtn.Font = Enum.Font.GothamBold
+	applyLiveBtn.TextSize = 11
+	applyLiveBtn.Text = "⚡ Áp dụng"
+	applyLiveBtn.BorderSizePixel = 0
+	applyLiveBtn.Parent = topBar
+	Instance.new("UICorner", applyLiveBtn).CornerRadius = UDim.new(0, 6)
+
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.fromOffset(28, 26)
+	closeBtn.Position = UDim2.new(1, -32, 0.5, -13)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(175, 55, 55)
+	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.TextSize = 12
+	closeBtn.Text = "✕"
+	closeBtn.BorderSizePixel = 0
+	closeBtn.Parent = topBar
+	Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+
+	-- Hàng tìm kiếm chữ + nút chuyển kết quả
+	local searchRow = Instance.new("Frame")
+	searchRow.Size = UDim2.new(1, -16, 0, 32)
+	searchRow.Position = UDim2.new(0, 8, 0, 44)
+	searchRow.BackgroundColor3 = Color3.fromRGB(25, 29, 39)
+	searchRow.BorderSizePixel = 0
+	searchRow.Parent = studio
+	Instance.new("UICorner", searchRow).CornerRadius = UDim.new(0, 8)
+
+	local searchBox = Instance.new("TextBox")
+	searchBox.Size = UDim2.new(1, -158, 1, -4)
+	searchBox.Position = UDim2.fromOffset(6, 2)
+	searchBox.BackgroundColor3 = Color3.fromRGB(37, 42, 55)
+	searchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	searchBox.PlaceholderText = "🔍 Tìm chữ, ID ảnh, link, nút mở menu..."
+	searchBox.PlaceholderColor3 = Color3.fromRGB(150, 158, 180)
+	searchBox.Text = ""
+	searchBox.ClearTextOnFocus = false
+	searchBox.Font = Enum.Font.Gotham
+	searchBox.TextSize = 12
+	searchBox.BorderSizePixel = 0
+	searchBox.Parent = searchRow
+	Instance.new("UICorner", searchBox).CornerRadius = UDim.new(0, 6)
+
+	local matchCountLbl = Instance.new("TextLabel")
+	matchCountLbl.Size = UDim2.fromOffset(52, 28)
+	matchCountLbl.Position = UDim2.new(1, -148, 0.5, -14)
+	matchCountLbl.BackgroundTransparency = 1
+	matchCountLbl.Text = "0/0"
+	matchCountLbl.TextColor3 = Color3.fromRGB(145, 210, 255)
+	matchCountLbl.Font = Enum.Font.GothamBold
+	matchCountLbl.TextSize = 11
+	matchCountLbl.Parent = searchRow
+
+	local prevMatchBtn = Instance.new("TextButton")
+	prevMatchBtn.Size = UDim2.fromOffset(26, 26)
+	prevMatchBtn.Position = UDim2.new(1, -92, 0.5, -13)
+	prevMatchBtn.BackgroundColor3 = Color3.fromRGB(52, 60, 78)
+	prevMatchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	prevMatchBtn.Font = Enum.Font.GothamBold
+	prevMatchBtn.TextSize = 12
+	prevMatchBtn.Text = "▲"
+	prevMatchBtn.BorderSizePixel = 0
+	prevMatchBtn.Parent = searchRow
+	Instance.new("UICorner", prevMatchBtn).CornerRadius = UDim.new(0, 6)
+
+	local nextMatchBtn = Instance.new("TextButton")
+	nextMatchBtn.Size = UDim2.fromOffset(26, 26)
+	nextMatchBtn.Position = UDim2.new(1, -62, 0.5, -13)
+	nextMatchBtn.BackgroundColor3 = Color3.fromRGB(52, 60, 78)
+	nextMatchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	nextMatchBtn.Font = Enum.Font.GothamBold
+	nextMatchBtn.TextSize = 12
+	nextMatchBtn.Text = "▼"
+	nextMatchBtn.BorderSizePixel = 0
+	nextMatchBtn.Parent = searchRow
+	Instance.new("UICorner", nextMatchBtn).CornerRadius = UDim.new(0, 6)
+
+	local clearSearchBtn = Instance.new("TextButton")
+	clearSearchBtn.Size = UDim2.fromOffset(26, 26)
+	clearSearchBtn.Position = UDim2.new(1, -32, 0.5, -13)
+	clearSearchBtn.BackgroundColor3 = Color3.fromRGB(95, 55, 65)
+	clearSearchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	clearSearchBtn.Font = Enum.Font.GothamBold
+	clearSearchBtn.TextSize = 11
+	clearSearchBtn.Text = "⌫"
+	clearSearchBtn.BorderSizePixel = 0
+	clearSearchBtn.Parent = searchRow
+	Instance.new("UICorner", clearSearchBtn).CornerRadius = UDim.new(0, 6)
+
+	-- Hàng lọc mục cấu hình
+	local filterRow = Instance.new("ScrollingFrame")
+	filterRow.Size = UDim2.new(1, -16, 0, 28)
+	filterRow.Position = UDim2.new(0, 8, 0, 80)
+	filterRow.BackgroundTransparency = 1
+	filterRow.ScrollBarThickness = 2
+	filterRow.CanvasSize = UDim2.fromOffset(430, 28)
+	filterRow.Parent = studio
+
+	local filterList = Instance.new("UIListLayout")
+	filterList.FillDirection = Enum.FillDirection.Horizontal
+	filterList.Padding = UDim.new(0, 5)
+	filterList.Parent = filterRow
+
+	local currentFilter = "ALL"
+	local filterTabs = {
+		{ key = "ALL", label = "Tất cả" },
+		{ key = "TEXT", label = "TEXT" },
+		{ key = "IMAGES", label = "IMAGES" },
+		{ key = "IDS", label = "IDS" },
+		{ key = "LINKS", label = "LINKS" },
+		{ key = "CLIPBOARD", label = "CLIPBOARD" },
+	}
+	local tabButtons = {}
+
+	-- Khung cuộn 4 chiều (Lên / Xuống / Trái / Phải) chứa code có thể sửa trực tiếp
+	local codeScroll = Instance.new("ScrollingFrame")
+	codeScroll.Name = "CodeScroll4Way"
+	codeScroll.Size = UDim2.new(1, -16, 1, -196)
+	codeScroll.Position = UDim2.new(0, 8, 0, 112)
+	codeScroll.BackgroundColor3 = Color3.fromRGB(13, 15, 21)
+	codeScroll.BorderSizePixel = 0
+	codeScroll.ScrollBarThickness = 6
+	codeScroll.ElasticBehavior = Enum.ElasticBehavior.Always
+	codeScroll.ScrollingDirection = Enum.ScrollingDirection.XY
+	codeScroll.CanvasSize = UDim2.fromOffset(1100, 900)
+	codeScroll.Parent = studio
+	Instance.new("UICorner", codeScroll).CornerRadius = UDim.new(0, 8)
+	local codeStroke = Instance.new("UIStroke", codeScroll)
+	codeStroke.Color = Color3.fromRGB(50, 62, 88)
+	codeStroke.Thickness = 1
+
+	local codeBox = Instance.new("TextBox")
+	codeBox.Name = "EditableCodeBox"
+	codeBox.Size = UDim2.fromOffset(1080, 880)
+	codeBox.Position = UDim2.fromOffset(8, 6)
+	codeBox.BackgroundTransparency = 1
+	codeBox.TextColor3 = Color3.fromRGB(226, 234, 248)
+	codeBox.Text = ""
+	codeBox.MultiLine = true
+	codeBox.ClearTextOnFocus = false
+	codeBox.TextWrapped = false
+	codeBox.TextXAlignment = Enum.TextXAlignment.Left
+	codeBox.TextYAlignment = Enum.TextYAlignment.Top
+	codeBox.Font = Enum.Font.Code
+	codeBox.TextSize = 12
+	codeBox.Parent = codeScroll
+
+	-- Thanh kết quả tìm kiếm nhanh (bấm dòng nào nhảy thẳng tới vị trí đó)
+	local hitBar = Instance.new("ScrollingFrame")
+	hitBar.Size = UDim2.new(1, -16, 0, 24)
+	hitBar.Position = UDim2.new(0, 8, 1, -80)
+	hitBar.BackgroundColor3 = Color3.fromRGB(24, 28, 38)
+	hitBar.BorderSizePixel = 0
+	hitBar.ScrollBarThickness = 2
+	hitBar.CanvasSize = UDim2.fromOffset(600, 24)
+	hitBar.Parent = studio
+	Instance.new("UICorner", hitBar).CornerRadius = UDim.new(0, 6)
+	local hitLayout = Instance.new("UIListLayout")
+	hitLayout.FillDirection = Enum.FillDirection.Horizontal
+	hitLayout.Padding = UDim.new(0, 4)
+	hitLayout.Parent = hitBar
+
+	-- Chân trang: Tên file + trạng thái + nút Chép / Lưu file
+	local footer = Instance.new("Frame")
+	footer.Size = UDim2.new(1, -16, 0, 44)
+	footer.Position = UDim2.new(0, 8, 1, -50)
+	footer.BackgroundTransparency = 1
+	footer.Parent = studio
+
+	local fileNameBox = Instance.new("TextBox")
+	fileNameBox.Size = UDim2.new(0.42, -4, 0, 34)
+	fileNameBox.Position = UDim2.fromOffset(0, 2)
+	fileNameBox.BackgroundColor3 = Color3.fromRGB(36, 41, 54)
+	fileNameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	fileNameBox.PlaceholderText = "Tên file (vd: script_ui)..."
+	fileNameBox.PlaceholderColor3 = Color3.fromRGB(145, 152, 175)
+	fileNameBox.Text = ""
+	fileNameBox.ClearTextOnFocus = false
+	fileNameBox.Font = Enum.Font.Gotham
+	fileNameBox.TextSize = 12
+	fileNameBox.BorderSizePixel = 0
+	fileNameBox.Parent = footer
+	Instance.new("UICorner", fileNameBox).CornerRadius = UDim.new(0, 7)
+
+	local copyBtn = Instance.new("TextButton")
+	copyBtn.Size = UDim2.fromOffset(68, 34)
+	copyBtn.Position = UDim2.new(0.42, 2, 0, 2)
+	copyBtn.BackgroundColor3 = Color3.fromRGB(75, 85, 110)
+	copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	copyBtn.Font = Enum.Font.GothamBold
+	copyBtn.TextSize = 11
+	copyBtn.Text = "📋 Chép"
+	copyBtn.BorderSizePixel = 0
+	copyBtn.Parent = footer
+	Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 7)
+
+	local saveConfirmBtn = Instance.new("TextButton")
+	saveConfirmBtn.Size = UDim2.new(0.58, -76, 0, 34)
+	saveConfirmBtn.Position = UDim2.new(0.42, 74, 0, 2)
+	saveConfirmBtn.BackgroundColor3 = Color3.fromRGB(45, 175, 95)
+	saveConfirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	saveConfirmBtn.Font = Enum.Font.GothamBold
+	saveConfirmBtn.TextSize = 12
+	saveConfirmBtn.Text = "💾 Lưu vào delta/"
+	saveConfirmBtn.BorderSizePixel = 0
+	saveConfirmBtn.Parent = footer
+	Instance.new("UICorner", saveConfirmBtn).CornerRadius = UDim.new(0, 7)
+
+	local statusBanner = Instance.new("TextLabel")
+	statusBanner.Size = UDim2.new(1, 0, 0, 12)
+	statusBanner.Position = UDim2.fromOffset(0, 36)
+	statusBanner.BackgroundTransparency = 1
+	statusBanner.Text = "Kéo 4 chiều tự do • Sửa trực tiếp rồi bấm Lưu hoặc Áp dụng"
+	statusBanner.TextColor3 = Color3.fromRGB(150, 210, 175)
+	statusBanner.Font = Enum.Font.Gotham
+	statusBanner.TextSize = 10
+	statusBanner.TextXAlignment = Enum.TextXAlignment.Left
+	statusBanner.Parent = footer
+
+	local function resizeCodeCanvas()
+		local txt = codeBox.Text or ""
+		local lineCount = 1
+		local maxLen = 40
+		for line in (txt .. "\n"):gmatch("([^\r\n]*)\r?\n") do
+			lineCount = lineCount + 1
+			if #line > maxLen then
+				maxLen = #line
+			end
+		end
+		local widthPx = math.max(960, maxLen * 8 + 80)
+		local heightPx = math.max(600, lineCount * 17 + 80)
+		codeBox.Size = UDim2.fromOffset(widthPx, heightPx)
+		codeScroll.CanvasSize = UDim2.fromOffset(widthPx + 24, heightPx + 24)
+	end
+
+	local searchMatches = {}
+	local activeMatchIdx = 0
+
+	local function jumpToMatch(index)
+		if #searchMatches == 0 then
+			matchCountLbl.Text = "0/0"
+			return
+		end
+		if index < 1 then
+			index = #searchMatches
+		elseif index > #searchMatches then
+			index = 1
+		end
+		activeMatchIdx = index
+		local hit = searchMatches[activeMatchIdx]
+		matchCountLbl.Text = tostring(activeMatchIdx) .. "/" .. tostring(#searchMatches)
+
+		local targetY = math.max(0, (hit.line - 2) * 17)
+		local targetX = math.max(0, (hit.col - 1) * 7)
+		local maxY = math.max(0, codeScroll.CanvasSize.Y.Offset - codeScroll.AbsoluteSize.Y)
+		local maxX = math.max(0, codeScroll.CanvasSize.X.Offset - codeScroll.AbsoluteSize.X)
+		codeScroll.CanvasPosition = Vector2.new(math.clamp(targetX, 0, maxX), math.clamp(targetY, 0, maxY))
+	end
+
+	local function rebuildSearchResults()
+		searchMatches = {}
+		activeMatchIdx = 0
+
+		for _, child in ipairs(hitBar:GetChildren()) do
+			if child:IsA("TextButton") then
+				child:Destroy()
+			end
+		end
+
+		local query = tostring(searchBox.Text or ""):lower()
+		query = query:gsub("^%s+", ""):gsub("%s+$", "")
+		if query == "" then
+			matchCountLbl.Text = "0/0"
+			hitBar.CanvasSize = UDim2.fromOffset(100, 24)
+			return
+		end
+
+		local lineNum = 0
+		local totalWidth = 0
+		for line in (codeBox.Text .. "\n"):gmatch("([^\r\n]*)\r?\n") do
+			lineNum = lineNum + 1
+			local sPos = line:lower():find(query, 1, true)
+			if sPos then
+				table.insert(searchMatches, { line = lineNum, col = sPos, text = line })
+				local mIdx = #searchMatches
+				local chip = Instance.new("TextButton")
+				local preview = line:gsub("^%s+", "")
+				if #preview > 26 then
+					preview = preview:sub(1, 24) .. ".."
+				end
+				chip.Size = UDim2.fromOffset(156, 20)
+				chip.Position = UDim2.fromOffset(0, 2)
+				chip.BackgroundColor3 = Color3.fromRGB(44, 56, 80)
+				chip.TextColor3 = Color3.fromRGB(255, 232, 130)
+				chip.Font = Enum.Font.Code
+				chip.TextSize = 10
+				chip.Text = "D" .. tostring(lineNum) .. ": " .. preview
+				chip.BorderSizePixel = 0
+				chip.Parent = hitBar
+				Instance.new("UICorner", chip).CornerRadius = UDim.new(0, 5)
+				totalWidth = totalWidth + 161
+
+				chip.MouseButton1Click:Connect(function()
+					jumpToMatch(mIdx)
+				end)
+			end
+		end
+
+		hitBar.CanvasSize = UDim2.fromOffset(math.max(120, totalWidth + 10), 24)
+		if #searchMatches > 0 then
+			jumpToMatch(1)
+		else
+			matchCountLbl.Text = "0/0"
+		end
+	end
+
+	local function refreshTabStyles()
+		for key, btn in pairs(tabButtons) do
+			if key == currentFilter then
+				btn.BackgroundColor3 = Color3.fromRGB(85, 140, 255)
+				btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			else
+				btn.BackgroundColor3 = Color3.fromRGB(34, 39, 52)
+				btn.TextColor3 = Color3.fromRGB(175, 184, 205)
+			end
+		end
+	end
+
+	local function loadScriptIntoEditor(filterKey)
+		currentFilter = filterKey or "ALL"
+		refreshTabStyles()
+		codeBox.Text = buildEasyRunnableScript(currentFilter)
+		resizeCodeCanvas()
+		rebuildSearchResults()
+	end
+
+	for _, tab in ipairs(filterTabs) do
+		local tBtn = Instance.new("TextButton")
+		tBtn.Size = UDim2.fromOffset(68, 24)
+		tBtn.BackgroundColor3 = Color3.fromRGB(34, 39, 52)
+		tBtn.TextColor3 = Color3.fromRGB(175, 184, 205)
+		tBtn.Font = Enum.Font.GothamBold
+		tBtn.TextSize = 10
+		tBtn.Text = tab.label
+		tBtn.BorderSizePixel = 0
+		tBtn.Parent = filterRow
+		Instance.new("UICorner", tBtn).CornerRadius = UDim.new(0, 6)
+		tabButtons[tab.key] = tBtn
+
+		tBtn.MouseButton1Click:Connect(function()
+			syncOverlayConfigFromEditedCode(codeBox.Text)
+			loadScriptIntoEditor(tab.key)
+		end)
+	end
+
+	searchBox:GetPropertyChangedSignal("Text"):Connect(rebuildSearchResults)
+	codeBox:GetPropertyChangedSignal("Text"):Connect(resizeCodeCanvas)
+
+	prevMatchBtn.MouseButton1Click:Connect(function()
+		jumpToMatch(activeMatchIdx - 1)
+	end)
+
+	nextMatchBtn.MouseButton1Click:Connect(function()
+		jumpToMatch(activeMatchIdx + 1)
+	end)
+
+	clearSearchBtn.MouseButton1Click:Connect(function()
+		searchBox.Text = ""
+		rebuildSearchResults()
+	end)
+
+	applyLiveBtn.MouseButton1Click:Connect(function()
+		syncOverlayConfigFromEditedCode(codeBox.Text)
+		if livePatchAllRoots then
+			livePatchAllRoots()
+		end
+		statusBanner.TextColor3 = Color3.fromRGB(115, 215, 255)
+		statusBanner.Text = "Đã đồng bộ & áp dụng cấu hình trực tiếp lên UI!"
+	end)
+
+	copyBtn.MouseButton1Click:Connect(function()
+		local clipFn = setclipboard or toclipboard
+		if type(clipFn) == "function" then
+			pcall(clipFn, codeBox.Text)
+			statusBanner.TextColor3 = Color3.fromRGB(120, 235, 150)
+			statusBanner.Text = "Đã sao chép toàn bộ mã Lua vào clipboard!"
+		else
+			statusBanner.TextColor3 = Color3.fromRGB(255, 125, 125)
+			statusBanner.Text = "Executor không hỗ trợ clipboard!"
+		end
+	end)
+
+	closeBtn.MouseButton1Click:Connect(function()
+		studio.Visible = false
+	end)
+
+	saveConfirmBtn.MouseButton1Click:Connect(function()
+		syncOverlayConfigFromEditedCode(codeBox.Text)
+		local ok, msg = saveCustomCodeToDeltaFolder(fileNameBox.Text, codeBox.Text)
+		if ok then
+			statusBanner.TextColor3 = Color3.fromRGB(105, 240, 145)
+			statusBanner.Text = msg
+			task.delay(0.9, function()
+				if studio then studio.Visible = false end
+			end)
+		else
+			statusBanner.TextColor3 = Color3.fromRGB(255, 115, 115)
+			statusBanner.Text = msg
+			fileNameBox:CaptureFocus()
+		end
+	end)
+
+	-- Kéo thanh nút nổi
+	local barDragging, barDragStart, barStartPos, barMoved = false, nil, nil, false
+	floatBtn.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+			barDragging = true
+			barMoved = false
+			barDragStart = input.Position
+			barStartPos = holder.Position
+		end
+	end)
+
+	-- Kéo 4 chiều trực tiếp trên khung codeScroll (Lên / Xuống / Trái / Phải)
+	local panDragging = false
+	local panStartInputPos = nil
+	local panStartCanvasPos = nil
+	local panMoved = false
+
+	codeScroll.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+			panDragging = true
+			panMoved = false
+			panStartInputPos = input.Position
+			panStartCanvasPos = codeScroll.CanvasPosition
+		end
+	end)
+
+	-- Kéo di chuyển cả cửa sổ Studio từ thanh TopBar
+	local winDragging = false
+	local winDragStart = nil
+	local winStartPos = nil
+
+	topBar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+			winDragging = true
+			winDragStart = input.Position
+			winStartPos = studio.Position
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
+			if barDragging then
+				local delta = input.Position - barDragStart
+				if delta.Magnitude > 8 then barMoved = true end
+				holder.Position = UDim2.new(
+					barStartPos.X.Scale,
+					barStartPos.X.Offset + delta.X,
+					barStartPos.Y.Scale,
+					barStartPos.Y.Offset + delta.Y
+				)
+			elseif panDragging then
+				local delta = input.Position - panStartInputPos
+				if delta.Magnitude > 6 then
+					panMoved = true
+				end
+				local maxX = math.max(0, codeScroll.CanvasSize.X.Offset - codeScroll.AbsoluteSize.X)
+				local maxY = math.max(0, codeScroll.CanvasSize.Y.Offset - codeScroll.AbsoluteSize.Y)
+				local nextX = math.clamp(panStartCanvasPos.X - delta.X, 0, maxX)
+				local nextY = math.clamp(panStartCanvasPos.Y - delta.Y, 0, maxY)
+				codeScroll.CanvasPosition = Vector2.new(nextX, nextY)
+			elseif winDragging then
+				local delta = input.Position - winDragStart
+				studio.Position = UDim2.new(
+					winStartPos.X.Scale,
+					winStartPos.X.Offset + delta.X,
+					winStartPos.Y.Scale,
+					winStartPos.Y.Offset + delta.Y
+				)
+			end
+		end
+	end)
+
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+			if barDragging then
+				barDragging = false
+				if not barMoved then
+					if not studio.Visible then
+						statusBanner.TextColor3 = Color3.fromRGB(150, 210, 175)
+						statusBanner.Text = "Kéo 4 chiều tự do • Sửa trực tiếp rồi bấm Lưu hoặc Áp dụng"
+						loadScriptIntoEditor("ALL")
+						studio.Visible = true
+					else
+						studio.Visible = false
+					end
+				end
+			end
+			if panDragging then
+				panDragging = false
+				if not panMoved then
+					codeBox:CaptureFocus()
+				end
+			end
+			if winDragging then
+				winDragging = false
+			end
+		end
+	end)
+end
+
+createScannerSaveUI()
