@@ -11,7 +11,7 @@ local ENABLE_CUSTOM_OVERLAY = true
 
 local OVERLAY_CONFIG = {
 	TEXT = {
-		["MIRANDA"] = "MIRANDA", -- [NHÃN TEXT UI] | Text gốc: "MIRANDA" -> Đổi thành: "MIRANDA"
+		["MIRANDA"] = "MIRANDA", -- [NHÃN TEXT UI] | Text gốc: "MIRANDA" -> Đổi thành: "GAU MODS"
 		["HUB"] = "HUB", -- [TIÊU ĐỀ MENU / HUB] | Text gốc: "HUB" -> Đổi thành: "HUB"
 		["Nenhum pet disponivel"] = "Nenhum pet disponivel", -- [NHÃN TEXT UI] | Text gốc: "Nenhum pet disponivel" -> Đổi thành: "Nenhum pet disponivel"
 		["Mantaris"] = "Mantaris", -- [NHÃN TEXT UI] | Text gốc: "Mantaris" -> Đổi thành: "Mantaris"
@@ -23,12 +23,12 @@ local OVERLAY_CONFIG = {
 	IMAGES = {
 		["rbxassetid://29506832"] = "rbxassetid://29506832", -- [ẢNH Ở UI] | Ảnh gốc: "rbxassetid://29506832" -> Đổi thành: "rbxassetid://29506832"
 		["rbxassetid://121807029290075"] = "rbxassetid://121807029290075", -- [ẢNH Ở UI] | Ảnh gốc: "rbxassetid://121807029290075" -> Đổi thành: "rbxassetid://121807029290075"
-		["rbxassetid://99103454554476"] = "rbxassetid://99103454554476", -- [NÚT MỞ MENU] | Ảnh gốc: "rbxassetid://84033903679356" -> Đổi thành: "rbxassetid://99103454554476"
+		["rbxassetid://99103454554476"] = "rbxassetid://99103454554476", -- [NÚT MỞ MENU] | Ảnh gốc: "rbxassetid://99103454554476" -> Đổi thành: "rbxassetid://84033903679356"
 	},
 	IDS = {
 		["29506832"] = "29506832", -- [ẢNH Ở UI] | ID gốc: "29506832" -> Đổi thành: "29506832"
 		["121807029290075"] = "121807029290075", -- [ẢNH Ở UI] | ID gốc: "121807029290075" -> Đổi thành: "121807029290075"
-		["99103454554476"] = "99103454554476", -- [NÚT MỞ MENU] | ID gốc: "84033903679356" -> Đổi thành: "99103454554476"
+		["99103454554476"] = "99103454554476", -- [NÚT MỞ MENU] | ID gốc: "99103454554476" -> Đổi thành: "84033903679356"
 	},
 	LINKS = {
 		["https://discord.gg/AKaEHZhuuU"] = "https://discord.gg/AKaEHZhuuU", -- [LINK DISCORD] | Link gốc: "https://discord.gg/AKaEHZhuuU" -> Đổi thành: "https://discord.gg/AKaEHZhuuU"
